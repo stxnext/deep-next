@@ -1,7 +1,6 @@
 from collections import defaultdict
 from pathlib import Path
 
-from deep_next.common.common import load_monorepo_dotenv
 from deep_next.core.base_graph import BaseGraph, State
 from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan.srs.common_agentless import create_structure
@@ -115,4 +114,3 @@ class CodeReviewGraph(BaseGraph):
 
 
 code_review_graph = CodeReviewGraph()
-
