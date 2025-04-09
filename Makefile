@@ -18,14 +18,16 @@ lint:
 test_app:
 	poetry run pytest apps/app
 
-.PHONY: test_core
-test_core:
-	poetry run pytest libs/core
+.PHONY: test_core_llm
+test_core_llm:
+	poetry run pytest libs/core  -m "llm"
 
-.PHONY: test_core_quick
-test_core_quick:
+.PHONY: test_core_unit
+test_core_unit:
 	poetry run pytest libs/core -m "not llm"
-	poetry run pytest libs/core/tests/test_steps/test_gather_project_knowledge/test_project_description.py
+
+.PHONY: test_core
+test_core: test_core_unit test_core_llm
 
 .PHONY: test_connectors
 test_connectors:
@@ -35,12 +37,12 @@ test_connectors:
 test_common:
 	poetry run pytest libs/common
 
-.PHONY: test_all
-test_all: \
-	test_core \
+.PHONY: test_unit
+test_unit: \
+	test_core_unit \
 	test_connectors \
 	test_common \
-	test_app \
+	test_app
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
