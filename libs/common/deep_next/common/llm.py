@@ -28,6 +28,7 @@ class LLMConfigType(str, Enum):
     SRF_ANALYZE = "srf-analyze"
     SRF_TOOLS = "srf-tools"
     IMPLEMENT = "implement"
+    CODE_REVIEW = "code-review"
     DEFAULT = "default"
 
 

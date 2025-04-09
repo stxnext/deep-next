@@ -4,6 +4,7 @@ from deep_next.core.base_graph import BaseGraph, State
 from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan import action_plan_graph
 from deep_next.core.steps.action_plan.data_model import ActionPlan
+from deep_next.core.steps.code_review.graph import code_review_graph
 from deep_next.core.steps.gather_project_knowledge.graph import (
     gather_project_knowledge_graph,
 )
@@ -33,7 +34,13 @@ class DeepNextGraphState(State):
 
     # Output arguments
     git_diff: str
-    """Final result of the graf flow: git diff of the changes made to the source code.
+    """
+    Final result of the graf flow: git diff of the changes made to the source code.
+    """
+
+    code_review_issues: list[str]
+    """
+    Code review of the changes made to the source code.
     """
 
 
@@ -68,6 +75,18 @@ class _Node(BaseNode):
 
         return {"git_diff": final_state["git_diff"]}
 
+    @staticmethod
+    def review_code(state: DeepNextGraphState) -> dict:
+        initial_state = code_review_graph.create_init_state(
+            root_path=state["root_path"],
+            issue_statement=state["problem_statement"],
+            git_diff=state["git_diff"],
+        )
+        final_state = code_review_graph.compiled.invoke(initial_state)
+        return {
+            "code_review_issues": final_state["code_review_issues"],
+        }
+
 
 class DeepNextGraph(BaseGraph):
     def __init__(self):
@@ -77,11 +96,13 @@ class DeepNextGraph(BaseGraph):
         self.add_quick_node(_Node.gather_project_knowledge)
         self.add_node(_Node.create_action_plan)
         self.add_node(_Node.implement)
+        self.add_node(_Node.review_code)
 
         self.add_quick_edge(START, _Node.gather_project_knowledge)
         self.add_quick_edge(_Node.gather_project_knowledge, _Node.create_action_plan)
         self.add_quick_edge(_Node.create_action_plan, _Node.implement)
-        self.add_quick_edge(_Node.implement, END)
+        self.add_quick_edge(_Node.implement, _Node.review_code)
+        self.add_quick_edge(_Node.review_code, END)
 
     def create_init_state(
         self, root: Path, problem_statement: str, hints: str
@@ -93,6 +114,7 @@ class DeepNextGraph(BaseGraph):
             _project_knowledge="",
             _action_plan=None,
             git_diff="",
+            code_review_issues=[],
         )
 
     def __call__(self, *_, problem_statement: str, hints: str, root: Path) -> str:

@@ -33,6 +33,11 @@ implement:
   config:
     region: us-east-1
 
+code-review:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
 default:
   model: mistral.mistral-7b-instruct-v0:2
   seed: 42

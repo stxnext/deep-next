@@ -23,6 +23,11 @@ implement:
   seed: 42
   temperature: 0.0
 
+code-review:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
 default:
   model: gpt-4o-mini-2024-07-18
   seed: 42
