@@ -14,6 +14,11 @@ class SRFConfig:
     CYCLE_ITERATION_LIMIT = 20
 
 
+class SRSConfig:
+    N_CYCLES = 3
+    CONTEXT_WINDOW = 10
+
+
 SRF_INDEXER_IGNORE_DIR_PREFIXES = [
     ".venv",
     ".git",
