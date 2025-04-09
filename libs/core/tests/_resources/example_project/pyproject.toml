@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "example_project"
+version = "0.1.0"
+description = "Dummy project for testing purposes"
+authors = ["Patryk Laskowski <patryk.laskowski@stxnext.pl>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,12 @@
+[tool.poetry]
+name = "deep_next_app"
+version = "0.1.0"
+description = "Deep NEXT product"
+authors = []
+packages = [
+    { include = "deep_next", from = "." }
+]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
