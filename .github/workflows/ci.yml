@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job: [lint, test]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - uses: actions/cache@v3
+        with:
+          path: .venv
+          key: shared-venv
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          poetry --version
+
+      - name: Setup git
+        run: |
+          apt-get update && apt-get install -y --no-install-recommends make git
+          git config --global user.name "DeepNext CI/CD Pipeline"
+          git config --global user.email "deepnext.cicd.pipeline@example.com"
+
+      - name: Install venv
+        run: make install_venv
+
+      - name: Run linter
+        if: matrix.job == 'lint'
+        run: make lint
+
+      - name: Run tests
+        if: matrix.job == 'test'
+        run: make test_all
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_ORGANIZATION: ${{ secrets.OPENAI_ORGANIZATION }}
