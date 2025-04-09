@@ -18,6 +18,11 @@ srf-tools:
   seed: 42
   temperature: 0.0
 
+srs-analyze:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
 implement:
   model: gpt-4o-2024-08-06
   seed: 42

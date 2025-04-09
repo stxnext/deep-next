@@ -26,6 +26,11 @@ srf-tools:
   config:
     region: us-east-1
 
+srs-analyze:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
 implement:
   model: anthropic.claude-3-5-sonnet-20240620-v1:0
   seed: 42

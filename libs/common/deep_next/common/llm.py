@@ -19,6 +19,7 @@ from langchain_core.messages import (
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
+from loguru import logger
 from pydantic import BaseModel
 
 
@@ -27,6 +28,7 @@ class LLMConfigType(str, Enum):
     ACTION_PLAN = "action-plan"
     SRF_ANALYZE = "srf-analyze"
     SRF_TOOLS = "srf-tools"
+    SRS_ANALYZE = "srs-analyze"
     IMPLEMENT = "implement"
     CODE_REVIEW = "code-review"
     DEFAULT = "default"
@@ -215,6 +217,7 @@ def llm_from_config(
     temperature: float | None = None,
 ) -> BaseChatModel:
     config = LLMConfig.load(config_type=config_type)
+    logger.info(f"LLM config: {config}")
     if config.model.provider == Provider.BEDROCK:
         return _get_aws_bedrock_llm(
             config=config,
