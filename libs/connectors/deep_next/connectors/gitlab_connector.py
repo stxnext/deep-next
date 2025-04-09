@@ -102,31 +102,6 @@ class GitLabIssue:
         self._issue.labels = [x for x in self._issue.labels if x != label]
         self._issue.save()
 
-    def count_user_open_discussions(self, user_id: int) -> int:
-        """Count comment threads in issue.
-
-        Args:
-            user_id: ID of the user who opened the issue.
-
-        Returns:
-            Number of comment threads.
-        """
-        discussions = self._issue.discussions.list(
-            all=True, order_by="created_at", sort="asc"
-        )
-
-        user_discussions = [
-            discussion
-            for discussion in discussions
-            if (
-                discussion.attributes["notes"]
-                and not discussion.attributes["notes"][0]["system"]
-                and discussion.attributes["notes"][0]["author"]["id"] == user_id
-            )
-        ]
-
-        return len(user_discussions)
-
 
 class GitLabMR:
     def __init__(self, mr: ProjectMergeRequest):
@@ -213,12 +188,8 @@ class GitLabConnector:
         merge_branch: str,
         into_branch: str,
         title: str,
-        labels: list[str] | None = None,
     ):
         """Create merge request."""
-        if labels is None:
-            labels = []
-
         logger.info(f"Creating MR from '{merge_branch}' to '{into_branch}'")
 
         return self.project.mergerequests.create(
@@ -226,17 +197,6 @@ class GitLabConnector:
                 "source_branch": merge_branch,
                 "target_branch": into_branch,
                 "title": title,
-                "labels": labels,
+                "labels": [],
             }
-        )
-
-    def get_project_member_id(self, name: str) -> int:
-        """Get project member ID by user's 'name'."""
-        members = self.project.members.list(all=True)
-        for member in members:
-            if member.name == name:
-                return member.id
-
-        raise ResourceNotFoundError(
-            f"User called '{name}' not found in '{self.project.name}' project."
         )
