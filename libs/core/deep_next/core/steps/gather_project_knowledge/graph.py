@@ -1,7 +1,7 @@
 import textwrap
 from pathlib import Path
 
-from deep_next.core.base_graph import BaseGraph, State
+from deep_next.core.base_graph import BaseGraph
 from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.gather_project_knowledge.project_description import (
     create_project_description,
@@ -9,39 +9,39 @@ from deep_next.core.steps.gather_project_knowledge.project_description import (
 from deep_next.core.steps.gather_project_knowledge.project_map import tree
 from langgraph.constants import START
 from langgraph.graph import END
+from pydantic import BaseModel, Field
 
 
-class GatherProjectKnowledgeGraphState(State):
-    # Input
-    root_path: Path
-
-    # Internal
-    _project_description: str
-    _project_map: str
-
-    # Output
-    project_knowledge: str
+class _State(BaseModel):
+    root_path: Path = Field(description="Path to the root project directory.")
+    project_description: str | None = Field(
+        default=None,
+        description="Natural language summary of the project structure and purpose.",
+    )
+    project_map: str | None = Field(
+        default=None,
+        description="Map of source code - fs tree view.",
+    )
+    project_knowledge: str | None = Field(
+        default=None, description="Structured representation of project knowledge."
+    )
 
 
 class _Node(BaseNode):
     @staticmethod
-    def create_project_map(state: GatherProjectKnowledgeGraphState) -> dict:
-        project_map = tree(path=state["root_path"])
+    def create_project_map(state: _State) -> dict:
+        project_map = tree(path=state.root_path)
 
-        return {"_project_map": project_map}
-
-    @staticmethod
-    def create_project_description(
-        state: GatherProjectKnowledgeGraphState,
-    ) -> dict:
-        project_description = create_project_description(root_path=state["root_path"])
-
-        return {
-            "_project_description": project_description,
-        }
+        return {"project_map": project_map}
 
     @staticmethod
-    def parse_final_state(state: GatherProjectKnowledgeGraphState) -> dict:
+    def create_project_description(state: _State) -> dict:
+        project_description = create_project_description(root_path=state.root_path)
+
+        return {"project_description": project_description}
+
+    @staticmethod
+    def parse_final_state(state: _State) -> dict:
         project_knowledge_tmpl = textwrap.dedent(
             """\
             PROJECT_DESCRIPTION
@@ -56,18 +56,18 @@ class _Node(BaseNode):
             """
         )
         project_knowledge = project_knowledge_tmpl.format(
-            project_description=state["_project_description"],
-            project_map=state["_project_map"],
+            project_description=state.project_description,
+            project_map=state.project_map,
         )
 
         return {"project_knowledge": project_knowledge}
 
 
 class GatherProjectKnowledgeGraph(BaseGraph):
-    """Implementation of "Gather Project Knowledge" step in LangGraph"""
+    """Graph to gather project knowledge."""
 
     def __init__(self):
-        super().__init__(GatherProjectKnowledgeGraphState)
+        super().__init__(_State)
 
     def _build(self) -> None:
         # Nodes
@@ -82,30 +82,20 @@ class GatherProjectKnowledgeGraph(BaseGraph):
         self.add_quick_edge(_Node.create_project_description, _Node.parse_final_state)
         self.add_quick_edge(_Node.parse_final_state, END)
 
-    def create_init_state(self, root_path: Path) -> GatherProjectKnowledgeGraphState:
-        return GatherProjectKnowledgeGraphState(
+    def create_init_state(self, root_path: Path) -> _State:
+        return _State(
             root_path=root_path,
-            _project_description="<MISSING>",
-            _project_map="<MISSING>",
-            project_knowledge="<MISSING>",
         )
 
     def __call__(self, root_path: Path) -> str:
         init_state = self.create_init_state(root_path)
-        state: GatherProjectKnowledgeGraphState = self.compiled.invoke(init_state)
-        return state["project_knowledge"]
+        state: _State = self.compiled.invoke(init_state)
+
+        return _State.model_validate(state).project_knowledge
 
 
 gather_project_knowledge_graph = GatherProjectKnowledgeGraph()
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv
-    from deep_next.common.config import MONOREPO_ROOT_PATH
-
-    load_monorepo_dotenv()
-
-    path = gather_project_knowledge_graph.visualize()
-    print(f"Saved to: {path}")
-
-    print(gather_project_knowledge_graph(MONOREPO_ROOT_PATH))
+    print(f"Saved to: {gather_project_knowledge_graph.visualize(subgraph_depth=3)}")
