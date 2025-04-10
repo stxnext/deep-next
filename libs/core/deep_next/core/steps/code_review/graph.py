@@ -7,8 +7,8 @@ from deep_next.core.steps.action_plan.srs._agentless import create_structure
 from deep_next.core.steps.action_plan.srs.graph import select_related_snippets_graph
 from deep_next.core.steps.code_review.review_code import review_code as _review_code
 from langgraph.graph import END, START
-from unidiff import PatchSet
 from pydantic import BaseModel, Field
+from unidiff import PatchSet
 
 
 class _State(BaseModel):
@@ -30,7 +30,7 @@ class _State(BaseModel):
     # Output
     code_review_issues: list[(str, str)] = Field(
         default_factory=list,
-        description="Code review issues found during the code review process."
+        description="Code review issues found during the code review process.",
     )
     code_review_completed: dict[str, bool] = Field(
         default_factory=dict,

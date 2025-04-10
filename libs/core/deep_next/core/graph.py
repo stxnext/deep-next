@@ -69,9 +69,7 @@ class _Node(BaseNode):
             git_diff=state.git_diff,
         )
         final_state = code_review_graph.compiled.invoke(initial_state)
-        return {
-            "code_review_issues": final_state["code_review_issues"],
-        }
+        return {"code_review_issues": final_state["code_review_issues"]}
 
 
 class DeepNextGraph(BaseGraph):
