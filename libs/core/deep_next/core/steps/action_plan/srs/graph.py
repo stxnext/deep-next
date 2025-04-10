@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Annotated, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.config import SRSConfig
 from deep_next.core.steps.action_plan.srs._agentless import (
     create_structure,

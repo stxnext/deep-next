@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan import action_plan_graph
 from deep_next.core.steps.action_plan.data_model import ActionPlan
 from deep_next.core.steps.gather_project_knowledge.graph import (
@@ -34,9 +33,7 @@ class _Node:
             root_path=state.root_path,
         )
         final_state = gather_project_knowledge_graph.compiled.invoke(init_state)
-        project_knowledge = final_state["project_knowledge"]
-
-        return {"project_knowledge": project_knowledge}
+        return {"project_knowledge": final_state["project_knowledge"]}
 
     @staticmethod
     def create_action_plan(state: _State) -> dict:
@@ -46,8 +43,7 @@ class _Node:
             project_knowledge=state.project_knowledge,
         )
         final_state = action_plan_graph.compiled.invoke(init_state)
-
-        return {"action_plan": final_state}
+        return {"action_plan": final_state["action_plan"]}
 
     @staticmethod
     def implement(state: _State) -> dict:
@@ -57,9 +53,7 @@ class _Node:
             action_plan=state.action_plan,
         )
         final_state = implement_graph.compiled.invoke(init_state)
-        git_diff = final_state["git_diff"]
-
-        return {"git_diff": git_diff}
+        return {"git_diff": final_state["git_diff"]}
 
 
 class DeepNextGraph(BaseGraph):

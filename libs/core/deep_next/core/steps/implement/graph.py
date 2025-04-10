@@ -4,7 +4,6 @@ from typing import Literal
 
 import tenacity
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
 from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
 from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
