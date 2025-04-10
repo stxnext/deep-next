@@ -2,17 +2,12 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Awaitable, Callable, Hashable, Union
 
-from deep_next.core.common import gitignore_name
 from deep_next.core.config import DATA_DIR
 from langchain_core.runnables.base import Runnable, RunnableLike
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel
-from typing_extensions import Self, TypedDict
-
-
-class State(TypedDict):
-    pass
+from typing_extensions import Self
 
 
 class _WrappedCompiledStateGraph(CompiledStateGraph):
@@ -21,8 +16,8 @@ class _WrappedCompiledStateGraph(CompiledStateGraph):
     def __init__(
         self,
         compiled_graph: CompiledStateGraph,
-        setup_fn: Callable[[State], None],
-        teardown_fn: Callable[[State], None],
+        setup_fn: Callable[[BaseModel], None],
+        teardown_fn: Callable[[BaseModel], None],
     ):
         self._compiled_graph = compiled_graph
         self._setup_fn = setup_fn
@@ -45,7 +40,7 @@ class _WrappedCompiledStateGraph(CompiledStateGraph):
 class BaseGraph(StateGraph, ABC):
     def __init__(
         self,
-        state_cls: type[State | BaseModel],
+        state_cls: type[BaseModel | BaseModel],
     ):
         super().__init__(state_cls)
         self.setup_fn = lambda _: None
@@ -57,16 +52,16 @@ class BaseGraph(StateGraph, ABC):
             self.teardown_fn,
         )
 
-    def set_setup_fn(self, setup_fn: Callable[[State], None]) -> Self:
+    def set_setup_fn(self, setup_fn: Callable[[BaseModel], None]) -> Self:
         self.setup_fn = setup_fn
         return self
 
-    def set_teardown_fn(self, teardown_fn: Callable[[State], None]) -> Self:
+    def set_teardown_fn(self, teardown_fn: Callable[[BaseModel], None]) -> Self:
         self.teardown_fn = teardown_fn
         return self
 
     @abstractmethod
-    def __call__(self, *args, **kwargs) -> State:
+    def __call__(self, *args, **kwargs) -> BaseModel:
         """Simplified interface to call a graph.
 
         Note: When using in node, the sub-graph won't be visible in visualization.
@@ -119,17 +114,19 @@ class BaseGraph(StateGraph, ABC):
         )
 
     @abstractmethod
-    def create_init_state(self, *args, **kwargs) -> State:
+    def create_init_state(self, *args, **kwargs) -> BaseModel:
         """Creates initial state for given graph."""
 
     def visualize(self, output_file_path: Path | None = None, subgraph_depth=2) -> Path:
-        if not output_file_path:
-            output_file_path = (
-                DATA_DIR
-                / "visualize"
-                / gitignore_name(f"graph_{self.__class__.__name__}.png")
-            )
+        """Visualize the graph."""
+        if output_file_path is None:
+            visualize_dir = DATA_DIR / "visualize"
+            visualize_dir.mkdir(parents=True, exist_ok=True)
+
+            output_file_path = visualize_dir / f"graph_{self.__class__.__name__}.png"
+
         self.compiled.get_graph(xray=subgraph_depth).draw_mermaid_png(
             output_file_path=str(output_file_path)
         )
+
         return output_file_path

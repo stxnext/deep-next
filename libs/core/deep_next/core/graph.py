@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from deep_next.core.base_graph import BaseGraph, State
+from deep_next.core.base_graph import BaseGraph
 from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan import action_plan_graph
 from deep_next.core.steps.action_plan.data_model import ActionPlan
@@ -10,73 +10,59 @@ from deep_next.core.steps.gather_project_knowledge.graph import (
 )
 from deep_next.core.steps.implement.graph import implement_graph
 from langgraph.graph import END, START
+from pydantic import BaseModel, Field
 
 
-class DeepNextGraphState(State):
+class _State(BaseModel):
 
-    # Input
-    root_path: Path
-    """Path to the root project directory."""
+    root_path: Path = Field(description="Path to the root project directory.")
+    problem_statement: str = Field(description="The issue title and body.")
+    hints: str = Field(description="Comments made on the issue.")
 
-    problem_statement: str
-    """The issue title and body."""
+    project_knowledge: str | None = Field(default=None)
+    action_plan: ActionPlan | None = Field(default=None)
 
-    hints: str
-    """Comments made on the issue."""
-
-    # Internal
-    _project_knowledge: str
-    """Project knowledge gathered from analyzing the repository structure and the source
-     code."""
-
-    _action_plan: ActionPlan | None
-    """A list of files and the changes that need to be made to each of them."""
-
-    # Output arguments
-    git_diff: str
-    """
-    Final result of the graf flow: git diff of the changes made to the source code.
-    """
-
-    code_review_issues: list[str]
-    """
-    Code review of the changes made to the source code.
-    """
+    git_diff: str | None = Field(
+        default=None,
+        description=("Final result: git diff of the changes made to the source code."),
+    )
+    code_review_issues: list[str] = Field(
+        default=[],
+        description=("Code review of the changes made to the source code."),
+    )
 
 
 class _Node(BaseNode):
     @staticmethod
-    def gather_project_knowledge(state: DeepNextGraphState) -> dict:
-        initial_state = gather_project_knowledge_graph.create_init_state(
-            root_path=state["root_path"],
+    def gather_project_knowledge(state: _State) -> dict:
+        project_knowledge = gather_project_knowledge_graph(
+            root_path=state.root_path,
         )
-        final_state = gather_project_knowledge_graph.compiled.invoke(initial_state)
 
-        return {"_project_knowledge": final_state["project_knowledge"]}
+        return {"project_knowledge": project_knowledge}
 
     @staticmethod
-    def create_action_plan(state: DeepNextGraphState) -> dict:
+    def create_action_plan(state: _State) -> dict:
         action_plan: ActionPlan = action_plan_graph(
-            root_path=state["root_path"],
-            issue_statement=state["problem_statement"],
-            project_knowledge=state["_project_knowledge"],
+            root_path=state.root_path,
+            issue_statement=state.problem_statement,
+            project_knowledge=state.project_knowledge,
         )
 
-        return {"_action_plan": action_plan}
+        return {"action_plan": action_plan}
 
     @staticmethod
-    def implement(state: DeepNextGraphState) -> dict:
-        initial_state = implement_graph.create_init_state(
-            root_path=state["root_path"],
-            issue_statement=state["problem_statement"],
-            action_plan=state["_action_plan"],
+    def implement(state: _State) -> dict:
+        git_diff: str = implement_graph(
+            root_path=state.root_path,
+            issue_statement=state.problem_statement,
+            action_plan=state.action_plan,
         )
-        final_state = implement_graph.compiled.invoke(initial_state)
 
-        return {"git_diff": final_state["git_diff"]}
+        return {"git_diff": git_diff}
 
     @staticmethod
-    def review_code(state: DeepNextGraphState) -> dict:
+    def review_code(state: _State) -> dict:
         initial_state = code_review_graph.create_init_state(
             root_path=state["root_path"],
             issue_statement=state["problem_statement"],
@@ -89,8 +75,10 @@ class _Node(BaseNode):
 
 
 class DeepNextGraph(BaseGraph):
+    """Main graph for DeepNext."""
+
     def __init__(self):
-        super().__init__(DeepNextGraphState)
+        super().__init__(_State)
 
     def _build(self):
         self.add_quick_node(_Node.gather_project_knowledge)
@@ -106,15 +94,11 @@ class DeepNextGraph(BaseGraph):
 
     def create_init_state(
         self, root: Path, problem_statement: str, hints: str
-    ) -> DeepNextGraphState:
-        return DeepNextGraphState(
+    ) -> _State:
+        return _State(
             root_path=root,
             problem_statement=problem_statement,
             hints=hints,
-            _project_knowledge="",
-            _action_plan=None,
-            git_diff="",
-            code_review_issues=[],
         )
 
     def __call__(self, *_, problem_statement: str, hints: str, root: Path) -> str:
@@ -123,7 +107,7 @@ class DeepNextGraph(BaseGraph):
         )
         final_state = self.compiled.invoke(initial_state)
 
-        return final_state["git_diff"]
+        return _State.model_validate(final_state).git_diff
 
 
 deep_next_graph = DeepNextGraph()
