@@ -27,32 +27,37 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def gather_project_knowledge(state: _State) -> dict:
-        project_knowledge = gather_project_knowledge_graph(
+        init_state = gather_project_knowledge_graph.create_init_state(
             root_path=state.root_path,
         )
+        final_state = gather_project_knowledge_graph.compiled.invoke(init_state)
+        project_knowledge = final_state["project_knowledge"]
 
         return {"project_knowledge": project_knowledge}
 
     @staticmethod
     def create_action_plan(state: _State) -> dict:
-        action_plan: ActionPlan = action_plan_graph(
+        init_state = action_plan_graph.create_init_state(
             root_path=state.root_path,
             issue_statement=state.problem_statement,
             project_knowledge=state.project_knowledge,
         )
+        final_state = action_plan_graph.compiled.invoke(init_state)
 
-        return {"action_plan": action_plan}
+        return {"action_plan": final_state}
 
     @staticmethod
     def implement(state: _State) -> dict:
-        git_diff: str = implement_graph(
+        init_state = implement_graph.create_init_state(
             root_path=state.root_path,
             issue_statement=state.problem_statement,
             action_plan=state.action_plan,
         )
+        final_state = implement_graph.compiled.invoke(init_state)
+        git_diff = final_state["git_diff"]
 
         return {"git_diff": git_diff}
 
@@ -95,4 +100,4 @@ deep_next_graph = DeepNextGraph()
 
 
 if __name__ == "__main__":
-    print(f"Saved to: {deep_next_graph.visualize(subgraph_depth=3)}")
+    print(f"Saved to: {deep_next_graph.visualize(subgraph_depth=2)}")

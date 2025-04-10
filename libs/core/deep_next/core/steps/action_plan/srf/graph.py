@@ -43,7 +43,7 @@ def cleanup_search_tools(state: _State) -> None:
     dispose_tools(state["root_path"])
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def single_file_selection_cycle(state: _State) -> dict:
         """

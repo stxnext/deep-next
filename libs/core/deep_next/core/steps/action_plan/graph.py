@@ -34,7 +34,7 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def define_code_context(state: _State) -> dict:
         initial_state = srf_graph.create_init_state(

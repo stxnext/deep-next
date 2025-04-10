@@ -62,7 +62,7 @@ class _State(TypedDict):
     """A dict mapping file names to specific lines in the file."""
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def localize_function(state: _State) -> dict:
         """Localize the function in the given file."""

@@ -221,7 +221,7 @@ def _call_analyze_llm(state: State) -> Analysis:
     return _invoke_fixable_llm_analysis_chain(prompt, data)
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def analyze_knowledge(state: State) -> dict:
         """

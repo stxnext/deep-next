@@ -45,7 +45,7 @@ class _State(BaseModel):
         return self
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def select_next_step(state: _State) -> dict:
         step: Step = state.steps_remaining.pop(0)

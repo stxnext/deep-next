@@ -27,7 +27,7 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def create_project_map(state: _State) -> dict:
         project_map = tree(path=state.root_path)
