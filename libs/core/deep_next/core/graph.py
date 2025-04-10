@@ -64,9 +64,9 @@ class _Node(BaseNode):
     @staticmethod
     def review_code(state: _State) -> dict:
         initial_state = code_review_graph.create_init_state(
-            root_path=state["root_path"],
-            issue_statement=state["problem_statement"],
-            git_diff=state["git_diff"],
+            root_path=state.root_path,
+            issue_statement=state.problem_statement,
+            git_diff=state.git_diff,
         )
         final_state = code_review_graph.compiled.invoke(initial_state)
         return {

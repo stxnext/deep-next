@@ -6,17 +6,6 @@ import re
 
 import libcst as cst
 import libcst.matchers as m
-from deep_next.evaluation.utils.git_repo import GitRepo
-from deep_next.evaluation.utils.swe_bench_dataset import SWEBenchDataset
-
-
-def get_repo_structure(instance_id: str, repo_name, base_commit, playground):
-    task = SWEBenchDataset.get_task_details(instance_id)
-
-    with GitRepo.clone_and_checkout(
-        url=task.repo_url, commit_hash=task.commit_hash, task_id=instance_id
-    ) as repo:
-        return create_structure(repo.path)
 
 
 def create_structure(directory_path):
