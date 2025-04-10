@@ -1,16 +1,17 @@
 from collections import defaultdict
 from pathlib import Path
+from typing import TypedDict
 
-from deep_next.core.base_graph import BaseGraph, State
+from deep_next.core.base_graph import BaseGraph
 from deep_next.core.base_node import BaseNode
-from deep_next.core.steps.action_plan.srs.common_agentless import create_structure
+from deep_next.core.steps.action_plan.srs._agentless import create_structure
 from deep_next.core.steps.action_plan.srs.graph import select_related_snippets_graph
 from deep_next.core.steps.code_review.review_code import review_code as _review_code
 from langgraph.graph import END, START
 from unidiff import PatchSet
 
 
-class CodeReviewGraphState(State):
+class CodeReviewGraphState(TypedDict):
     # Input
     root_path: Path
     issue_statement: str
