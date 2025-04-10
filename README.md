@@ -10,7 +10,7 @@ DeepNext is an advanced AI system that automatically analyzes a code repository,
 
 ```bash
 # Clone the repository
-git clone https://github.com/stxnext/deep-next.git
+git clone git@github.com:stxnext/deep-next.git
 cd deep-next
 
 # Install dependencies
@@ -24,7 +24,7 @@ make install_venv
 poetry run python -m deep_next.core.entrypoint \
   --problem-statement "Add type hints in file.py" \
   --hints "The error occurs in file.py" \
-  --root_dir /path/to/repository
+  --root-dir /path/to/repository
 ```
 
 
@@ -60,7 +60,7 @@ DeepNext operates through a pipeline that handles the entire software engineerin
 
 The project is structured as a monorepo with specialized components:
 - **Apps**: Main DeepNext application for Github/GitLab integration (app/)
-- **Libs**: Core processing logic, connectors for external services, and common utilities 
+- **Libs**: Core processing logic, connectors for external services, and common utilities
     - `core/`: Main logic for analyzing repositories and generating solutions
     - `connectors/`: Integration with external services
     - `common/`: Shared utilities and configurations
@@ -102,6 +102,15 @@ Create an `llm-config.yaml` file based on the example provided to configure mode
 
 For tracking and metrics, DeepNext integrates with LangSmith. Set up your credentials in the `.env` file.
 
+```
+# OpenAI access
+OPENAI_API_KEY=...
+
+# AWS Bedrock access
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
+
 ## Roadmap
 
 - **May 2025**: First public release
@@ -115,4 +124,5 @@ For tracking and metrics, DeepNext integrates with LangSmith. Set up your creden
 - **Multiple LLM Support**: Works with various models to fit your needs
 - **Flexible Integration**: Compatible with GitHub, GitLab and AWS
 - **Customizable**: Configure different models for different pipeline stages
+- **Modular**: Easy to modify, test, and improve by swapping small pieces of code
 - **Open Source**: MIT-licensed and community-driven
