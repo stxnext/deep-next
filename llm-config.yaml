@@ -1,0 +1,34 @@
+project-knowledge:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
+action-plan:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
+srf-analyze:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
+srf-tools:
+  model: gpt-4o-mini-2024-07-18
+  seed: 42
+  temperature: 0.0
+
+srs-analyze:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
+implement:
+  model: gpt-4o-2024-08-06
+  seed: 42
+  temperature: 0.0
+
+default:
+  model: gpt-4o-mini-2024-07-18
+  seed: 42
+  temperature: 0.0

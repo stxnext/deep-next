@@ -1,0 +1,18 @@
+diff --git a/src/hello_world.py b/src/hello_world.py
+index 2734f77..4cbe359 100644
+--- a/src/hello_world.py
++++ b/src/hello_world.py
+@@ -1,4 +1,4 @@
+-def say_hello():
++def say_hello() -> None:
+     """Say hello!"""
+     print("Hello World")
+
+@@ -12,6 +12,6 @@ def foo() -> str:
+     return "bar"
+
+
+-def add_integers(a, b):
++def add_integers(a: int, b: int) -> int:
+     """Add two integers."""
+     return int(a + b)

@@ -1,0 +1,10 @@
+[tool.poetry]
+name = "deep_next_connectors"
+version = "0.1.0"
+description = "Connectors for Deep NEXT with 3rd party services."
+authors = []
+packages = [{ include = "deep_next", from = "." }]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
