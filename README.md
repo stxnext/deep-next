@@ -1,6 +1,6 @@
 # DeepNext
 
-Your AI-powered software engineering assistant that automates issue resolution from analysis to pull request.
+Your AI-powered junior software engineering assistant that takes an issue description and converts it into a pull request.
 
 DeepNext is an advanced AI system that automatically analyzes code repositories, designs solutions, and implements fixes for software engineering tasks using Large Language Models, saving developers hours of repetitive work.
 
