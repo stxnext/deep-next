@@ -15,6 +15,9 @@ cd deep-next
 
 # Install dependencies
 make install_venv
+
+# Test the installation
+make test_unit
 ```
 
 ### Example usage
@@ -41,7 +44,7 @@ DeepNext operates through a pipeline that handles the entire software engineerin
   - Generates project map showing directory organization and component relationships
 - **Outputs**: Consolidated **project knowledge** description
 
-### 2. Create Detailed Design
+### 2. Create Action Plan
 - **Inputs**: **Project knowledge** and **issue description**
 - **Process**:
   - Selects relevant files through multiple parallel analysis cycles
