@@ -39,7 +39,7 @@ index 534b8eb..9e8a211 100644
 '''
 
 
-# @pytest.mark.llm
+@pytest.mark.llm
 @pytest.mark.parametrize(
     "root_dir, problem_statement, hints, expected",
     ((EXAMPLE_REPO_ROOT_DIR, _problem_statement, _hints, _expected),),
