@@ -24,11 +24,11 @@ class _State(BaseModel):
 
     git_diff: str | None = Field(
         default=None,
-        description=("Final result: git diff of the changes made to the source code."),
+        description="Final result: git diff of the changes made to the source code.",
     )
     code_review_issues: list[str] = Field(
-        default=[],
-        description=("Code review of the changes made to the source code."),
+        default_factory=list,
+        description="Code review of the changes made to the source code.",
     )
 
 
