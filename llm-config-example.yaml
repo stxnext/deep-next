@@ -32,15 +32,11 @@ srs-analyze:
   temperature: 0.0
 
 implement:
-  model: anthropic.claude-3-5-sonnet-20240620-v1:0
+  model: gpt-4o-2024-08-06
   seed: 42
   temperature: 0.0
-  config:
-    region: us-east-1
 
 default:
-  model: mistral.mistral-7b-instruct-v0:2
+  model: gpt-4o-mini-2024-07-18
   seed: 42
   temperature: 0.0
-  config:
-    region: eu-west-3
