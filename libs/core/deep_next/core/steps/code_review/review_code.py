@@ -11,6 +11,7 @@ from deep_next.core.steps.code_review.model.diff_consistency import (
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
+from loguru import logger
 
 
 class Prompt:
@@ -45,8 +46,15 @@ class Prompt:
 
     issue_statement = textwrap.dedent(
         """
-         # Issue Statement
+        # Issue Statement
         {issue_statement}
+        """
+    )
+
+    project_knowledge = textwrap.dedent(
+        """
+        # Project Knowledge
+        {project_knowledge}
         """
     )
 
@@ -68,17 +76,23 @@ class Prompt:
         """
     )
 
-    output_format = textwrap.dedent(
+    output_1_format = textwrap.dedent(
         """
-        Always keep the output format as in the examples below (The lines -------------------- are not part of the example, they are separators)!
+        Always keep the output format as in the example output below!
 
         EXAMPLE OUTPUT:
-        --------------------
-        {example_output_code_review}
-        --------------------
-        {empty_output_code_review}
-        --------------------
 
+        {example_output_code_review_1}
+        """  # noqa: E501
+    )
+
+    output_2_format = textwrap.dedent(
+        """
+        Always keep the output format as in the example output below!
+
+        EXAMPLE OUTPUT:
+        
+        {example_output_code_review_2}
         """  # noqa: E501
     )
 
@@ -124,6 +138,7 @@ def _invoke_fixable_llm_chain(
 
 def _call_code_review_llm(
     issue_statement: str,
+    project_knowledge: str,
     git_diff: str,
     combined_code_fragments: dict[str, str],
     *,
@@ -133,9 +148,11 @@ def _call_code_review_llm(
     messages = [
         ("system", Prompt.role_description),
         ("human", Prompt.issue_statement),
+        ("human", Prompt.project_knowledge),
         ("human", Prompt.git_diff),
         ("human", Prompt.code_fragments),
-        ("human", Prompt.output_format),
+        ("human", Prompt.output_1_format),
+        ("human", Prompt.output_2_format),
     ]
 
     prompt = ChatPromptTemplate.from_messages(messages)
@@ -147,13 +164,13 @@ def _call_code_review_llm(
         ]
     )
 
-    # TODO(iwanicki): dodać project knowledge
     data = {
         "issue_statement": issue_statement,
+        "project_knowledge": project_knowledge,
         "git_diff": git_diff,
         "relevant_code_fragments": relevant_code_fragments,
-        "example_output_code_review": json.dumps(example_output.model_dump()),
-        "empty_output_code_review": json.dumps({"issues": []}),
+        "example_output_code_review_1": json.dumps(example_output.model_dump()),
+        "example_output_code_review_2": json.dumps({"issues": []}),
     }
 
     return _invoke_fixable_llm_chain(prompt, data, code_review_parser)
@@ -177,6 +194,7 @@ def _combine_code_fragments(code_fragments: dict[str, list[str]]) -> dict[str, s
 
 def review_code(
     issue_statement: str,
+    project_knowledge: str,
     git_diff: str,
     code_fragments: dict[str, list[str]],
 ) -> tuple[list[(str, str)], dict[str, bool]]:
@@ -192,13 +210,18 @@ def review_code(
         try:
             code_review = _call_code_review_llm(
                 issue_statement,
+                project_knowledge,
                 git_diff,
                 _combine_code_fragments(code_fragments),
                 example_output=code_reviewer.example_output,
                 code_review_parser=code_reviewer.parser,
             )
             issues.extend([(code_reviewer.name, issue) for issue in code_review.issues])
-        except Exception:
+        except Exception as e:
+            logger.warning(
+                f"Code reviewer {code_reviewer.name} failed to review the code. "
+                f"Exception:\n{e}"
+            )
             code_review_completed[code_reviewer.name] = False
 
     return issues, code_review_completed

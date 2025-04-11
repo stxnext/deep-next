@@ -1,16 +1,23 @@
+import textwrap
+
 from deep_next.core.steps.code_review.model.base import CodeReviewer, CodeReviewModel
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import Field
 
 _issues_desc = (
-    "Analyze the changes made in the code. List all code style issues, that is:"
-    "\n- Missing or incorrect docstrings in places where they are needed."
-    "\n- Missing or incorrect type hints in places where they are needed."
-    "\n- Incorrect naming of variables, functions, classes, etc."
-    "\n- Incorrect formatting of the code, e.g.: missing or extra spaces, parenthesis, "
-    "etc."
-    "Don't look for major issues, code logic issues, code consistency, etc.. List only "
-    "issues that are code style related."
+    textwrap.dedent(
+        """\
+        Analyze the changes made in the code. List all code style issues, that is:
+        - Missing or incorrect docstrings in places where they are needed.
+        - Missing or incorrect type hints in places where they are needed.
+        - Incorrect naming of variables, functions, classes, etc.
+        - Incorrect formatting of the code, e.g.: missing or extra spaces, \
+        parenthesis, etc.
+    
+        Don't look for major issues, code logic issues, code consistency, etc.. List \
+        only issues that are code style related.
+        """
+    )
 )
 
 

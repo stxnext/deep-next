@@ -66,10 +66,11 @@ class _Node(BaseNode):
         initial_state = code_review_graph.create_init_state(
             root_path=state.root_path,
             issue_statement=state.problem_statement,
+            project_knowledge=state.project_knowledge,
             git_diff=state.git_diff,
         )
         final_state = code_review_graph.compiled.invoke(initial_state)
-        return {"code_review_issues": final_state["code_review_issues"]}
+        return {"code_review_issues": final_state["result"]["issues"]}
 
 
 class DeepNextGraph(BaseGraph):
