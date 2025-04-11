@@ -91,7 +91,7 @@ class Prompt:
         Always keep the output format as in the example output below!
 
         EXAMPLE OUTPUT:
-        
+
         {example_output_code_review_2}
         """  # noqa: E501
     )

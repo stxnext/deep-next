@@ -28,7 +28,7 @@ def select_code(
     for file_name, locations in file_locations.items():
         for (start_line, end_line) in locations:
             file_lines = (root_path / file_name).read_text().splitlines()
-            selected_lines = file_lines[start_line : end_line]
+            selected_lines = file_lines[start_line:end_line]
 
             selected_lines = [
                 f"{i + 1:4} |{line}"

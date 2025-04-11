@@ -4,30 +4,28 @@ from deep_next.core.steps.code_review.model.base import CodeReviewer, CodeReview
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import Field
 
-_issues_desc = (
-    textwrap.dedent(
-        """\
-        Analyze the changes made in the code. List all fundamental issues with code \
-        consistency, that is:
-        - Situations, when a newly created or already existing utility, function, class or \
-        other piece of code could be reused, but is not.
-        - Situations, when a newly created or already existing utility, function, class or \
-        other piece of code is used with a mistake, e.g.: when a method is misspelled, or \
-        it seems like a developer was trying to GUESS the correct name of a function that \
-        in reality is named differently.
-        - Situations, when a newly created or already existing utility, function, class or \
-        other piece of code is used with incorrect arguments, a wrong number of arguments, \
-        or in a wrong context.
-        - Situations, when a newly created or already existing utility, function, class or \
-        other piece of code is used to obtain a certain return value which in reality is \
-        not at all returned by the used entity, e.g.: when a function returns a list, but \
-        the developer is trying to use it as a dictionary, or when two values are \
-        returned, but the developer is trying to unpack it as three values."
-    
-        Don't look for minor issues, code style issues, etc.. List only issues that are \
-        fundamental and prevent the code from working correctly or fulfilling the task.
-        """
-    )
+_issues_desc = textwrap.dedent(
+    """\
+    Analyze the changes made in the code. List all fundamental issues with code \
+    consistency, that is:
+    - Situations, when a newly created or already existing utility, function, class or \
+    other piece of code could be reused, but is not.
+    - Situations, when a newly created or already existing utility, function, class or \
+    other piece of code is used with a mistake, e.g.: when a method is misspelled, or \
+    it seems like a developer was trying to GUESS the correct name of a function that \
+    in reality is named differently.
+    - Situations, when a newly created or already existing utility, function, class or \
+    other piece of code is used with incorrect arguments, a wrong number of arguments, \
+    or in a wrong context.
+    - Situations, when a newly created or already existing utility, function, class or \
+    other piece of code is used to obtain a certain return value which in reality is \
+    not at all returned by the used entity, e.g.: when a function returns a list, but \
+    the developer is trying to use it as a dictionary, or when two values are \
+    returned, but the developer is trying to unpack it as three values."
+
+    Don't look for minor issues, code style issues, etc.. List only issues that are \
+    fundamental and prevent the code from working correctly or fulfilling the task.
+    """
 )
 
 

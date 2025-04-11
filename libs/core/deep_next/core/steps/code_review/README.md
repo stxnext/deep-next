@@ -68,5 +68,5 @@ print(result.issues)
 ## Architecture Notes
 
 - Built on LangGraph for workflow orchestration
-- Utilizes LLMs to review the code 
+- Utilizes LLMs to review the code
 - Modular design allows for easy addition of new reviewers
