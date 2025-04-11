@@ -50,7 +50,6 @@ class _State(BaseModel):
 class _Node(BaseNode):
     @staticmethod
     def select_code(state: _State) -> dict:
-        # TODO: include all files from SRF here + the reasons they were selected.
         if not state.include_code_fragments:
             return {"code_fragments": {}}
 
