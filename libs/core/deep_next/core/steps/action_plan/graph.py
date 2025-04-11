@@ -95,8 +95,14 @@ class ActionPlanGraph(BaseGraph):
         self.add_quick_edge(_Node.define_code_context, _Node.create_action_plan)
         self.add_quick_edge(_Node.create_action_plan, END)
 
-    def create_init_state(self, *args, **kwargs) -> _State:
-        return _State(*args, **kwargs)
+    def create_init_state(
+        self, root_path: Path, issue_statement: str, project_knowledge: str
+    ) -> _State:
+        return _State(
+            root_path=root_path,
+            issue_statement=issue_statement,
+            project_knowledge=project_knowledge,
+        )
 
 
 graph = ActionPlanGraph()
