@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from deep_next.core.steps.gather_project_knowledge.project_description import (
+from deep_next.core.steps.gather_project_knowledge.project_descr import (
     create_project_description,
 )
 from tests.utils import EXAMPLE_REPO_ROOT_DIR

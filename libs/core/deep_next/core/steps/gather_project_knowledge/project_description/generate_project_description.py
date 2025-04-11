@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+from deep_next.core.io import read_txt
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.common import (
     _create_llm,
@@ -26,7 +27,7 @@ class Prompt:
         {repository_tree}
 
         ### Files related to the issue (readme, Makefile, requirements.txt, etc.)
-        {related_files}
+        {related_code_context}
 
         ### Questions worth to consider
         {questions}
@@ -102,6 +103,25 @@ class ExistingProjectDescriptionContext(BaseModel):
     )
     project_description: str = Field(default="", description=project_description_desc)
 
+    # def dump(self) -> dict:
+    #     return {
+    #         "overview_description": self.overview_description,
+    #         "project_description_context": [
+    #             context.model_dump() for context in self.project_description_context
+    #         ],
+    #         "project_description": self.project_description,
+    #     }
+
+    def dump(self) -> str:
+        project_description = ""
+        project_description += f"Overview description: {self.overview_description}\n"
+        project_description += "Project description context:\n"
+        for context in self.project_description_context:
+            project_description += f"- Reasoning: {context.reasoning}\n"
+            project_description += f"- Key observation: {context.key_observation}\n"
+        project_description += f"Project description: {self.project_description}\n"
+        return project_description
+
 
 def _create_llm_agent():
     design_solution_prompt_template = ChatPromptTemplate.from_messages(
@@ -128,11 +148,15 @@ def generate_project_description(
     repository_tree: str,
     project_info: ProjectInfo,
 ) -> ExistingProjectDescriptionContext:
+
+    related_code_context = "\n".join(
+        [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
+    )
     response = _create_llm_agent().invoke(
         {
             "project_name": project_info.name,
             "repository_tree": repository_tree,
-            "related_files": related_files,
+            "related_code_context": related_code_context,
             "questions": questions,
             "example_project_description": example_output_loc_cfl.model_dump_json(),
         }

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.base_node import BaseNode
-from deep_next.core.steps.gather_project_knowledge.project_description import (
+from deep_next.core.steps.gather_project_knowledge.project_descr import (
     create_project_description,
 )
 from deep_next.core.steps.gather_project_knowledge.project_map import tree

@@ -1,5 +1,5 @@
 from deep_next.core.steps.gather_project_knowledge.project_description.graph import (
-    GatherProjectDescriptionGraphState,
+    GatherProjectKnowledgeGraph,
 )
 
-__all__ = ["GatherProjectDescriptionGraphState"]
+__all__ = ["GatherProjectKnowledgeGraph"]
