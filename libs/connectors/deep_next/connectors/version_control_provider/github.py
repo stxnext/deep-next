@@ -1,7 +1,11 @@
 import textwrap
-from datetime import datetime
 from typing import List
 
+from deep_next.connectors.version_control_provider.base import (
+    BaseConnector,
+    BaseIssue,
+    BaseMR,
+)
 from github import Github
 from github.Issue import Issue
 from github.IssueComment import IssueComment
@@ -10,23 +14,33 @@ from github.Repository import Repository
 from loguru import logger
 
 
-class GitHubIssue:
+class GitHubIssue(BaseIssue):
     def __init__(self, issue: Issue):
         self._issue = issue
-
-        self.url = issue.html_url
-        self.labels = [label.name for label in issue.get_labels()]
-        self.no = issue.number
-        self.title = issue.title
-        self.description = issue.body or ""
-
         self._anchor_comment: IssueComment | None = None
-        self._comment_prefix = "[DeepNext]"
+
+    @property
+    def url(self) -> str:
+        return self._issue.html_url
+
+    @property
+    def labels(self) -> list[str]:
+        return [label.name for label in self._issue.get_labels()]
+
+    @property
+    def no(self) -> int:
+        return self._issue.number
+
+    @property
+    def title(self) -> str:
+        return self._issue.title
+
+    @property
+    def description(self) -> str:
+        return self._issue.body or ""
 
     @property
     def comments(self) -> str:
-        """Get all issue comments except the ones added by DeepNext."""
-        # TODO: Implement comments support. For now it's redundant - all in description
         return "<No comments>"
 
     def add_comment(
@@ -36,17 +50,7 @@ class GitHubIssue:
         if self._anchor_comment is None:
             self._anchor_comment = self._get_or_create_anchor_comment()
 
-        def prettify_comment(txt: str) -> str:
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            return textwrap.dedent(
-                f"""\
-                **Status update ({timestamp}):**
-
-                > {txt}
-            """
-            )
-
-        body = prettify_comment(comment)
+        body = self.prettify_comment(comment)
 
         if file_content:
             body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
@@ -60,16 +64,13 @@ class GitHubIssue:
             if comment.body.startswith(self._comment_prefix):
                 return comment
 
-        header = (
-            f"{self._comment_prefix} 🚧 DeepNext WIP "
-            f"({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
-        )
-        anchor = self._issue.create_comment(header)
+        anchor = self._issue.create_comment(self.comment_thread_header)
 
         return anchor
 
+    @staticmethod
     def _format_file_attachment(self, filename: str, content: str) -> str:
-        """Simulate file attachment using markdown code block."""
+        """Simulate file attachment using Markdown code block."""
         return textwrap.dedent(
             f"""\
             **Attached file** `{filename}`:
@@ -78,9 +79,6 @@ class GitHubIssue:
             ```
         """
         )
-
-    def has_label(self, label: str) -> bool:
-        return label in self.labels
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
@@ -91,18 +89,29 @@ class GitHubIssue:
         if label not in self.labels:
             logger.warning(f"Label '{label}' not found in issue #{self.no}")
             return
+
         self._issue.remove_from_labels(label)
-        self.labels = [x for x in self.labels if x != label]
 
 
-class GitHubMR:
+class GitHubMR(BaseMR):
     def __init__(self, pr: PullRequest):
         self._pr = pr
 
-        self.url = pr.html_url
-        self.no = pr.number
-        self.title = pr.title
-        self.description = pr.body or ""
+    @property
+    def url(self) -> str:
+        return self._pr.html_url
+
+    @property
+    def no(self) -> int:
+        return self._pr.number
+
+    @property
+    def title(self) -> str:
+        return self._pr.title
+
+    @property
+    def description(self) -> str:
+        return self._pr.body or ""
 
     @property
     def base_commit(self) -> str:
@@ -131,7 +140,7 @@ class GitHubMR:
         return "\n".join(diffs)
 
 
-class GitHubConnector:
+class GitHubConnector(BaseConnector):
     def __init__(self, token: str, repo_name: str):
         self.github = Github(token)
         self.repo: Repository = self.github.get_repo(repo_name)
@@ -160,8 +169,8 @@ class GitHubConnector:
         merge_branch: str,
         into_branch: str,
         title: str,
-    ) -> PullRequest:
+    ) -> GitHubMR:
         pr = self.repo.create_pull(
             title=title, head=merge_branch, base=into_branch, body=""
         )
-        return pr
+        return GitHubMR(pr)
