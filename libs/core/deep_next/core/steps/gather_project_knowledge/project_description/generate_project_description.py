@@ -40,6 +40,11 @@ class Prompt:
         - Tech Stack Overview: Information about the main technologies used, such as: Python version, Frameworks and libraries (e.g., Django, Flask, FastAPI, Pandas, NumPy), Databases (e.g., PostgreSQL, MySQL, SQLite), Caching mechanisms (e.g., Redis).
         - Architecture Overview: High-level overview of the project's architecture, such as: Monolithic vs. microservices, How different modules interact, Important design patterns used in the codebase.
 
+        Based on the given context, provide the project description to the git repository to understand the problem. The project description
+        should include the high level overview of the project structure, entry points, important classes, tech stack and architecture.
+        The project description should help you in the next step to identify the part of the issue that needs to be clarified or anchored
+        to the code context.
+
         ADDITIONAL INSTRUCTIONS:
         ------------------------
         1. Your answer should be submitted directly based on given data.
@@ -53,64 +58,17 @@ class Prompt:
     )
 
 
-overview_desc = (
-    "Analyze GitHub Repository. Prepare high level project description based on the "
-    "given context. Prepare hight level overview of the project structure, entry "
-    "points, important classes, tech stack and architecture."
-)
-
-
-reasoning_desc = (
-    "Think about the reasoning for key project observations. Provide the reasoning for"
-    " the observation. It could be related to the project structure, entry points, "
-    "important classes, tech stack, architecture or any other key observation that "
-    "could be important for the project."
-)
-
-
-key_observation_desc = (
-    "Provide the key observation for the project description to the git repository to"
-    " understand the problem better. The key observation could be related to the "
-    "project structure, entry points, important classes, tech stack, architecture or"
-    " any other key observation that could be important for the project."
-)
-
-
-project_description_context_desc = (
-    "Provide the project description context to the git repository to understand the"
-    " repository better with a brief reasoning for the observation."
-)
-
-project_description_desc = (
-    "Based on the given context, provide the project description to the git repository"
-    " to understand the problem. The project description should include the high level"
-    " overview of the project structure, entry points, important classes, tech stack "
-    "and architecture. The project description should help you in the next step to "
-    "identify the part of the issue that needs to be clarified or anchored to the "
-    "code context."
-)
-
-
 class ProjectDescriptionContext(BaseModel):
-    reasoning: str = Field(default="", description=reasoning_desc)
-    key_observation: str = Field(default="", description=key_observation_desc)
+    reasoning: str = Field(default="", description="Reasoning for the observation")
+    key_observation: str = Field(default="", description="Key observation")
 
 
 class ExistingProjectDescriptionContext(BaseModel):
-    overview_description: str = Field(default="", description=overview_desc)
+    overview_description: str = Field(default="", description="Overview of the project")
     project_description_context: list[ProjectDescriptionContext] = Field(
-        default_factory=list, description=project_description_context_desc
+        default_factory=list, description="List of project description contexts"
     )
-    project_description: str = Field(default="", description=project_description_desc)
-
-    # def dump(self) -> dict:
-    #     return {
-    #         "overview_description": self.overview_description,
-    #         "project_description_context": [
-    #             context.model_dump() for context in self.project_description_context
-    #         ],
-    #         "project_description": self.project_description,
-    #     }
+    project_description: str = Field(default="", description="Project description")
 
     def dump(self) -> str:
         project_description = ""

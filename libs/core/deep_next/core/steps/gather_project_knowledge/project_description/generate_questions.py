@@ -42,35 +42,6 @@ class Prompt:
     )
 
 
-# overview_desc = (
-#     "Analyze GitHub repository. Read the documentation to understand the repo "
-#     "structure. Understand the project structure and the existing code context to "
-#     "generate questions for the next step to identify the part of the code that is "
-#     "important to perform project analysis."
-# )
-
-
-# reasoning_desc = (
-#     "Think about the reasoning for generating the questions. "
-#     "Provide the reasoning for the questions that you are going to ask."
-#     "The reasoning should help you in the next step to identify the part "
-#     "of the code that is important to perform project analysis."
-# )
-
-
-# questions_desc = (
-#     "Provide the questions to the git repository to understand the github repository"
-#     " better. This question will be used to search for the relevant code context that"
-#     " needs to be clarified or anchored to the code context."
-# )
-
-
-# question_context_desc = (
-#     "Provide the question context to the git repository to understand the problem "
-#     "better with a brief reasoning for the question."
-# )
-
-
 class QuestionContext(BaseModel):
     reasoning: str = Field(default="", description="Reasoning for the question")
     question: str = Field(default="", description="Question to the git repository")

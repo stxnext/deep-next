@@ -112,18 +112,9 @@ gather_project_description_graph = GatherProjectKnowledgeGraph()
 
 
 if __name__ == "__main__":
-    gather_project_knowledge_graph = GatherProjectKnowledgeGraph()
-    print(
-        gather_project_knowledge_graph(
-            root_path=Path("/home/patryk/PROJECTS/deep-next")
-        )
-    )
+    from deep_next.common.common import load_monorepo_dotenv
 
-#     from dotenv import load_dotenv
+    load_monorepo_dotenv()
 
-#     assert load_dotenv(ROOT_DIR / ".env")
-
-#     path = gather_project_description_graph.visualize()
-#     print(f"Saved to: {path}")
-
-#     print(gather_project_description_graph(ROOT_DIR, "problem_statement"))
+    path = gather_project_description_graph.visualize()
+    print(f"Saved to: {path}")

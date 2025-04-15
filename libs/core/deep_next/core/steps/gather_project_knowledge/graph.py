@@ -3,8 +3,8 @@ from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.base_node import BaseNode
-from deep_next.core.steps.gather_project_knowledge.project_descr import (
-    create_project_description,
+from deep_next.core.steps.gather_project_knowledge.project_description.graph import (
+    gather_project_description_graph,
 )
 from deep_next.core.steps.gather_project_knowledge.project_map import tree
 from langgraph.constants import START
@@ -36,14 +36,16 @@ class _Node(BaseNode):
 
     @staticmethod
     def create_project_description(state: _State) -> dict:
-        project_description = create_project_description(root_path=state.root_path)
+        project_description = gather_project_description_graph(
+            root_path=state.root_path
+        )
 
-        return {"project_description": project_description}
+        return {"project_description": project_description.dump()}
 
     @staticmethod
     def parse_final_state(state: _State) -> dict:
         project_knowledge_tmpl = textwrap.dedent(
-            """\
+            """
             PROJECT_DESCRIPTION
             --------------------
             {project_description}
