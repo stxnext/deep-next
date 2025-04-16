@@ -15,4 +15,5 @@ DeepNext is an advanced AI system that automatically analyzes a code repository,
 - [Architecture](./architecture.html)
 - [Integration](./integration.html)
 - [Configuration](./configuration.html)
+- [Examples](./examples.html)
 - [Contributing](./contributing.html)
