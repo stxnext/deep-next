@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Annotated, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.config import SRFConfig
 from deep_next.core.steps.action_plan.srf.file_selection.graph import (
     file_selection_graph,
@@ -43,7 +42,7 @@ def cleanup_search_tools(state: _State) -> None:
     dispose_tools(state["root_path"])
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def single_file_selection_cycle(state: _State) -> dict:
         """

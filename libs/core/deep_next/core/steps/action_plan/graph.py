@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.config import SRFConfig
 from deep_next.core.io import read_txt
 from deep_next.core.steps.action_plan.action_plan import create_action_plan
@@ -34,7 +33,7 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def define_code_context(state: _State) -> dict:
         initial_state = srf_graph.create_init_state(
@@ -96,9 +95,13 @@ class ActionPlanGraph(BaseGraph):
         self.add_quick_edge(_Node.define_code_context, _Node.create_action_plan)
         self.add_quick_edge(_Node.create_action_plan, END)
 
-    def create_init_state(self, *args, **kwargs) -> _State:
-        raise NotImplementedError(
-            "Probably not important since pydantic BaseModel is used for state."
+    def create_init_state(
+        self, root_path: Path, issue_statement: str, project_knowledge: str
+    ) -> _State:
+        return _State(
+            root_path=root_path,
+            issue_statement=issue_statement,
+            project_knowledge=project_knowledge,
         )
 
 
