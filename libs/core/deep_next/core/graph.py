@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.action_plan import action_plan_graph
 from deep_next.core.steps.action_plan.data_model import ActionPlan
 from deep_next.core.steps.code_review.graph import code_review_graph
@@ -32,34 +31,34 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def gather_project_knowledge(state: _State) -> dict:
-        project_knowledge = gather_project_knowledge_graph(
+        init_state = gather_project_knowledge_graph.create_init_state(
             root_path=state.root_path,
         )
-
-        return {"project_knowledge": project_knowledge}
+        final_state = gather_project_knowledge_graph.compiled.invoke(init_state)
+        return {"project_knowledge": final_state["project_knowledge"]}
 
     @staticmethod
     def create_action_plan(state: _State) -> dict:
-        action_plan: ActionPlan = action_plan_graph(
+        init_state = action_plan_graph.create_init_state(
             root_path=state.root_path,
             issue_statement=state.problem_statement,
             project_knowledge=state.project_knowledge,
         )
-
-        return {"action_plan": action_plan}
+        final_state = action_plan_graph.compiled.invoke(init_state)
+        return {"action_plan": final_state["action_plan"]}
 
     @staticmethod
     def implement(state: _State) -> dict:
-        git_diff: str = implement_graph(
+        init_state = implement_graph.create_init_state(
             root_path=state.root_path,
             issue_statement=state.problem_statement,
             action_plan=state.action_plan,
         )
-
-        return {"git_diff": git_diff}
+        final_state = implement_graph.compiled.invoke(init_state)
+        return {"git_diff": final_state["git_diff"]}
 
     @staticmethod
     def review_code(state: _State) -> dict:
@@ -113,4 +112,4 @@ deep_next_graph = DeepNextGraph()
 
 
 if __name__ == "__main__":
-    print(f"Saved to: {deep_next_graph.visualize(subgraph_depth=3)}")
+    print(f"Saved to: {deep_next_graph.visualize(subgraph_depth=2)}")

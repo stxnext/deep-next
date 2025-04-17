@@ -2,7 +2,6 @@ import textwrap
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.gather_project_knowledge.project_description import (
     create_project_description,
 )
@@ -27,7 +26,7 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def create_project_map(state: _State) -> dict:
         project_map = tree(path=state.root_path)

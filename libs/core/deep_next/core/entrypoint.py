@@ -85,7 +85,7 @@ def _validate_exclusive_options(
     ),
 )
 @click.option(
-    "--root_dir",
+    "--root-dir",
     type=click.Path(
         exists=True, file_okay=False, dir_okay=True, readable=True, path_type=Path
     ),
@@ -93,7 +93,7 @@ def _validate_exclusive_options(
     help="Absolute path to the repo root directory.",
 )
 @click.option(
-    "--output_file",
+    "--output-file",
     type=click.Path(
         exists=False, file_okay=True, dir_okay=False, writable=True, path_type=Path
     ),
