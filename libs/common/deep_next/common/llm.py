@@ -45,6 +45,7 @@ class Model(str, Enum):
     AWS_DEEPSEEK_R1_v1_0 = "us.deepseek.r1-v1:0"
     GPT_4O_MINI_2024_07_18 = "gpt-4o-mini-2024-07-18"
     GPT_4O_2024_08_06 = "gpt-4o-2024-08-06"
+    GPT_4_1_2025_04_14 = "gpt-4.1-2025-04-14"
 
     @property
     def provider(self) -> Provider:
@@ -58,6 +59,7 @@ _provider = {
     Model.AWS_DEEPSEEK_R1_v1_0: Provider.BEDROCK,
     Model.GPT_4O_MINI_2024_07_18: Provider.OPENAI,
     Model.GPT_4O_2024_08_06: Provider.OPENAI,
+    Model.GPT_4_1_2025_04_14: Provider.OPENAI,
 }
 
 
