@@ -76,23 +76,16 @@ class Prompt:
         """
     )
 
-    output_1_format = textwrap.dedent(
+    output_format = textwrap.dedent(
         """
-        Always keep the output format as in the example output below!
+        Always keep the output format as in the examples below (The lines -------------------- are not part of the example, they are separators)!
 
         EXAMPLE OUTPUT:
-
-        {example_output_code_review_1}
-        """  # noqa: E501
-    )
-
-    output_2_format = textwrap.dedent(
-        """
-        Always keep the output format as in the example output below!
-
-        EXAMPLE OUTPUT:
-
-        {example_output_code_review_2}
+        --------------------
+        {example_output_code_review}
+        --------------------
+        {empty_output_code_review}
+        --------------------
         """  # noqa: E501
     )
 
@@ -151,8 +144,7 @@ def _call_code_review_llm(
         ("human", Prompt.project_knowledge),
         ("human", Prompt.git_diff),
         ("human", Prompt.code_fragments),
-        ("human", Prompt.output_1_format),
-        ("human", Prompt.output_2_format),
+        ("human", Prompt.output_format),
     ]
 
     prompt = ChatPromptTemplate.from_messages(messages)
@@ -169,8 +161,8 @@ def _call_code_review_llm(
         "project_knowledge": project_knowledge,
         "git_diff": git_diff,
         "relevant_code_fragments": relevant_code_fragments,
-        "example_output_code_review_1": json.dumps(example_output.model_dump()),
-        "example_output_code_review_2": json.dumps({"issues": []}),
+        "example_output_code_review": json.dumps(example_output.model_dump()),
+        "empty_output_code_review": json.dumps({"issues": []}),
     }
 
     return _invoke_fixable_llm_chain(prompt, data, code_review_parser)
