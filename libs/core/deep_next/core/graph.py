@@ -26,6 +26,27 @@ class _State(BaseModel):
     )
 
 
+class _StatePhaseOne(BaseModel):
+
+    root_path: Path = Field(description="Path to the root project directory.")
+    problem_statement: str = Field(description="The issue title and body.")
+    hints: str = Field(description="Comments made on the issue.")
+
+    project_knowledge: str | None = Field(default=None)
+    action_plan: ActionPlan | None = Field(default=None)
+
+
+class _StatePhaseTwo(BaseModel):
+
+    root_path: Path = Field(description="Path to the root project directory.")
+    action_plan: ActionPlan | None = Field(default=None)
+
+    git_diff: str | None = Field(
+        default=None,
+        description=("Final result: git diff of the changes made to the source code."),
+    )
+
+
 class _Node:
     @staticmethod
     def gather_project_knowledge(state: _State) -> dict:
@@ -88,6 +109,83 @@ class DeepNextGraph(BaseGraph):
         final_state = self.compiled.invoke(initial_state)
 
         return _State.model_validate(final_state).git_diff
+
+
+class DeepNextPhaseOneGraph(BaseGraph):
+    """Graph for the first phase of DeepNext."""
+
+    def __init__(self):
+        super().__init__(_StatePhaseOne)
+
+    def _build(self):
+        self.add_quick_node(_Node.gather_project_knowledge)
+        self.add_node(_Node.create_action_plan)
+
+        self.add_quick_edge(START, _Node.gather_project_knowledge)
+        self.add_quick_edge(_Node.gather_project_knowledge, _Node.create_action_plan)
+        self.add_quick_edge(_Node.create_action_plan, END)
+
+    def create_init_state(
+        self, root_path: Path, problem_statement: str, hints: str
+    ) -> _State:
+        return _State(
+            root_path=root_path,
+            problem_statement=problem_statement,
+            hints=hints,
+        )
+
+    def __call__(
+        self, *_, root_path: Path, problem_statement: str, hints: str
+    ) -> ActionPlan:
+        initial_state = self.create_init_state(
+            root_path=root_path, problem_statement=problem_statement, hints=hints
+        )
+        final_state = self.compiled.invoke(initial_state)
+
+        return _State.model_validate(final_state).action_plan
+
+
+class DeepNextPhaseTwoGraph(BaseGraph):
+    """Graph for the first phase of DeepNext."""
+
+    def __init__(self):
+        super().__init__(_StatePhaseTwo)
+
+    def _build(self):
+        self.add_node(_Node.implement)
+
+        self.add_quick_edge(START, _Node.implement)
+        self.add_quick_edge(_Node.implement, END)
+
+    def create_init_state(
+        self,
+        root_path: Path,
+        problem_statement: str,
+        action_plan: ActionPlan,
+    ) -> _State:
+        return _State(
+            root_path=root_path,
+            problem_statement=problem_statement,
+            action_plan=action_plan,
+        )
+
+    def __call__(
+        self,
+        *_,
+        problem_statement: str,
+        hints: str,
+        root_path: Path,
+        project_knowledge: str,
+        action_plan: ActionPlan,
+    ) -> ActionPlan:
+        initial_state = self.create_init_state(
+            root_path=root_path,
+            problem_statement=problem_statement,
+            action_plan=action_plan,
+        )
+        final_state = self.compiled.invoke(initial_state)
+
+        return _State.model_validate(final_state).action_plan
 
 
 deep_next_graph = DeepNextGraph()
