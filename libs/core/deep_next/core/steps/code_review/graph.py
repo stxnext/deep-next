@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.steps.code_review.review_code import review_code as _review_code
 from deep_next.core.steps.code_review.select_code import select_code as _select_code
 from langgraph.graph import END, START
@@ -47,7 +46,7 @@ class _State(BaseModel):
     )
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def select_code(state: _State) -> dict:
         if not state.include_code_fragments:
