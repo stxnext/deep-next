@@ -111,8 +111,12 @@ class DeepNextGraph(BaseGraph):
         return _State.model_validate(final_state).git_diff
 
 
-class DeepNextPhaseOneGraph(BaseGraph):
-    """Graph for the first phase of DeepNext."""
+class DeepNextActionPlanGraph(BaseGraph):
+    """
+    Graph for the first phase of DeepNext.
+
+    Gather the project knowledge and creating an action plan.
+    """
 
     def __init__(self):
         super().__init__(_StatePhaseOne)
@@ -127,8 +131,8 @@ class DeepNextPhaseOneGraph(BaseGraph):
 
     def create_init_state(
         self, root_path: Path, problem_statement: str, hints: str
-    ) -> _State:
-        return _State(
+    ) -> _StatePhaseOne:
+        return _StatePhaseOne(
             root_path=root_path,
             problem_statement=problem_statement,
             hints=hints,
@@ -145,8 +149,12 @@ class DeepNextPhaseOneGraph(BaseGraph):
         return _State.model_validate(final_state).action_plan
 
 
-class DeepNextPhaseTwoGraph(BaseGraph):
-    """Graph for the first phase of DeepNext."""
+class DeepNextImplementGraph(BaseGraph):
+    """
+    Graph for the second phase of DeepNext.
+
+    Implement the action plan and generate the git diff.
+    """
 
     def __init__(self):
         super().__init__(_StatePhaseTwo)
@@ -160,27 +168,21 @@ class DeepNextPhaseTwoGraph(BaseGraph):
     def create_init_state(
         self,
         root_path: Path,
-        problem_statement: str,
         action_plan: ActionPlan,
-    ) -> _State:
-        return _State(
+    ) -> _StatePhaseTwo:
+        return _StatePhaseTwo(
             root_path=root_path,
-            problem_statement=problem_statement,
             action_plan=action_plan,
         )
 
     def __call__(
         self,
         *_,
-        problem_statement: str,
-        hints: str,
         root_path: Path,
-        project_knowledge: str,
         action_plan: ActionPlan,
     ) -> ActionPlan:
         initial_state = self.create_init_state(
             root_path=root_path,
-            problem_statement=problem_statement,
             action_plan=action_plan,
         )
         final_state = self.compiled.invoke(initial_state)
