@@ -161,8 +161,8 @@ class SelectRelatedSnippetsGraph(BaseGraph):
 
     def __call__(
         self,
-        problem_statement: str,
         root_path: Path,
+        problem_statement: str,
         files: list[Path],
         structure: dict | None = None,
     ) -> dict[str, list[list[int]]]:
