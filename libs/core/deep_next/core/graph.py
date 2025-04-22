@@ -43,7 +43,7 @@ class _StatePhaseTwo(BaseModel):
 
     git_diff: str | None = Field(
         default=None,
-        description=("Final result: git diff of the changes made to the source code."),
+        description="Final result: git diff of the changes made to the source code.",
     )
 
 
