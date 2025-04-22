@@ -14,8 +14,11 @@ from deep_next.app.config import (
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
 from deep_next.connectors.aws import AWSSecretsManager
 from deep_next.connectors.gitlab_connector import GitLabConnector, GitLabIssue
-from deep_next.core.entrypoint import main as deep_next_pipeline
+from deep_next.core.entrypoint import run_deep_next_action_plan
 from loguru import logger
+
+from deep_next.core.graph import deep_next_graph
+from deep_next.core.io import write_txt
 
 
 def create_feature_branch_name(issue_no: int) -> str:
@@ -72,7 +75,32 @@ def solve_issue(
 
     start_time = time.time()
     try:
-        _ = deep_next_pipeline(
+        git_diff = deep_next_graph(
+            problem_statement=gitlab_issue, hints=gitlab_issue.comments, root=local_repo.repo_dir
+        )
+        # write_txt(txt=git_diff, path=output_file)
+    finally:
+        exec_time = time.time() - start_time
+
+        msg = f"DeepNext core total execution time: {exec_time:.0f} seconds"
+        logger.info(msg)
+        gitlab_issue.add_comment(msg)
+
+    feature_branch.commit_all(commit_msg=f"DeepNext resolves #{gitlab_issue.no}")
+    feature_branch.push_to_remote()
+
+    return feature_branch.name
+
+
+def propose_action_plan(
+    gitlab_issue: GitLabIssue,
+    local_repo: GitRepository,
+) -> str:
+    """Propose an action plan."""
+
+    start_time = time.time()
+    try:
+        action_plan = run_deep_next_action_plan(
             problem_statement=gitlab_issue.title + "\n" + gitlab_issue.description,
             hints=gitlab_issue.comments,
             root_dir=local_repo.repo_dir,
@@ -83,6 +111,8 @@ def solve_issue(
         msg = f"DeepNext core total execution time: {exec_time:.0f} seconds"
         logger.info(msg)
         gitlab_issue.add_comment(msg)
+
+    gitlab_issue.add_comment(f"Assigned feature branch: `{feature_branch.name}`")
 
     feature_branch.commit_all(commit_msg=f"DeepNext resolves #{gitlab_issue.no}")
     feature_branch.push_to_remote()

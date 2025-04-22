@@ -2,12 +2,15 @@ from pathlib import Path
 
 import click
 from deep_next.core.config import DATA_DIR
-from deep_next.core.graph import deep_next_graph
-from deep_next.core.io import read_txt, write_txt
+from deep_next.core.graph import deep_next_graph, deep_next_action_plan_graph, \
+    deep_next_implement_graph
+from deep_next.core.io import read_txt, write_txt, write_json
 from loguru import logger
 
+from deep_next.core.steps.action_plan.data_model import ActionPlan
 
-def main(
+
+def run_deep_next(
     problem_statement: str,
     hints: str,
     root_dir: Path,
@@ -18,6 +21,49 @@ def main(
 
     git_diff: str = deep_next_graph(
         problem_statement=problem_statement, hints=hints, root=root_dir
+    )
+
+    logger.debug(git_diff)
+    write_txt(txt=git_diff, path=output_file)
+    logger.info(f"Result saved to: '{output_file}'")
+
+    logger.success("DeepNext pipeline completed successfully.")
+
+    return git_diff
+
+
+def run_deep_next_action_plan(
+    problem_statement: str,
+    hints: str,
+    root_dir: Path,
+    output_file: Path | str = DATA_DIR / "result.diff",
+) -> ActionPlan:
+    """Deep NEXT action plan pipeline."""
+    logger.info(f"\n{problem_statement=}\n{hints=}\n{root_dir=}")
+
+    action_plan: ActionPlan = deep_next_action_plan_graph(
+        problem_statement=problem_statement, hints=hints, root=root_dir
+    )
+
+    logger.debug(action_plan)
+    write_json(data=action_plan.model_dump(), path=output_file)
+    logger.info(f"Result saved to: '{output_file}'")
+
+    logger.success("DeepNext pipeline completed successfully.")
+
+    return action_plan
+
+
+def run_deep_next_implement(
+    action_plan: ActionPlan,
+    root_dir: Path,
+    output_file: Path | str = DATA_DIR / "result.diff",
+) -> str:
+    """Deep NEXT implementation pipeline."""
+    logger.info(f"\n{action_plan=}\n{root_dir=}")
+
+    git_diff: str = deep_next_implement_graph(
+        action_plan=action_plan, root=root_dir
     )
 
     logger.debug(git_diff)
