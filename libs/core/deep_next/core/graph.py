@@ -26,7 +26,7 @@ class _State(BaseModel):
     )
 
 
-class _StatePhaseOne(BaseModel):
+class _StateActionPlan(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
     problem_statement: str = Field(description="The issue title and body.")
@@ -36,7 +36,7 @@ class _StatePhaseOne(BaseModel):
     action_plan: ActionPlan | None = Field(default=None)
 
 
-class _StatePhaseTwo(BaseModel):
+class _StateImplement(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
     action_plan: ActionPlan | None = Field(default=None)
@@ -119,7 +119,7 @@ class DeepNextActionPlanGraph(BaseGraph):
     """
 
     def __init__(self):
-        super().__init__(_StatePhaseOne)
+        super().__init__(_StateActionPlan)
 
     def _build(self):
         self.add_quick_node(_Node.gather_project_knowledge)
@@ -131,8 +131,8 @@ class DeepNextActionPlanGraph(BaseGraph):
 
     def create_init_state(
         self, root_path: Path, problem_statement: str, hints: str
-    ) -> _StatePhaseOne:
-        return _StatePhaseOne(
+    ) -> _StateActionPlan:
+        return _StateActionPlan(
             root_path=root_path,
             problem_statement=problem_statement,
             hints=hints,
@@ -157,7 +157,7 @@ class DeepNextImplementGraph(BaseGraph):
     """
 
     def __init__(self):
-        super().__init__(_StatePhaseTwo)
+        super().__init__(_StateImplement)
 
     def _build(self):
         self.add_node(_Node.implement)
@@ -169,8 +169,8 @@ class DeepNextImplementGraph(BaseGraph):
         self,
         root_path: Path,
         action_plan: ActionPlan,
-    ) -> _StatePhaseTwo:
-        return _StatePhaseTwo(
+    ) -> _StateImplement:
+        return _StateImplement(
             root_path=root_path,
             action_plan=action_plan,
         )
