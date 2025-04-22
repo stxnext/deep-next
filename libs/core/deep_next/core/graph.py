@@ -190,6 +190,8 @@ class DeepNextImplementGraph(BaseGraph):
         return _State.model_validate(final_state).action_plan
 
 
+deep_next_action_plan_graph = DeepNextActionPlanGraph()
+deep_next_implement_graph = DeepNextImplementGraph()
 deep_next_graph = DeepNextGraph()
 
 
