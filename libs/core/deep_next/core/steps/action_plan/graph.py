@@ -45,14 +45,13 @@ class _Node:
             config=RunnableConfig(recursion_limit=SRFConfig.CYCLE_ITERATION_LIMIT),
         )
 
-        # TODO: Add explanation! Code context should be returned from `srf_graph`.
         code_context = [
             FileCodeContext(
-                path=path,
-                code_snippet=read_txt(path),
-                explanation="<missing explanation>",
+                path=relevant_file.path,
+                code_snippet=read_txt(relevant_file.path),
+                explanation=relevant_file.explanation,
             )
-            for path in final_state["final_results"]
+            for relevant_file in final_state["final_results"]
         ]
 
         return {"code_context": ExistingCodeContext(code_context=code_context)}

@@ -39,10 +39,12 @@ class _State(BaseModel):
     )
 
     # Output
-    result: CodeReviewResult | None = Field(
+    result: CodeReviewResult = Field(
         default_factory=list,
-        description="Code review issues found during the code review process and "
-        "potential errors.",
+        description=(
+            "Code review issues found during the code review process"
+            " and potential errors."
+        ),
     )
 
 

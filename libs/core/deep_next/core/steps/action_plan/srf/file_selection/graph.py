@@ -12,6 +12,7 @@ from deep_next.core.steps.action_plan.srf.common import (
 )
 from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
     Analysis,
+    RelevantFile,
     analysis_parser,
     example_output_next_steps,
     example_output_select_files,
@@ -146,8 +147,8 @@ class State(TypedDict):
     _messages: Annotated[list[AnyMessage], operator.add]
 
     # Output
-    relevant_files: list[Path] | None
-    invalid_files: list[Path] | None
+    relevant_files: list[RelevantFile] | None
+    invalid_files: list[RelevantFile] | None
 
 
 def _fix_invalid_analysis(e: OutputParserException) -> Analysis | None:
@@ -269,11 +270,11 @@ class _Node:
                 f"decision. Next steps: `{state['_current_analysis'].next_steps}`"
             )
 
-        relevant_files, invalid_files = validate_files(
+        valid_files, invalid_files = validate_files(
             state["_current_analysis"].relevant_files_so_far, state["root_path"]
         )
 
-        return {"relevant_files": relevant_files, "invalid_files": invalid_files}
+        return {"relevant_files": valid_files, "invalid_files": invalid_files}
 
 
 def _is_analysis_stuck(state: State) -> bool:
@@ -369,7 +370,7 @@ class FileSelectionGraph(BaseGraph):
         query: str,
         root_path: Path,
         print_conversations: bool = False,
-    ) -> list[Path]:
+    ) -> list[RelevantFile]:
         initial_state = self.create_init_state(
             query=query,
             root_path=root_path,
