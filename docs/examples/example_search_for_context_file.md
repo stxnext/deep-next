@@ -383,7 +383,8 @@ def _build(self) -> None:
 
 ## Usage Example
 
-
+To run example prepare placeholder `loger.py` file in `./libs/core/tests/_resources/example_project/src/logger.py`.
+Add `# placeholder for logger.py` to the file.
 
 ```python
 from deep_next.core.steps.implement.graph import _Node, _State

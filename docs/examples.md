@@ -13,6 +13,7 @@ This page provides links to practical examples of how to customize and extend De
 - [Project Map Filtering](./examples/example_project_map_filter.html) - Use LLM to filter out irrelevant files and directories
 - [Multi-Implementation Patch Selection](./examples/example_multiple_implementations.html) - Improve patch reliability by generating multiple implementations
 - [Additional Context File Detection](./examples/example_search_for_context_file.html) - Automatically detect and include related files for better context
+- [All Modifications At Once](./examples/example_all_modifications_at_once.html) - Implement changes across multiple files in a single LLM call for better coordination
 
 
 [Back to Examples](../examples.html)
