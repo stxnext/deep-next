@@ -47,13 +47,18 @@ def find_issues(
     return resp
 
 
-def get_projects_configs(configs_dir: Path = CONFIGS_DIR) -> list[GitLabProjectConfig]:
-    """Loads all registered projects configurations."""
+def get_projects_configs(
+    configs_dir: Path = CONFIGS_DIR, project_name: str | None = None
+) -> list[GitLabProjectConfig]:
+    """Loads all registered projects configurations, optionally filtered by name."""
     configs: list[GitLabProjectConfig] = [
         GitLabProjectConfig.load(config_path)
         for config_path in configs_dir.iterdir()
         if config_path.suffix == ".json"
     ]
+
+    if project_name:
+        configs = [c for c in configs if c.project_name == project_name]
 
     return sorted(configs, key=lambda x: x.project_name) if configs else []
 
@@ -159,11 +164,25 @@ def solve_project_issues(config: GitLabProjectConfig) -> None:
     )
 
 
+import os
+import argparse
+
 def main(configs_dir: Path = CONFIGS_DIR) -> None:
-    """Solves issues dedicated for DeepNext for all registered projects."""
+    """Solves issues dedicated for DeepNext for all registered projects or one."""
     logger.debug(f"Configs dir: '{configs_dir}'")
 
-    if not (projects_registry := get_projects_configs(configs_dir)):
+    parser = argparse.ArgumentParser(description="DeepNext Entrypoint")
+    parser.add_argument(
+        "--project",
+        type=str,
+        default=os.environ.get("PROJECT_NAME"),
+        help="Project name to process (overrides env PROJECT_NAME)",
+    )
+    args, _ = parser.parse_known_args()
+
+    project_name = args.project
+
+    if not (projects_registry := get_projects_configs(configs_dir, project_name)):
         logger.warning("No projects found. Register projects first.")
     else:
         logger.success(
