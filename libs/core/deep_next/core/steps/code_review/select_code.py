@@ -17,10 +17,21 @@ def select_code(
     Use the select_related_snippets module to find the relevant code snippets based on
     the issue statement and the files present in the git diff.
     """
+    modified_files_paths = []
+    for patch in PatchSet(git_diff):
+        modified_file_path: Path = root_path / Path(patch.path)
+
+        if not modified_file_path.is_file():
+            raise FileNotFoundError(
+                f"Critical error - cannot resolve path based on git diff. "
+                f"File {Path(patch.path)} not found within {root_path}."
+            )
+        modified_files_paths.append(modified_file_path)
+
     file_locations = select_related_snippets_graph(
         root_path=root_path,
         problem_statement=issue_statement,
-        files=[patch.path for patch in PatchSet(git_diff)],
+        files=modified_files_paths,
         structure=create_structure(root_path),
     )
 

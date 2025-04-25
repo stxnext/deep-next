@@ -2,7 +2,12 @@ FROM python:3.11-slim
 
 RUN \
     apt-get update && \
-    apt-get install -y --no-install-recommends make curl openssh-client git
+    apt-get install -y --no-install-recommends \
+      make \
+      curl \
+      openssh-client  \
+      git \
+      ca-certificates
 
 RUN \
     git config --global user.email "deepnext@stxnext.pl" && \
@@ -16,15 +21,6 @@ ENV PATH="/root/.local/bin:$PATH"
 
 ARG DOT_ENV_CONTENT
 RUN echo "$DOT_ENV_CONTENT" > /deep-next/.env
-
-# Inject SSH private key for GitLab authentication
-# TODO: Better idea might be to use AWS Secrets Manager
-ARG SSH_PRIVATE_KEY
-RUN mkdir -p ~/.ssh && \
-    echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa && \
-    chmod 600 ~/.ssh/id_rsa && \
-    ssh-keyscan gitlab.com >> ~/.ssh/known_hosts && \
-    ssh-keyscan -H git.stxnext.pl >> ~/.ssh/known_hosts
 
 COPY ../.. /deep-next
 

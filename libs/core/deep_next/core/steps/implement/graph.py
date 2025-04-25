@@ -50,7 +50,7 @@ class _Node:
     def select_next_step(state: _State) -> dict:
         step: Step = state.steps_remaining.pop(0)
 
-        logger.info(f"Selected step: '{step.title}'")
+        logger.info(f"Implementing solution for: '{step.title}'")
 
         return {"selected_step": step, "steps_remaining": state.steps_remaining}
 
@@ -87,7 +87,8 @@ def _select_next_or_end(
         logger.debug(f"Steps remaining: {len(state.steps_remaining)}")
         return _Node.select_next_step.__name__
 
-    logger.debug("All steps completed, generating diff...")
+    logger.success("Implementation completed, generating diff...")
+
     return _Node.generate_git_diff.__name__
 
 

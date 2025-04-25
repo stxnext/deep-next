@@ -68,16 +68,6 @@ class Analysis(BaseModel):
     def json_str(self) -> str:
         return json.dumps(self.model_dump())
 
-    @classmethod
-    def empty(cls):
-        return cls(
-            overview="",
-            relevant_files_so_far=[],
-            reasoning="",
-            unknowns=[],
-            next_steps=[],
-        )
-
 
 analysis_parser = PydanticOutputParser(pydantic_object=Analysis)
 

@@ -44,6 +44,8 @@ def run_command(
         stdout = resp.stdout.strip() if resp.stdout.strip() else NO_OUTPUT
         stderr = resp.stderr.strip() if resp.stderr.strip() else NO_OUTPUT
 
+        # TODO: Sanitize command flag? Or verbose false?
+        #  which is better for hidinbg url with access token secret?
         logger.debug(
             "Command executed successfully:\n"
             f"{cmd}\n\n"

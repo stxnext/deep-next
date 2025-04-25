@@ -3,6 +3,7 @@
 import ast
 import os
 import re
+from pathlib import Path
 
 import libcst as cst
 import libcst.matchers as m
@@ -19,17 +20,23 @@ def create_structure(directory_path):
     for root, _, files in os.walk(directory_path):
         repo_name = os.path.basename(directory_path)
         relative_root = os.path.relpath(root, directory_path)
+
         if relative_root == ".":
             relative_root = repo_name
+
         curr_struct = structure
+
         for part in relative_root.split(os.sep):
             if part not in curr_struct:
                 curr_struct[part] = {}
+
             curr_struct = curr_struct[part]
+
         for file_name in files:
             if file_name.endswith(".py"):
                 file_path = os.path.join(root, file_name)
                 class_info, function_names, file_lines = parse_python_file(file_path)
+
                 curr_struct[file_name] = {
                     "classes": class_info,
                     "functions": function_names,
@@ -112,7 +119,8 @@ def parse_python_file(file_path, file_content=None):
     return class_info, function_names, file_content.splitlines()
 
 
-def get_repo_files(structure, filepaths: list[str]):
+def get_repo_files(structure, filepaths: list[str | Path]):
+    filepaths = [str(filepath) for filepath in filepaths]
     files, classes, functions = get_full_file_paths_and_classes_and_functions(structure)
     file_contents = dict()
     for filepath in filepaths:

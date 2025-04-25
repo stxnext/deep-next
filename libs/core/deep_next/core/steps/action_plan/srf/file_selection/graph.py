@@ -187,15 +187,16 @@ def _invoke_fixable_llm_analysis_chain(
 
 
 def _call_analyze_llm(state: State) -> Analysis:
+    relevant_files_so_far_str = json.dumps(
+        [f.model_dump() for f in state["_current_analysis"].relevant_files_so_far]
+    )
+
     messages = [
         ("system", AnalyzeKnowledgePrompt.role_description),
         HumanMessage(state["query"]),
         ("human", AnalyzeKnowledgePrompt.additional_context),
         HumanMessage(f"Previous overview:\n{state['_current_analysis'].overview}"),
-        HumanMessage(
-            f"Previously relevant files:"
-            f"\n{json.dumps(state['_current_analysis'].relevant_files_so_far)}"
-        ),
+        HumanMessage(f"Previously relevant files:" f"\n{relevant_files_so_far_str}"),
         HumanMessage(f"Previous reasoning:\n{state['_current_analysis'].reasoning}"),
         HumanMessage(
             f"Previous unknowns:" f"\n{json.dumps(state['_current_analysis'].unknowns)}"

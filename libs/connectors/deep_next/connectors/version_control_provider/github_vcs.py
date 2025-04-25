@@ -69,7 +69,7 @@ class GitHubIssue(BaseIssue):
         return anchor
 
     @staticmethod
-    def _format_file_attachment(self, filename: str, content: str) -> str:
+    def _format_file_attachment(filename: str, content: str) -> str:
         """Simulate file attachment using Markdown code block."""
         return textwrap.dedent(
             f"""\
@@ -141,7 +141,7 @@ class GitHubMR(BaseMR):
 
 
 class GitHubConnector(BaseConnector):
-    def __init__(self, token: str, repo_name: str):
+    def __init__(self, *_, token: str, repo_name: str):
         self.github = Github(token)
         self.repo: Repository = self.github.get_repo(repo_name)
 

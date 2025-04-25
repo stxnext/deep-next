@@ -142,12 +142,14 @@ class GitLabMR(BaseMR):
 
 
 class GitLabConnector(BaseConnector):
-    def __init__(self, *_, access_token: str, project_id: int, base_url: str):
+    def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
         """Create connection with GitLab project."""
-        self.project_id = project_id
+        self.repo_name = repo_name
 
         self.connector = gitlab.Gitlab(base_url, private_token=access_token)
-        self.project = self.connector.projects.get(self.project_id)
+        self.project = self.connector.projects.get(self.repo_name)
+
+        self.project_id = self.project.id
 
     def list_issues(self, label=None) -> list[GitLabIssue]:
         """Fetches all issues"""
