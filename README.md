@@ -70,13 +70,26 @@ The project is structured as a monorepo with specialized components:
 
 ## GitHub/GitLab integration
 
-Running as a service to automatically process issues:
+## Running DeepNext for a Single Repository with Docker
+
+To process issues for a single repository, run one DeepNext instance per repo.
+Specify the repository path using the `REPO_PATH` environment variable.
 
 ```bash
-# Start the DeepNext app in Docker
+# Build the Docker image
 make app_docker_build
-make app_docker_run
+
+# Run DeepNext for a specific repository
+docker run --rm \
+  -e REPO_PATH=/path/to/your/repository \
+  -e OPENAI_API_KEY=... \
+  -e AWS_ACCESS_KEY_ID=... \
+  -e AWS_SECRET_ACCESS_KEY=... \
+  deepnext/app
 ```
+
+Replace `/path/to/your/repository` with the absolute path to your local repo.
+Set any required environment variables for LLM providers as needed.
 
 Configuration for GitLab:
 ```json

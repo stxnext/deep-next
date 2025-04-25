@@ -16,14 +16,19 @@ app_docker_build:
 
 .PHONY: _app_docker_run
 _app_docker_run:
+ifndef REPO
+	$(error REPO variable is required. Usage: make app_docker_run REPO=your_repo)
+endif
 	docker run -d \
 		-v $$(pwd)/apps/app/___data/configs:/deep-next/apps/app/___data/configs \
+		-e REPO="$(REPO)" \
 		--name "$(CONTAINER_NAME)" \
 		deep_next_app:latest
 	@echo -e 'Inspect logs:\ndocker logs -f $(CONTAINER_NAME)'
 
 .PHONY: app_docker_run
 app_docker_run: _assert_container_does_not_exist app_docker_build _app_docker_run
+	@echo "Started container for repo: $(REPO)"
 
 .PHONY: app_docker_stop
 app_docker_stop:

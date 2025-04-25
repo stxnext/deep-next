@@ -58,6 +58,31 @@ def get_projects_configs(configs_dir: Path = CONFIGS_DIR) -> list[GitLabProjectC
     return sorted(configs, key=lambda x: x.project_name) if configs else []
 
 
+def get_project_config_by_name_or_path(
+    project_name: str | None = None,
+    config_path: str | None = None,
+    configs_dir: Path = CONFIGS_DIR,
+) -> GitLabProjectConfig | None:
+    """Load a single project config by name or path."""
+    if config_path:
+        config_file = Path(config_path)
+        if not config_file.exists():
+            logger.error(f"Config file '{config_path}' does not exist.")
+            return None
+        return GitLabProjectConfig.load(config_file)
+    elif project_name:
+        for config_file in configs_dir.iterdir():
+            if config_file.suffix == ".json":
+                config = GitLabProjectConfig.load(config_file)
+                if config.project_name == project_name:
+                    return config
+        logger.error(f"Project '{project_name}' not found in configs dir.")
+        return None
+    else:
+        logger.error("No project name or config path specified.")
+        return None
+
+
 def solve_issue(
     gitlab_issue: GitLabIssue,
     local_repo: GitRepository,
@@ -159,28 +184,64 @@ def solve_project_issues(config: GitLabProjectConfig) -> None:
     )
 
 
-def main(configs_dir: Path = CONFIGS_DIR) -> None:
-    """Solves issues dedicated for DeepNext for all registered projects."""
+def main(
+    project_name: str | None = None,
+    config_path: str | None = None,
+    configs_dir: Path = CONFIGS_DIR,
+) -> None:
+    """Solves issues dedicated for DeepNext for a single specified project."""
     logger.debug(f"Configs dir: '{configs_dir}'")
 
-    if not (projects_registry := get_projects_configs(configs_dir)):
-        logger.warning("No projects found. Register projects first.")
-    else:
-        logger.success(
-            f"Found {len(projects_registry)} registered project(s): "
-            f"{[config.project_name for config in projects_registry]}"
+    config = get_project_config_by_name_or_path(
+        project_name=project_name,
+        config_path=config_path,
+        configs_dir=configs_dir,
+    )
+    if not config:
+        logger.error(
+            "No project specified or project config not found. "
+            "Set PROJECT_NAME or CONFIG_PATH env or pass as argument."
         )
+        return
 
-        for config in projects_registry:
-            logger.info(f"Resolving issues for '{config.project_name}' project...")
-            solve_project_issues(config)
-
+    logger.success(f"Loaded project config for '{config.project_name}'")
+    logger.info(f"Resolving issues for '{config.project_name}' project...")
+    solve_project_issues(config)
     logger.success("DeepNext app run completed.")
 
 
 if __name__ == "__main__":
+    import os
+    import argparse
     from deep_next.common.common import load_monorepo_dotenv
 
     load_monorepo_dotenv()
 
-    main()
+    parser = argparse.ArgumentParser(
+        description="Run DeepNext app for a single project."
+    )
+    parser.add_argument(
+        "--project-name",
+        type=str,
+        default=os.environ.get("PROJECT_NAME"),
+        help="Project name to process (env: PROJECT_NAME)",
+    )
+    parser.add_argument(
+        "--config-path",
+        type=str,
+        default=os.environ.get("CONFIG_PATH"),
+        help="Path to project config file (env: CONFIG_PATH)",
+    )
+    parser.add_argument(
+        "--configs-dir",
+        type=str,
+        default=os.environ.get("CONFIGS_DIR", str(CONFIGS_DIR)),
+        help="Directory with project configs (env: CONFIGS_DIR)",
+    )
+    args = parser.parse_args()
+
+    main(
+        project_name=args.project_name,
+        config_path=args.config_path,
+        configs_dir=Path(args.configs_dir),
+    )
