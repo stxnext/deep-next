@@ -230,7 +230,6 @@ def develop_single_file_patches(
         "issue_statement": issue_statement,
     }
 
-    # Add additional context files if provided
     if context_files:
         additional_context = ""
         for context_file_path, content in context_files.items():
@@ -240,7 +239,6 @@ def develop_single_file_patches(
             additional_context += "\n```\n"
             additional_context += "Note: This file is provided for context only. Do not modify it.\n"
 
-        # Append the additional context to the issue statement
         input_data["issue_statement"] = (
             input_data["issue_statement"]
             + "\n\n--- ADDITIONAL CONTEXT FILES ---\n"
@@ -271,27 +269,13 @@ from pathlib import Path
 
 ```python
 class _State(BaseModel):
-    root_path: Path = Field(description="Path to the root project directory.")
-    issue_statement: str = Field(
-        description="Detailed description of the issue to be implemented."
-    )
-    steps: list[Step] = Field(description="List of steps to implement the solution.")
 
-    steps_remaining: list[Step] | None = Field(
-        default=None, description="Steps yet to be processed."
-    )
-    selected_step: Step | None = Field(
-        default=None, description="The step currently being processed."
-    )
+    # ... existing code ...
 
     context_files: dict[Path, str] | None = Field(
         default=None, description="Additional context files for implementation."
     )
 
-    git_diff: str | None = Field(
-        default=None,
-        description="The resulting git diff after applying the implementation steps.",
-    )
 ```
 
 ### Step 7: Update the _Node to add Context File Detection Node and modify code_development
@@ -300,11 +284,8 @@ class _State(BaseModel):
 
 ```python
 class _Node(BaseNode):
-    @staticmethod
-    def select_next_step(state: _State) -> dict:
-        step: Step = state.steps_remaining.pop(0)
 
-        return {"selected_step": step}
+    # ... existing code ...
 
     @staticmethod
     def identify_context_files(state: _State) -> dict:
@@ -345,9 +326,6 @@ class _Node(BaseNode):
 
         return state
 
-    @staticmethod
-    def generate_git_diff(state: _State) -> dict:
-        return {"git_diff": generate_diff(state.root_path)}
 ```
 
 ### Step 8: Update the Graph Building Logic
@@ -355,18 +333,22 @@ class _Node(BaseNode):
 **Location**: `libs/core/deep_next/core/steps/implement/graph.py`
 
 ```python
-def _build(self) -> None:
-    self.add_quick_node(_Node.select_next_step)
-    self.add_quick_node(_Node.identify_context_files)
-    self.add_quick_node(_Node.code_development)
-    self.add_quick_node(_Node.generate_git_diff)
+class ImplementGraph(BaseGraph):
 
-    self.add_quick_edge(START, _Node.select_next_step)
-    self.add_quick_edge(_Node.select_next_step, _Node.identify_context_files)
-    self.add_quick_edge(_Node.identify_context_files, _Node.code_development)
-    self.add_quick_edge(_Node.generate_git_diff, END)
+    # ... existing code ...
 
-    self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
+    def _build(self) -> None:
+        self.add_quick_node(_Node.select_next_step)
+        self.add_quick_node(_Node.identify_context_files)
+        self.add_quick_node(_Node.code_development)
+        self.add_quick_node(_Node.generate_git_diff)
+
+        self.add_quick_edge(START, _Node.select_next_step)
+        self.add_quick_edge(_Node.select_next_step, _Node.identify_context_files)
+        self.add_quick_edge(_Node.identify_context_files, _Node.code_development)
+        self.add_quick_edge(_Node.generate_git_diff, END)
+
+        self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
 ```
 
 ## Benefits

@@ -11,9 +11,10 @@ When working with large codebases, the project map can become very lengthy, caus
 
 Below are the specific changes needed to add LLM-based filtering to the `project_map.py` module:
 
-**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
 
 ### Step 1: Add required imports
+
+**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
 
 ```python
 # Add these imports to the top of the file
@@ -29,6 +30,8 @@ from deep_next.core.steps.gather_project_knowledge.common import _create_llm
 ```
 
 ### Step 2: Create a structured output model
+
+**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
 
 ```python
 # Add this class after the existing _is_valid_file function
@@ -70,6 +73,8 @@ class Prompt:
 ```
 
 ### Step 3: Implement the filtering function
+
+**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
 
 ```python
 def _create_llm_agent():
@@ -128,6 +133,8 @@ example_output_project_map = ProjectMapFilter(
 
 ### Step 4: Update the tree function signature and implementation
 
+**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
+
 ```python
 # Modify the tree function signature to add the task_description parameter
 def tree(path: Path | str, root_name: str | None = None, task_description: str = None) -> str:
@@ -149,9 +156,13 @@ def tree(path: Path | str, root_name: str | None = None, task_description: str =
     """
 ```
 
-### Step 5: Modify the end of the tree function to apply filtering
+#### Step 4.1: Modify the end of the `tree` function to apply filtering
+
+**Location**: `libs/core/deep_next/core/steps/gather_project_knowledge/project_map.py`
 
 ```python
+# ... existing code ...
+
 # Replace the end of the tree function with this code
 
     # Apply LLM filtering if task description is provided
@@ -185,9 +196,6 @@ filtered_map = tree(
     Path("/path/to/project"),
     task_description=task
 )
-
-# The filtered map will contain only directories and files relevant to
-# database connections and type hints
 ```
 
 [Back to Examples](../examples.html)

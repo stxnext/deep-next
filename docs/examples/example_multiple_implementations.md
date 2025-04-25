@@ -11,9 +11,9 @@ When developing patches for code implementation tasks, language models can somet
 
 Below are the specific changes needed to implement multi-implementation patch selection:
 
-**Location**: `libs/core/deep_next/core/steps/implement/develop_patch.py`
-
 ### Step 1: Add required imports
+
+**Location**: `libs/core/deep_next/core/steps/implement/develop_patch.py`
 
 ```python
 # Add these imports to the top of the file
@@ -24,6 +24,8 @@ from pydantic import BaseModel, Field
 
 ### Step 2: Create the evaluation model
 
+**Location**: `libs/core/deep_next/core/steps/implement/develop_patch.py`
+
 ```python
 class PatchEvaluation(BaseModel):
     """Model for the LLM to evaluate and select the best patch implementation."""
@@ -32,6 +34,8 @@ class PatchEvaluation(BaseModel):
 ```
 
 ### Step 3: Implement the evaluator agent
+
+**Location**: `libs/core/deep_next/core/steps/implement/develop_patch.py`
 
 ```python
 def _create_evaluator_agent():
@@ -88,6 +92,8 @@ def _create_evaluator_agent():
 ```
 
 ### Step 4: Implement the multi-implementation function
+
+**Location**: `libs/core/deep_next/core/steps/implement/develop_patch.py`
 
 ```python
 def develop_multiple_file_patches(
@@ -170,10 +176,12 @@ example_patch_evaluation = PatchEvaluation(
     )
 ```
 
-### Step 5: Update the graph node in `libs/core/deep_next/core/steps/implement/graph.py`
+### Step 5: Update the graph node
+
+**Location**: `libs/core/deep_next/core/steps/implement/graph.py`
 
 ```python
-# Update the imports
+# Add the imports
 from deep_next.core.steps.implement.develop_patch import  develop_multiple_file_patches
 ```
 
@@ -194,7 +202,7 @@ from deep_next.core.steps.implement.develop_patch import  develop_multiple_file_
         raw_patches = develop_multiple_file_patches(
             step=state.selected_step,
             issue_statement=state.issue_statement,
-            num_implementations=3  # Generate 3 implementations by default
+            num_implementations=3  # Generate 3 implementations
         )
 
         patches: list[CodePatch] = parse_patches(raw_patches)
@@ -226,14 +234,12 @@ from deep_next.core.steps.implement.develop_patch import develop_multiple_file_p
 from deep_next.core.steps.action_plan.data_model import Step
 from pathlib import Path
 
-# Create a step
 step = Step(
     target_file=Path("./libs/core/tests/_resources/example_project/src/hello_world.py"),
     title="Add type hints",
     description="Add type hints to the add_integers function"
 )
 
-# Generate multiple implementations and select the best one
 raw_patch = develop_multiple_file_patches(
     step=step,
     issue_statement="Add type hints to the add_integers function",
