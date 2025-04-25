@@ -3,8 +3,6 @@ def test_success() -> None:
 
 
 def test_root_installed_ok() -> None:
-    from deep_next.connectors.aws import AWSSecretsManager
-    from deep_next.connectors.gitlab_connector import GitLabConnector
+    from deep_next.connectors.version_control_provider import BaseConnector
 
-    assert AWSSecretsManager
-    assert GitLabConnector
+    assert BaseConnector
