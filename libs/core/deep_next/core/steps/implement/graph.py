@@ -15,6 +15,7 @@ from deep_next.core.steps.implement.develop_patch import (
 from deep_next.core.steps.implement.git_diff import generate_diff
 from deep_next.core.steps.implement.utils import CodePatch
 from langgraph.graph import END, START
+from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -49,7 +50,9 @@ class _Node:
     def select_next_step(state: _State) -> dict:
         step: Step = state.steps_remaining.pop(0)
 
-        return {"selected_step": step}
+        logger.info(f"Implementing solution for: '{step.title}'")
+
+        return {"selected_step": step, "steps_remaining": state.steps_remaining}
 
     @staticmethod
     @tenacity.retry(
@@ -80,11 +83,13 @@ class _Node:
 def _select_next_or_end(
     state: _State,
 ) -> Literal[_Node.select_next_step.__name__, _Node.generate_git_diff.__name__]:
-    return (
-        _Node.select_next_step.__name__
-        if state.steps_remaining
-        else _Node.generate_git_diff.__name__
-    )
+    if state.steps_remaining:
+        logger.debug(f"Steps remaining: {len(state.steps_remaining)}")
+        return _Node.select_next_step.__name__
+
+    logger.success("Implementation completed, generating diff...")
+
+    return _Node.generate_git_diff.__name__
 
 
 class ImplementGraph(BaseGraph):
@@ -100,9 +105,10 @@ class ImplementGraph(BaseGraph):
 
         self.add_quick_edge(START, _Node.select_next_step)
         self.add_quick_edge(_Node.select_next_step, _Node.code_development)
-        self.add_quick_edge(_Node.generate_git_diff, END)
 
         self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
+
+        self.add_quick_edge(_Node.generate_git_diff, END)
 
     def create_init_state(
         self, root_path: Path, issue_statement: str, action_plan: ActionPlan
