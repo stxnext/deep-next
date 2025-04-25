@@ -1,7 +1,9 @@
-import textwrap
-from datetime import datetime
-
 import gitlab
+from deep_next.connectors.version_control_provider.base import (
+    BaseConnector,
+    BaseIssue,
+    BaseMR,
+)
 from gitlab.v4.objects.discussions import ProjectIssueDiscussion
 from gitlab.v4.objects.issues import ProjectIssue
 from gitlab.v4.objects.merge_requests import ProjectMergeRequest
@@ -21,63 +23,54 @@ def filter_issues_by_label(issues, label):
     return [issue for issue in issues if label in issue.labels]
 
 
-class GitLabIssue:
+class GitLabIssue(BaseIssue):
     def __init__(self, issue: ProjectIssue):
         self._issue = issue
-
-        self.url = issue.web_url
-        self.labels = issue.labels
-        self.no = issue.iid
-        self.title = issue.title
-        self.description = issue.description
-
         self._discussion: ProjectIssueDiscussion | None = None
-        self._comment_prefix = "[DeepNext]"
+
+    @property
+    def url(self) -> str:
+        return self._issue.web_url
+
+    @property
+    def labels(self) -> list[str]:
+        return self._issue.labels
+
+    @property
+    def no(self) -> int:
+        return self._issue.iid
+
+    @property
+    def title(self) -> str:
+        return self._issue.title
+
+    @property
+    def description(self) -> str:
+        return self._issue.description
 
     @property
     def comments(self) -> str:
         """Get all issue comments except the ones added by DeepNext."""
-        # TODO: Implement comments support. For now it's redundant - all in description
         return "<No comments>"
 
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
     ) -> None:
-        # TODO: Tight coupling with GitLab API. It's pure deep_next.app logic.
         if self._discussion is None:
-            top_lvl_comment = (
-                f"## 🚧 DeepNext WIP ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
-            )
-            self._discussion = self._issue.discussions.create({"body": top_lvl_comment})
-
-        def prettify_comment(txt: str) -> str:
-            tmpl = textwrap.dedent(
-                """\
-            **Status update:**
-
-            > {comment}
-            """
+            self._discussion = self._issue.discussions.create(
+                {"body": self.comment_thread_header}
             )
 
-            return tmpl.format(comment=txt)
+        self._discussion.notes.create({"body": self.prettify_comment(comment)})
 
-        self._discussion.notes.create({"body": prettify_comment(comment)})
         if file_content:
             self._add_file_attachment(file_name, file_content)
 
     def _add_file_attachment(self, filename: str, content: str) -> str:
-        """
-        Upload a text file and attach it to the issue.
-
-        Args:
-            filename: The name of the file to be uploaded
-            content: The text content of the file
-
-        Returns:
-            The markdown representation of the uploaded file
-        """
+        """Upload a text file and attach it to the issue."""
         project_id = self._issue.project_id
         gl = self._issue.manager.gitlab
+
         project = gl.projects.get(project_id)
 
         uploaded_file = project.upload(filename, filedata=content)
@@ -86,9 +79,6 @@ class GitLabIssue:
         self.add_comment(comment)
 
         return uploaded_file["markdown"]
-
-    def has_label(self, label: str) -> bool:
-        return label in self.labels
 
     def add_label(self, label: str) -> None:
         self._issue.labels.append(label)
@@ -103,14 +93,25 @@ class GitLabIssue:
         self._issue.save()
 
 
-class GitLabMR:
+class GitLabMR(BaseMR):
     def __init__(self, mr: ProjectMergeRequest):
         self._mr = mr
 
-        self.url = mr.web_url
-        self.no = mr.iid
-        self.title = mr.title
-        self.description = mr.description
+    @property
+    def url(self) -> str:
+        return self._mr.web_url
+
+    @property
+    def no(self) -> int:
+        return self._mr.iid
+
+    @property
+    def title(self) -> str:
+        return self._mr.title
+
+    @property
+    def description(self) -> str:
+        return self._mr.description
 
     @property
     def base_commit(self) -> str:
@@ -140,13 +141,15 @@ class GitLabMR:
         return "\n".join(diff_output)
 
 
-class GitLabConnector:
-    def __init__(self, *_, access_token: str, project_id: int, base_url: str):
+class GitLabConnector(BaseConnector):
+    def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
         """Create connection with GitLab project."""
-        self.project_id = project_id
+        self.repo_name = repo_name
 
         self.connector = gitlab.Gitlab(base_url, private_token=access_token)
-        self.project = self.connector.projects.get(self.project_id)
+        self.project = self.connector.projects.get(self.repo_name)
+
+        self.project_id = self.project.id
 
     def list_issues(self, label=None) -> list[GitLabIssue]:
         """Fetches all issues"""

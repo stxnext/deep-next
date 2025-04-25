@@ -219,7 +219,9 @@ def llm_from_config(
     temperature: float | None = None,
 ) -> BaseChatModel:
     config = LLMConfig.load(config_type=config_type)
-    logger.info(f"LLM config: {config}")
+
+    logger.debug(f"'{config_type.value}' LLM config: {config}")
+
     if config.model.provider == Provider.BEDROCK:
         return _get_aws_bedrock_llm(
             config=config,

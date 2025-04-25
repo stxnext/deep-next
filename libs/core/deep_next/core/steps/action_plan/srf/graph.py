@@ -4,6 +4,9 @@ from typing import Annotated, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import SRFConfig
+from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
+    RelevantFile,
+)
 from deep_next.core.steps.action_plan.srf.file_selection.graph import (
     file_selection_graph,
 )
@@ -25,13 +28,13 @@ class _State(TypedDict):
     query: str
 
     # Internal
-    _cycle_results: Annotated[list[Path], operator.add]
-    _cycle_invalid_results: Annotated[list[Path], operator.add]
+    _cycle_results: Annotated[list[RelevantFile], operator.add]
+    _cycle_invalid_results: Annotated[list[RelevantFile], operator.add]
     _cycle_iterations: Annotated[list[int], operator.add]
 
     # Output
-    final_results: list[Path]
-    final_invalid_results: list[Path]
+    final_results: list[RelevantFile]
+    final_invalid_results: list[RelevantFile]
 
 
 def setup_search_tools(state: _State) -> None:
@@ -70,7 +73,7 @@ class _Node:
         }
 
     @staticmethod
-    def combine_results(state: _State) -> dict[str, list[Path]]:
+    def combine_results(state: _State) -> dict:
         combined_results = set(state["_cycle_results"])
         combined_invalid_results = set(state["_cycle_invalid_results"])
 
@@ -131,7 +134,7 @@ class SelectRelatedFilesGraph(BaseGraph):
         self,
         query: str,
         root_path: Path,
-    ) -> tuple[list[Path], list[Path], list[int]]:
+    ) -> tuple[list[RelevantFile], list[RelevantFile], list[int]]:
         initial_state = self.create_init_state(
             root_path=root_path,
             query=query,

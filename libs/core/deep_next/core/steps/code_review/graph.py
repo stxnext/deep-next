@@ -1,10 +1,11 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
+from deep_next.core.io import read_txt
 from deep_next.core.steps.code_review.review_code import review_code as _review_code
-from deep_next.core.steps.code_review.select_code import select_code as _select_code
 from langgraph.graph import END, START
 from pydantic import BaseModel, Field
+from unidiff import PatchSet
 
 
 class CodeReviewResult(BaseModel):
@@ -39,25 +40,31 @@ class _State(BaseModel):
     )
 
     # Output
-    result: CodeReviewResult | None = Field(
+    result: CodeReviewResult = Field(
         default_factory=list,
-        description="Code review issues found during the code review process and "
-        "potential errors.",
+        description=(
+            "Code review issues found during the code review process"
+            " and potential errors."
+        ),
     )
 
 
 class _Node:
     @staticmethod
     def select_code(state: _State) -> dict:
-        if not state.include_code_fragments:
-            return {"code_fragments": {}}
+        modified_files_paths = []
+        for patch in PatchSet(state.git_diff):
+            modified_file_path: Path = state.root_path / Path(patch.path)
+
+            if not modified_file_path.is_file():
+                raise FileNotFoundError(
+                    f"Critical error - cannot resolve path based on git diff. "
+                    f"File {Path(patch.path)} not found within {state.root_path}."
+                )
+            modified_files_paths.append(modified_file_path)
 
         return {
-            "code_fragments": _select_code(
-                state.root_path,
-                state.issue_statement,
-                state.git_diff,
-            )
+            "code_fragments": {path: [read_txt(path)] for path in modified_files_paths}
         }
 
     @staticmethod

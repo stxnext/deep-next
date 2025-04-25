@@ -48,6 +48,7 @@ class _Node:
             project_knowledge=state.project_knowledge,
         )
         final_state = action_plan_graph.compiled.invoke(init_state)
+
         return {"action_plan": final_state["action_plan"]}
 
     @staticmethod
@@ -58,6 +59,7 @@ class _Node:
             action_plan=state.action_plan,
         )
         final_state = implement_graph.compiled.invoke(init_state)
+
         return {"git_diff": final_state["git_diff"]}
 
     @staticmethod
@@ -69,6 +71,7 @@ class _Node:
             git_diff=state.git_diff,
         )
         final_state = code_review_graph.compiled.invoke(initial_state)
+
         return {"code_review_issues": final_state["result"]["issues"]}
 
 

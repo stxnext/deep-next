@@ -83,10 +83,14 @@ def _get_python_files(
     Returns:
     - list[str]: A list of Python file paths.
     """
+    msg = f"Gathering all python files within `{dir_path}`"
     if ignore_prefixes is None:
         ignore_prefixes = []
+        msg += " recursively for all dirs"
     else:
-        logger.debug(f"Ignoring directories with prefixes: `{ignore_prefixes}`")
+        msg += f" ignoring dirs with prefixes: `{ignore_prefixes}`"
+
+    logger.debug(msg)
 
     py_files = []
 

@@ -1,24 +1,28 @@
 import time
 from datetime import datetime
-from pathlib import Path
 
-from deep_next.app.add_new_project import GitLabProjectConfig
 from deep_next.app.config import (
-    CONFIGS_DIR,
     FAILED_LABEL,
     FEATURE_BRANCH_NAME_TMPL,
     IN_PROGRESS_LABEL,
+    REF_BRANCH,
     REPOSITORIES_DIR,
     SOLVED_LABEL,
+    TODO_LABEL,
 )
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
-from deep_next.connectors.aws import AWSSecretsManager
-from deep_next.connectors.gitlab_connector import GitLabConnector, GitLabIssue
+from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
+from deep_next.connectors.version_control_provider import (
+    BaseConnector,
+    BaseIssue,
+    GitHubConnector,
+    GitLabConnector,
+)
 from deep_next.core.entrypoint import main as deep_next_pipeline
 from loguru import logger
 
 
-def create_feature_branch_name(issue_no: int) -> str:
+def _create_feature_branch_name(issue_no: int) -> str:
     """Creates a feature branch name for a given issue."""
     return FEATURE_BRANCH_NAME_TMPL.format(
         issue_no=issue_no,
@@ -27,8 +31,8 @@ def create_feature_branch_name(issue_no: int) -> str:
 
 
 def find_issues(
-    gitlab_connector: GitLabConnector, deep_next_label: str
-) -> list[GitLabIssue]:
+    vcs_connector: BaseConnector, deep_next_label: str = TODO_LABEL
+) -> list[BaseIssue]:
     """Fetches all issues to be solved by DeepNext.
 
     Excludes labels that are not allowed to be processed.
@@ -36,7 +40,7 @@ def find_issues(
     excluding_labels = [FAILED_LABEL, SOLVED_LABEL, IN_PROGRESS_LABEL]
 
     resp = []
-    for issue in gitlab_connector.list_issues(label=deep_next_label):
+    for issue in vcs_connector.list_issues(label=deep_next_label):
         if excluded := sorted([x for x in excluding_labels if x in issue.labels]):
             logger.warning(
                 f"Skipping issue #{issue.no} ({issue.url}) due to label(s): {excluded}"
@@ -47,34 +51,23 @@ def find_issues(
     return resp
 
 
-def get_projects_configs(configs_dir: Path = CONFIGS_DIR) -> list[GitLabProjectConfig]:
-    """Loads all registered projects configurations."""
-    configs: list[GitLabProjectConfig] = [
-        GitLabProjectConfig.load(config_path)
-        for config_path in configs_dir.iterdir()
-        if config_path.suffix == ".json"
-    ]
-
-    return sorted(configs, key=lambda x: x.project_name) if configs else []
-
-
 def solve_issue(
-    gitlab_issue: GitLabIssue,
+    issue: BaseIssue,
     local_repo: GitRepository,
-    ref_branch: str = "develop",
+    ref_branch: str = REF_BRANCH,
 ) -> str:
     """Solves a single issue."""
     feature_branch: FeatureBranch = local_repo.new_feature_branch(
         ref_branch,
-        feature_branch=create_feature_branch_name(gitlab_issue.no),
+        feature_branch=_create_feature_branch_name(issue.no),
     )
-    gitlab_issue.add_comment(f"Assigned feature branch: `{feature_branch.name}`")
+    issue.add_comment(f"Assigned feature branch: `{feature_branch.name}`")
 
     start_time = time.time()
     try:
         _ = deep_next_pipeline(
-            problem_statement=gitlab_issue.title + "\n" + gitlab_issue.description,
-            hints=gitlab_issue.comments,
+            problem_statement=issue.title + "\n" + issue.description,
+            hints=issue.comments,
             root_dir=local_repo.repo_dir,
         )
     finally:
@@ -82,98 +75,107 @@ def solve_issue(
 
         msg = f"DeepNext core total execution time: {exec_time:.0f} seconds"
         logger.info(msg)
-        gitlab_issue.add_comment(msg)
+        issue.add_comment(msg)
 
-    feature_branch.commit_all(commit_msg=f"DeepNext resolves #{gitlab_issue.no}")
+    feature_branch.commit_all(
+        commit_msg=f"DeepNext resolves #{issue.no}: {issue.title}"
+    )
     feature_branch.push_to_remote()
 
     return feature_branch.name
 
 
-def solve_project_issues(config: GitLabProjectConfig) -> None:
+def _get_connector(config: VCSConfig) -> BaseConnector:
+    """Creates a connector for the given project configuration."""
+    if config.vcs == "github":
+        return GitHubConnector(
+            token=config.access_token,
+            repo_name=config.repo_path,  # TODO: Fix naming
+        )
+    elif config.vcs == "gitlab":
+        return GitLabConnector(
+            access_token=config.access_token,
+            repo_name=config.repo_path,
+            base_url=config.base_url,
+        )
+    else:
+        raise ValueError(
+            f"Unsupported VCS, can't find related connector: '{config.vcs}'"
+        )
+
+
+def solve_project_issues(vcs_config: VCSConfig) -> None:
     """Solves all issues dedicated for DeepNext for a given project."""
-    logger.debug(f"Creating gitlab connector for '{config.project_name}' project")
-    gitlab_project = GitLabConnector(
-        access_token=AWSSecretsManager().get_secret(config.gitlab.access_token),
-        project_id=config.gitlab.project_id,
-        base_url=config.gitlab.base_url,
-    )
+    logger.debug(f"Creating connector for '{vcs_config.repo_path}' project")
+    vcs_connector = _get_connector(vcs_config)
 
-    logger.debug(f"Preparing local git repo for '{config.project_name}' project")
+    logger.debug(f"Preparing local git repo for '{vcs_config.repo_path}' project")
     local_repo: GitRepository = setup_local_git_repo(
-        repo_dir=REPOSITORIES_DIR / config.project_name,
-        ssh_url=config.git.repo_url,
+        repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
+        clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
-    logger.debug(f"Looking for issues to be solved in '{config.project_name}' project")
-    if not (todo := find_issues(gitlab_project, deep_next_label=config.git.label)):
-        logger.info(f"No issues to be solved for '{config.project_name}' repo")
+    logger.debug(f"Looking for issues to be solved in '{vcs_config.repo_path}' project")
+    if not (issues_todo := find_issues(vcs_connector, deep_next_label=TODO_LABEL)):
+        logger.info(f"No issues to be solved for '{vcs_config.repo_path}' repo")
         return
 
     logger.success(
-        f"Found {len(todo)} issue(s) todo for '{config.project_name}' repo: "
-        f"{sorted(f'#{issue.no}' for issue in todo)}"
+        f"Found {len(issues_todo)} issue(s) todo for '{vcs_config.repo_path}' repo: "
+        f"{sorted(f'#{issue.no}' for issue in issues_todo)}"
     )
 
     failure = []
     success = []
-    for gitlab_issue in todo:
+    for issue in issues_todo:
         try:
-            gitlab_issue.add_label(IN_PROGRESS_LABEL)
+            issue.add_label(IN_PROGRESS_LABEL)
 
             feature_branch = solve_issue(
-                gitlab_issue,
+                issue,
                 local_repo,
-                ref_branch=config.git.ref_branch,
+                ref_branch=REF_BRANCH,
             )
 
-            mr = gitlab_project.create_mr(
+            mr = vcs_connector.create_mr(
                 merge_branch=feature_branch,
-                into_branch=config.git.ref_branch,
-                title=f"Resolve '{gitlab_issue.title}'",
+                into_branch=REF_BRANCH,
+                title=f"[DeepNext] Resolve '{issue.title}'",
             )
         except Exception as e:
-            failure.append(gitlab_issue)
+            failure.append(issue)
 
-            err_msg = f"🔴 DeepNext app failed for #{gitlab_issue.no}"
+            err_msg = f"🔴 DeepNext app failed for #{issue.no}: {str(e)}"
             logger.error(err_msg)
-            gitlab_issue.add_comment(
+
+            issue.add_label(FAILED_LABEL)
+            issue.add_comment(
                 comment=err_msg, file_content=str(e), file_name="error_message.txt"
             )
-
-            gitlab_issue.add_label(FAILED_LABEL)
         else:
-            success.append(gitlab_issue)
+            success.append(issue)
 
-            msg = f"🟢 Issue #{gitlab_issue.no} solved: {mr.web_url}"
+            msg = f"🟢 Issue #{issue.no} solved: {mr.url}"
             logger.success(msg)
-            gitlab_issue.add_comment(msg)
 
-            gitlab_issue.add_label(SOLVED_LABEL)
+            issue.add_label(SOLVED_LABEL)
+            issue.add_comment(msg)
+
         finally:
-            gitlab_issue.remove_label(IN_PROGRESS_LABEL)
+            issue.remove_label(IN_PROGRESS_LABEL)
 
     logger.success(
-        f"Project '{config.project_name}' summary: "
-        f"total={len(todo)}; solved={len(success)}; failed={len(failure)}"
+        f"Project '{vcs_config.repo_path}' summary: "
+        f"total={len(issues_todo)}; solved={len(success)}; failed={len(failure)}"
     )
 
 
-def main(configs_dir: Path = CONFIGS_DIR) -> None:
-    """Solves issues dedicated for DeepNext for all registered projects."""
-    logger.debug(f"Configs dir: '{configs_dir}'")
+def main() -> None:
+    """Solves issues dedicated for DeepNext for given project."""
+    vcs_config: VCSConfig = load_vcs_config_from_env()
 
-    if not (projects_registry := get_projects_configs(configs_dir)):
-        logger.warning("No projects found. Register projects first.")
-    else:
-        logger.success(
-            f"Found {len(projects_registry)} registered project(s): "
-            f"{[config.project_name for config in projects_registry]}"
-        )
-
-        for config in projects_registry:
-            logger.info(f"Resolving issues for '{config.project_name}' project...")
-            solve_project_issues(config)
+    logger.info(f"Looking for issues in '{vcs_config.repo_path}' project...")
+    solve_project_issues(vcs_config)
 
     logger.success("DeepNext app run completed.")
 
