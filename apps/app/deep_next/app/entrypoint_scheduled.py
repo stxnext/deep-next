@@ -27,7 +27,7 @@ def task_scheduler(interval_s: int) -> None:
 @click.option(
     "--interval-s",
     "-s",
-    default=60,
+    default=30,
     show_default=True,
     envvar=SCHEDULE_INTERVAL_ENV_VAR,
     type=int,

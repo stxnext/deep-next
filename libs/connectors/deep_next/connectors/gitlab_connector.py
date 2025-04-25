@@ -1,5 +1,6 @@
 import textwrap
 from datetime import datetime
+from enum import Enum
 
 import gitlab
 from gitlab.v4.objects.discussions import ProjectIssueDiscussion
@@ -35,10 +36,11 @@ class GitLabIssue:
         self._comment_prefix = "[DeepNext]"
 
     @property
-    def comments(self) -> str:
+    def comments(self) -> list:
         """Get all issue comments except the ones added by DeepNext."""
+        return self._issue.discussions.list()
         # TODO: Implement comments support. For now it's redundant - all in description
-        return "<No comments>"
+        # return "<No comments>"
 
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
@@ -87,14 +89,15 @@ class GitLabIssue:
 
         return uploaded_file["markdown"]
 
-    def has_label(self, label: str) -> bool:
-        return label in self.labels
+    def has_label(self, label: str | Enum) -> bool:
+        return str(label) in self.labels
 
-    def add_label(self, label: str) -> None:
-        self._issue.labels.append(label)
+    def add_label(self, label: str | Enum) -> None:
+        self._issue.labels.append(str(label))
         self._issue.save()
 
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
+        label = str(label)
         if label not in self._issue.labels:
             logger.warning(f"Label '{label}' not found in issue #{self.no}")
             return

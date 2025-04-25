@@ -21,7 +21,6 @@ class GitLabConfig(BaseModel):
 class GitConfig(BaseModel):
     ref_branch: str
     repo_url: str
-    label: str
 
 
 class GitLabProjectConfig(BaseModel):
@@ -65,7 +64,6 @@ def create_gitlab_project_config(
     git_repo_url: str,
     gitlab_access_token: str,
     gitlab_base_url: str = "https://gitlab.com",
-    todo_label: str = "deep_next",
     ref_branch: str = "develop",
 ) -> GitLabProjectConfig:
     """Create GitLab project configuration."""
@@ -94,7 +92,6 @@ def create_gitlab_project_config(
         git=GitConfig(
             ref_branch=ref_branch,
             repo_url=git_repo_url,
-            label=todo_label,
         ),
     )
 
