@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 
 from deep_next.common.config import MONOREPO_DATA_PATH
@@ -15,13 +16,19 @@ for dir_path in [DATA_DIR, RESULTS_DIR, REPOSITORIES_DIR]:
         logger.debug(f"Creating directory: `{dir_path}`")
     dir_path.mkdir(exist_ok=True, parents=True)
 
-TODO_LABEL = "deep_next"
-FAILED_LABEL = "deep_next_failed"
-SOLVED_LABEL = "deep_next_solved"
-IN_PROGRESS_LABEL = "deep_next_in_progress"
-
 REF_BRANCH = "develop"
 
 FEATURE_BRANCH_NAME_TMPL = "deep_next/issue_{issue_no}/{note}"
 
 SCHEDULE_INTERVAL_ENV_VAR = "DEEP_NEXT_SCHEDULE_INTERVAL"
+
+class DeepNextState(Enum):
+    """State of the DeepNext process."""
+    PENDING_E2E = "deep_next"
+    PENDING_AP = "deep_next_propose_action_plan"
+    PENDING_IMPLEMENT_AP = "deep_next_implement_action_plan"
+
+    IN_PROGRESS = "deep_next_in_progress"
+    AWAITING_RESPONSE = 'deep_next_awaiting_response'
+    SOLVED = "deep_next_solved"
+    FAILED = "deep_next_failed"

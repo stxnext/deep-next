@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 from typing import List
 
 from deep_next.connectors.version_control_provider.base import (
@@ -40,8 +41,8 @@ class GitHubIssue(BaseIssue):
         return self._issue.body or ""
 
     @property
-    def comments(self) -> str:
-        return "<No comments>"
+    def comments(self) -> list:
+        return self._issue.get_comments()
 
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
@@ -80,12 +81,14 @@ class GitHubIssue(BaseIssue):
         """
         )
 
-    def add_label(self, label: str) -> None:
+    def add_label(self, label: str | Enum) -> None:
+        label = str(label)
         if label not in self.labels:
             self._issue.add_to_labels(label)
             self.labels.append(label)
 
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
+        label = str(label)
         if label not in self.labels:
             logger.warning(f"Label '{label}' not found in issue #{self.no}")
             return

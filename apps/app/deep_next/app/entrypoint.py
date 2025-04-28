@@ -2,13 +2,10 @@ import time
 from datetime import datetime
 
 from deep_next.app.config import (
-    FAILED_LABEL,
     FEATURE_BRANCH_NAME_TMPL,
-    IN_PROGRESS_LABEL,
     REF_BRANCH,
     REPOSITORIES_DIR,
-    SOLVED_LABEL,
-    TODO_LABEL,
+    DeepNextState,
 )
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
 from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
@@ -16,10 +13,26 @@ from deep_next.connectors.version_control_provider import (
     BaseConnector,
     BaseIssue,
     GitHubConnector,
-    GitLabConnector,
+    GitLabConnector, BaseMR,
 )
-from deep_next.core.entrypoint import main as deep_next_pipeline
 from loguru import logger
+
+from deep_next.core.graph import deep_next_graph, deep_next_action_plan_graph
+
+ACTION_PLAN_PREFIX = "# Action Plan:\n"
+ACTION_PLAN_RESPONSE_INSTRUCTIONS = (
+    "To access the action plan, respond with:"
+    "\n```"
+    "\n@deepnext"
+    "\nOK"
+    "\n```"
+    "\n"
+    "\nTo request changes to the action plan, specify the changes you want to see by using the following message format:"
+    "\n```"
+    "\n@deepnext"
+    "\n<message to deepnext>"
+    "\n```"
+)
 
 
 def _create_feature_branch_name(issue_no: int) -> str:
@@ -31,16 +44,16 @@ def _create_feature_branch_name(issue_no: int) -> str:
 
 
 def find_issues(
-    vcs_connector: BaseConnector, deep_next_label: str = TODO_LABEL
+    vcs_connector: BaseConnector, label: DeepNextState
 ) -> list[BaseIssue]:
     """Fetches all issues to be solved by DeepNext.
 
     Excludes labels that are not allowed to be processed.
     """
-    excluding_labels = [FAILED_LABEL, SOLVED_LABEL, IN_PROGRESS_LABEL]
+    excluding_labels = [DeepNextState.FAILED.name, DeepNextState.SOLVED, DeepNextState.IN_PROGRESS]
 
     resp = []
-    for issue in vcs_connector.list_issues(label=deep_next_label):
+    for issue in vcs_connector.list_issues(label=label.name):
         if excluded := sorted([x for x in excluding_labels if x in issue.labels]):
             logger.warning(
                 f"Skipping issue #{issue.no} ({issue.url}) due to label(s): {excluded}"
@@ -51,11 +64,12 @@ def find_issues(
     return resp
 
 
-def solve_issue(
+def _solve_issue(
+    vcs_config: VCSConfig,
     issue: BaseIssue,
     local_repo: GitRepository,
     ref_branch: str = REF_BRANCH,
-) -> str:
+) -> BaseMR | None:
     """Solves a single issue."""
     feature_branch: FeatureBranch = local_repo.new_feature_branch(
         ref_branch,
@@ -65,10 +79,10 @@ def solve_issue(
 
     start_time = time.time()
     try:
-        _ = deep_next_pipeline(
+        deep_next_graph(
             problem_statement=issue.title + "\n" + issue.description,
             hints=issue.comments,
-            root_dir=local_repo.repo_dir,
+            root=local_repo.repo_dir
         )
     finally:
         exec_time = time.time() - start_time
@@ -82,7 +96,116 @@ def solve_issue(
     )
     feature_branch.push_to_remote()
 
-    return feature_branch.name
+    mr = vcs_config.create_mr(
+        merge_branch=feature_branch.name,
+        into_branch=ref_branch,
+        title=f"Resolve '{issue.title}'",
+    )
+
+    return mr
+
+
+def _solve_issue_and_label(
+    vcs_config: VCSConfig,
+    issue: BaseIssue,
+    local_repo: GitRepository,
+    ref_branch: str = REF_BRANCH,
+) -> bool:
+    success: bool
+    try:
+        issue.add_label(DeepNextState.IN_PROGRESS)
+
+        mr = _solve_issue(
+            vcs_config,
+            issue,
+            local_repo,
+            ref_branch=ref_branch,
+        )
+    except Exception as e:
+        err_msg = f"🔴 DeepNext app failed for #{issue.no}: {str(e)}"
+        logger.error(err_msg)
+
+        issue.add_label(DeepNextState.FAILED)
+        issue.add_comment(
+            comment=err_msg, file_content=str(e), file_name="error_message.txt"
+        )
+
+        success = False
+    else:
+        msg = f"🟢 Issue #{issue.no} solved: {mr.url}"
+        logger.success(msg)
+
+        issue.add_label(DeepNextState.SOLVED)
+        issue.add_comment(msg)
+
+        success = True
+    finally:
+        issue.remove_label(DeepNextState.IN_PROGRESS)
+
+    return success
+
+
+def _propose_action_plan(
+    issue: BaseIssue,
+    local_repo: GitRepository,
+) -> None:
+    """Propose an action plan."""
+
+    start_time = time.time()
+    try:
+        action_plan = deep_next_action_plan_graph(
+            problem_statement=issue.title + "\n" + issue.description,
+            hints=issue.comments,
+            root=local_repo.repo_dir,
+        )
+    finally:
+        exec_time = time.time() - start_time
+
+        msg = f"DeepNext core total execution time: {exec_time:.0f} seconds"
+        logger.info(msg)
+        issue.add_comment(msg)
+
+    issue.add_comment(f"{ACTION_PLAN_PREFIX}{action_plan.model_dump()}")
+    issue.add_comment(f"{ACTION_PLAN_RESPONSE_INSTRUCTIONS}")
+
+
+def _propose_action_plan_and_label(
+    issue: BaseIssue,
+    local_repo: GitRepository,
+) -> bool:
+    succeeded: bool
+
+    try:
+        issue.add_label(DeepNextState.IN_PROGRESS)
+
+        _propose_action_plan(
+            issue,
+            local_repo,
+        )
+    except Exception as e:
+        err_msg = f"🔴 DeepNext app failed for #{issue.no}"
+        logger.error(err_msg)
+        issue.add_comment(
+            comment=err_msg, file_content=str(e), file_name="error_message.txt"
+        )
+
+        succeeded = False
+        issue.add_label(DeepNextState.FAILED)
+    else:
+        succeeded = True
+        issue.add_label(DeepNextState.AWAITING_RESPONSE)
+    finally:
+        issue.remove_label(DeepNextState.IN_PROGRESS)
+
+    return succeeded
+
+
+def _handle_user_action_plan_response_and_label(
+    issue: BaseIssue,
+    local_repo: GitRepository,
+) -> bool:
+
+    last_comment = issue.comments[-1]
 
 
 def _get_connector(config: VCSConfig) -> BaseConnector:
@@ -115,58 +238,31 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
-    logger.debug(f"Looking for issues to be solved in '{vcs_config.repo_path}' project")
-    if not (issues_todo := find_issues(vcs_connector, deep_next_label=TODO_LABEL)):
-        logger.info(f"No issues to be solved for '{vcs_config.repo_path}' repo")
-        return
+    logger.debug(f"Looking for issues to handle in '{vcs_config.repo_path}' project")
 
-    logger.success(
-        f"Found {len(issues_todo)} issue(s) todo for '{vcs_config.repo_path}' repo: "
-        f"{sorted(f'#{issue.no}' for issue in issues_todo)}"
-    )
+    results = []
+    for issue in find_issues(vcs_connector, label=DeepNextState.PENDING_E2E):
+        logger.success(f"Found an issue for '{vcs_config.repo_path}' repo: #{issue.no}")
+        success = _solve_issue_and_label(vcs_config, issue, local_repo, ref_branch=REF_BRANCH)
+        results.append(success)
 
-    failure = []
-    success = []
-    for issue in issues_todo:
-        try:
-            issue.add_label(IN_PROGRESS_LABEL)
-
-            feature_branch = solve_issue(
-                issue,
+    for gitlab_issue in find_issues(vcs_connector, label=DeepNextState.PENDING_AP):
+        if gitlab_issue.has_label(DeepNextState.AWAITING_RESPONSE):
+            succeeded = _handle_user_action_plan_response_and_label(
+                gitlab_issue,
                 local_repo,
-                ref_branch=REF_BRANCH,
             )
-
-            mr = vcs_connector.create_mr(
-                merge_branch=feature_branch,
-                into_branch=REF_BRANCH,
-                title=f"[DeepNext] Resolve '{issue.title}'",
-            )
-        except Exception as e:
-            failure.append(issue)
-
-            err_msg = f"🔴 DeepNext app failed for #{issue.no}: {str(e)}"
-            logger.error(err_msg)
-
-            issue.add_label(FAILED_LABEL)
-            issue.add_comment(
-                comment=err_msg, file_content=str(e), file_name="error_message.txt"
-            )
+            results.append(succeeded)
         else:
-            success.append(issue)
-
-            msg = f"🟢 Issue #{issue.no} solved: {mr.url}"
-            logger.success(msg)
-
-            issue.add_label(SOLVED_LABEL)
-            issue.add_comment(msg)
-
-        finally:
-            issue.remove_label(IN_PROGRESS_LABEL)
+            succeeded = _propose_action_plan_and_label(
+                gitlab_issue,
+                local_repo,
+            )
+            results.append(succeeded)
 
     logger.success(
         f"Project '{vcs_config.repo_path}' summary: "
-        f"total={len(issues_todo)}; solved={len(success)}; failed={len(failure)}"
+        f"total={len(results)}; solved={sum(results)}; failed={len(results) - sum(results)}"
     )
 
 

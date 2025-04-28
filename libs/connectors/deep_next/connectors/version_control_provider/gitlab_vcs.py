@@ -1,3 +1,5 @@
+from enum import Enum
+
 import gitlab
 from deep_next.connectors.version_control_provider.base import (
     BaseConnector,
@@ -49,9 +51,9 @@ class GitLabIssue(BaseIssue):
         return self._issue.description
 
     @property
-    def comments(self) -> str:
+    def comments(self) -> list:
         """Get all issue comments except the ones added by DeepNext."""
-        return "<No comments>"
+        return ["<No comments>"]
 
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
@@ -80,11 +82,12 @@ class GitLabIssue(BaseIssue):
 
         return uploaded_file["markdown"]
 
-    def add_label(self, label: str) -> None:
-        self._issue.labels.append(label)
+    def add_label(self, label: str | Enum) -> None:
+        self._issue.labels.append(str(label))
         self._issue.save()
 
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
+        label = str(label)
         if label not in self._issue.labels:
             logger.warning(f"Label '{label}' not found in issue #{self.no}")
             return

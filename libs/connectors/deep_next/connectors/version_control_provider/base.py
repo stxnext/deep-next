@@ -1,6 +1,7 @@
 import textwrap
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
 
 
 class BaseIssue(ABC):
@@ -31,7 +32,7 @@ class BaseIssue(ABC):
 
     @property
     @abstractmethod
-    def comments(self) -> str:
+    def comments(self) -> list:
         """"""
 
     @abstractmethod
@@ -41,11 +42,11 @@ class BaseIssue(ABC):
         """"""
 
     @abstractmethod
-    def add_label(self, label: str) -> None:
+    def add_label(self, label: str | Enum) -> None:
         """"""
 
     @abstractmethod
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
         """"""
 
     @property
@@ -56,9 +57,8 @@ class BaseIssue(ABC):
     def comment_thread_header(self):
         return f"## 🚧 DeepNext WIP ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
 
-    def has_label(self, label: str) -> bool:
-        """"""
-        return label in self.labels
+    def has_label(self, label: str | Enum) -> bool:
+        return str(label) in self.labels
 
     @staticmethod
     def prettify_comment(txt: str) -> str:
