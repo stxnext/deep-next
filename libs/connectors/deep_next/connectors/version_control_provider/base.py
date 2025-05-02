@@ -103,6 +103,31 @@ class BaseMR(ABC):
     def git_diff(self) -> str:
         """Retrieve the full git diff for a given merge request."""
 
+    def post_reasoning_and_steps(self, reasoning: str, steps: list[str]) -> None:
+        """Post reasoning and steps as a formatted comment in the MR/PR thread."""
+        formatted_comment = self.format_reasoning_and_steps(reasoning, steps)
+        self.add_comment(formatted_comment)
+
+    def format_reasoning_and_steps(self, reasoning: str, steps: list[str]) -> str:
+        """Format reasoning and steps for user-friendly display."""
+        steps_formatted = "\n".join(f"- {step}" for step in steps)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        return textwrap.dedent(
+            f"""\
+            ### 🤖 DeepNext Reasoning & Action Plan ({timestamp})
+
+            **Reasoning:**
+            {reasoning}
+
+            **Steps Taken:**
+            {steps_formatted}
+            """
+        )
+
+    @abstractmethod
+    def add_comment(self, comment: str) -> None:
+        """Add a comment to the MR/PR thread."""
+
 
 class BaseConnector(ABC):
     @abstractmethod

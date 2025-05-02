@@ -30,5 +30,11 @@ class Step(BaseModel):
 
 
 class ActionPlan(BaseModel):
-    reasoning: str
-    ordered_steps: list[Step]
+    reasoning: str = Field(
+        description="Explanation of the rationale behind the action plan, "
+        "intended for both human and machine readability."
+    )
+    ordered_steps: list[Step] = Field(
+        description="List of steps to be executed in order, each step "
+        "providing a high-level overview and detailed description."
+    )

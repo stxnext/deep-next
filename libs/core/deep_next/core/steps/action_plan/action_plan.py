@@ -167,4 +167,7 @@ def create_action_plan(
         }
     )
 
-    return _validate_paths(action_plan, root_path)
+    # Validate and return the action plan with reasoning and steps populated
+    validated_action_plan = _validate_paths(action_plan, root_path)
+    # Optionally, format reasoning and steps for user readability here if needed
+    return validated_action_plan
