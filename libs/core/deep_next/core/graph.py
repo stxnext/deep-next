@@ -126,8 +126,8 @@ class DeepNextGraph(BaseGraph):
             [
                 (
                     f"{idx}. {step.title}\n\n"
-                    f"{step.description}\n"
-                    f"Target file: {step.target_file}\n"
+                    f"{step.description}\n\n"
+                    f"Target file: `{step.target_file.relative_to(state.root_path)}`\n"
                 )
                 for idx, step in enumerate(state.action_plan.ordered_steps, start=1)
             ]
