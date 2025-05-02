@@ -1,10 +1,18 @@
 from pathlib import Path
+import os
 
 import click
 from deep_next.core.config import DATA_DIR
 from deep_next.core.graph import deep_next_graph
 from deep_next.core.io import read_txt, write_txt
 from loguru import logger
+
+
+def setup_logging() -> None:
+    """Configure loguru logger with level from LOG_LEVEL env or INFO by default."""
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
 
 
 def main(
@@ -142,5 +150,6 @@ if __name__ == "__main__":
     from deep_next.common.common import load_monorepo_dotenv
 
     load_monorepo_dotenv()
+    setup_logging()
 
     cli()
