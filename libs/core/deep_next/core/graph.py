@@ -12,6 +12,16 @@ from langgraph.graph import END, START
 from pydantic import BaseModel, Field
 
 
+class DeepNextResult(BaseModel):
+    """Response model for DeepNext."""
+
+    git_diff: str = Field(
+        description="Final result: git diff of the changes made to the source code."
+    )
+    reasoning: str = Field(description="Reasoning behind the changes made.")
+    action_plan: str = Field(description="Action plan for the changes made.")
+
+
 class _State(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
@@ -102,13 +112,32 @@ class DeepNextGraph(BaseGraph):
             hints=hints,
         )
 
-    def __call__(self, *_, problem_statement: str, hints: str, root: Path) -> str:
+    def __call__(
+        self, *_, problem_statement: str, hints: str, root: Path
+    ) -> DeepNextResult:
         initial_state = self.create_init_state(
             root=root, problem_statement=problem_statement, hints=hints
         )
         final_state = self.compiled.invoke(initial_state)
 
-        return _State.model_validate(final_state).git_diff
+        state = _State.model_validate(final_state)
+
+        ordered_steps_str = "\n".join(
+            [
+                (
+                    f"{idx}. {step.title}\n\n"
+                    f"{step.description}\n"
+                    f"Target file: {step.target_file}\n"
+                )
+                for idx, step in enumerate(state.action_plan.ordered_steps, start=1)
+            ]
+        )
+
+        return DeepNextResult(
+            git_diff=state.git_diff,
+            reasoning=state.action_plan.reasoning,
+            action_plan=ordered_steps_str,
+        )
 
 
 deep_next_graph = DeepNextGraph()
