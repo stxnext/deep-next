@@ -55,8 +55,8 @@ def solve_issue(
     issue: BaseIssue,
     local_repo: GitRepository,
     ref_branch: str = REF_BRANCH,
-) -> str:
-    """Solves a single issue."""
+) -> tuple[str, dict]:
+    """Solves a single issue and returns feature branch and pipeline result."""
     feature_branch: FeatureBranch = local_repo.new_feature_branch(
         ref_branch,
         feature_branch=_create_feature_branch_name(issue.no),
@@ -64,8 +64,9 @@ def solve_issue(
     issue.add_comment(f"Assigned feature branch: `{feature_branch.name}`")
 
     start_time = time.time()
+    pipeline_result = None
     try:
-        _ = deep_next_pipeline(
+        pipeline_result = deep_next_pipeline(
             problem_statement=issue.title + "\n" + issue.description,
             hints=issue.comments,
             root_dir=local_repo.repo_dir,
@@ -82,7 +83,7 @@ def solve_issue(
     )
     feature_branch.push_to_remote()
 
-    return feature_branch.name
+    return feature_branch.name, pipeline_result
 
 
 def _get_connector(config: VCSConfig) -> BaseConnector:
@@ -106,6 +107,8 @@ def _get_connector(config: VCSConfig) -> BaseConnector:
 
 def solve_project_issues(vcs_config: VCSConfig) -> None:
     """Solves all issues dedicated for DeepNext for a given project."""
+    from deep_next.app.formatting import format_action_plan_and_reasoning
+
     logger.debug(f"Creating connector for '{vcs_config.repo_path}' project")
     vcs_connector = _get_connector(vcs_config)
 
@@ -131,7 +134,7 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
         try:
             issue.add_label(IN_PROGRESS_LABEL)
 
-            feature_branch = solve_issue(
+            feature_branch, pipeline_result = solve_issue(
                 issue,
                 local_repo,
                 ref_branch=REF_BRANCH,
@@ -142,6 +145,18 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
                 into_branch=REF_BRANCH,
                 title=f"[DeepNext] Resolve '{issue.title}'",
             )
+
+            # Post action plan and reasoning to MR/PR
+            if pipeline_result and isinstance(pipeline_result, dict):
+                reasoning = pipeline_result.get("reasoning")
+                steps = pipeline_result.get("steps")
+                formatted_comment = format_action_plan_and_reasoning(reasoning, steps)
+                if formatted_comment:
+                    vcs_connector.add_comment(
+                        mr,
+                        formatted_comment,
+                    )
+
         except Exception as e:
             failure.append(issue)
 
