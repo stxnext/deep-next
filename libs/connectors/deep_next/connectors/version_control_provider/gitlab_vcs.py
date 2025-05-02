@@ -140,6 +140,21 @@ class GitLabMR(BaseMR):
 
         return "\n".join(diff_output)
 
+    def post_action_plan_comment(self, reasoning: str, steps: list[str]) -> None:
+        """Post reasoning and steps as a comment in the MR."""
+        comment_body = self._format_action_plan_comment(reasoning, steps)
+        self._mr.notes.create({"body": comment_body})
+
+    @staticmethod
+    def _format_action_plan_comment(reasoning: str, steps: list[str]) -> str:
+        """Format the action plan comment for MR."""
+        formatted_steps = "\n".join(f"- {step}" for step in steps)
+        return (
+            "### 🤖 DeepNext Action Plan\n\n"
+            f"**Reasoning:**\n{reasoning}\n\n"
+            f"**Steps:**\n{formatted_steps}"
+        )
+
 
 class GitLabConnector(BaseConnector):
     def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
@@ -185,6 +200,13 @@ class GitLabConnector(BaseConnector):
                 ) from None
 
         return GitLabMR(mr)
+
+    def post_action_plan_to_mr(
+        self, mr_no: int, reasoning: str, steps: list[str]
+    ) -> None:
+        """Post reasoning and steps as a comment to the MR."""
+        mr = self.get_mr(mr_no)
+        mr.post_action_plan_comment(reasoning, steps)
 
     def create_mr(
         self,

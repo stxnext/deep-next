@@ -97,6 +97,24 @@ class GitHubMR(BaseMR):
     def __init__(self, pr: PullRequest):
         self._pr = pr
 
+    def post_action_plan_comment(self, action_plan: dict) -> None:
+        """Post a formatted action plan (reasoning and steps) as a PR comment."""
+        body = self._format_action_plan_comment(action_plan)
+        self._pr.create_issue_comment(body)
+
+    @staticmethod
+    def _format_action_plan_comment(action_plan: dict) -> str:
+        """Format the action plan dict into a readable markdown comment."""
+        reasoning = action_plan.get("reasoning", "")
+        steps = action_plan.get("steps", [])
+        reasoning_md = f"**Reasoning:**\n\n{reasoning}" if reasoning else ""
+        steps_md = ""
+        if steps:
+            steps_md = "**Steps Taken:**\n\n" + "\n".join(
+                f"1. {step}" for step in steps
+            )
+        return "\n\n".join(filter(None, [reasoning_md, steps_md]))
+
     @property
     def url(self) -> str:
         return self._pr.html_url

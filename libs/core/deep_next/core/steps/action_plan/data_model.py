@@ -32,3 +32,20 @@ class Step(BaseModel):
 class ActionPlan(BaseModel):
     reasoning: str
     ordered_steps: list[Step]
+
+    def to_markdown(self) -> str:
+        """Format reasoning and steps as markdown for user-friendly display."""
+        steps_md = "\n".join(
+            [
+                f"**{idx+1}. {step.title}**\n"
+                f"{step.description}\n"
+                f"_Target file_: `{step.target_file}`\n"
+                for idx, step in enumerate(self.ordered_steps)
+            ]
+        )
+        return (
+            f"### Reasoning\n"
+            f"{self.reasoning}\n\n"
+            f"### Steps\n"
+            f"{steps_md}"
+        )
