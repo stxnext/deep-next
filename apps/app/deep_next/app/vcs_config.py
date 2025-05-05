@@ -4,6 +4,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from deep_next.app.utils import get_connector
+from deep_next.connectors.version_control_provider import BaseMR, BaseIssue
+from deep_next.connectors.version_control_provider.github_vcs import GitHubMR, \
+    GitHubConnector
+from deep_next.connectors.version_control_provider.gitlab_vcs import GitLabMR, \
+    GitLabConnector
+
 
 class EnvVars:
     VCS = "VCS_PROVIDER"
@@ -23,6 +30,17 @@ class VCSConfig(BaseModel, ABC):
     def clone_url(self) -> str:
         """Abstract property for clone URL."""
 
+    @abstractmethod
+    def create_mr(
+        self,
+        merge_branch: str,
+        into_branch: str,
+        title: str,
+        description: str | None = None,
+        issue: BaseIssue | None = None,
+    ) -> BaseMR:
+        """Create a new merge request."""
+
 
 class GitHubConfig(VCSConfig):
     vcs: Literal["github"] = "github"
@@ -30,6 +48,24 @@ class GitHubConfig(VCSConfig):
     @property
     def clone_url(self) -> str:
         return f"https://{self.access_token}@github.com/{self.repo_path}.git"
+
+    def create_mr(
+        self,
+        merge_branch: str,
+        into_branch: str,
+        title: str,
+        description: str | None = None,
+        issue: BaseMR | None = None,
+    ) -> GitHubMR:
+        """Create a new merge request."""
+        connector: GitHubConnector = get_connector(self)
+        return connector.create_mr(
+            merge_branch=merge_branch,
+            into_branch=into_branch,
+            title=title,
+            description=description,
+            issue=issue,
+        )
 
 
 class GitLabConfig(VCSConfig):
@@ -41,6 +77,24 @@ class GitLabConfig(VCSConfig):
         return (
             "https://gitlab-ci-token:"
             f"{self.access_token}@{self.base_url}/{self.repo_path}.git"
+        )
+
+    def create_mr(
+        self,
+        merge_branch: str,
+        into_branch: str,
+        title: str,
+        description: str | None = None,
+        issue: BaseMR | None = None,
+    ) -> GitLabMR:
+        """Create a new merge request."""
+        connector: GitLabConnector = get_connector(self)
+        return connector.create_mr(
+            merge_branch=merge_branch,
+            into_branch=into_branch,
+            title=title,
+            description=description,
+            issue=issue,
         )
 
 

@@ -22,13 +22,14 @@ FEATURE_BRANCH_NAME_TMPL = "deep_next/issue_{issue_no}/{note}"
 
 SCHEDULE_INTERVAL_ENV_VAR = "DEEP_NEXT_SCHEDULE_INTERVAL"
 
+
 class DeepNextState(Enum):
     """State of the DeepNext process."""
+
     PENDING_E2E = "deep_next"
-    PENDING_AP = "deep_next_propose_action_plan"
-    PENDING_IMPLEMENT_AP = "deep_next_implement_action_plan"
+    PENDING_HITL = "deep_next_human_in_the_loop"
 
     IN_PROGRESS = "deep_next_in_progress"
-    AWAITING_RESPONSE = 'deep_next_awaiting_response'
+    AWAITING_RESPONSE = "deep_next_awaiting_response"
     SOLVED = "deep_next_solved"
     FAILED = "deep_next_failed"

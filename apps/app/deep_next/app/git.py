@@ -1,8 +1,10 @@
 import subprocess
+import uuid
 from pathlib import Path
 
 from deep_next.common.cmd import RunCmdError, run_command
 from loguru import logger
+
 
 
 class GitRepositoryError(Exception):
@@ -27,8 +29,7 @@ def setup_local_git_repo(repo_dir: Path, clone_url: str) -> "GitRepository":
 
 
 class FeatureBranch:
-    def __init__(self, ref_branch: str, name: str, git_repo: "GitRepository"):
-        self.ref_branch = ref_branch
+    def __init__(self, name: str, git_repo: "GitRepository"):
         self.name = name
 
         self._git_repo = git_repo
@@ -46,6 +47,14 @@ class FeatureBranch:
 
         logger.success(f"Pushed changes to remote: '{self.name}'")
 
+    def make_temporary_change(self):
+        unique_name = f"deep_next_tmp_{uuid.uuid4()}"
+        run_command(["touch", unique_name], cwd=self._git_repo.repo_dir)
+        return unique_name
+
+    def remove_temporary_change(self, change_id: str):
+        run_command(["rm", change_id], cwd=self._git_repo.repo_dir)
+
 
 # TODO: In evaluation similar git handler is used. It's refactor suggestion.
 class GitRepository:
@@ -56,6 +65,18 @@ class GitRepository:
             raise ValueError(
                 f"Provided invalid git repo dir ('.git' not found): {repo_dir}"
             )
+
+    def get_feature_branch(self, feature_branch: str) -> FeatureBranch:
+        """Get feature branch."""
+        if not self.branch_exists(feature_branch):
+            raise BranchCheckoutError(
+                f"Branch '{feature_branch}' does not exist in '{self.repo_dir}'"
+            )
+
+        return FeatureBranch(
+            name=feature_branch,
+            git_repo=self,
+        )
 
     def new_feature_branch(self, ref_branch: str, feature_branch: str) -> FeatureBranch:
         logger.info(
@@ -82,7 +103,6 @@ class GitRepository:
         self._reset_and_clean_working_directory()
 
         return FeatureBranch(
-            ref_branch=ref_branch,
             name=feature_branch,
             git_repo=self,
         )
