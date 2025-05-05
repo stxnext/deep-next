@@ -1,39 +1,39 @@
 project-knowledge:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 action-plan:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 srf-analyze:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 srf-tools:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 srs-analyze:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 implement:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
   temperature: 0.0
 
 code-review:
-  model: gpt-4o-2024-08-06
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
 
 default:
-  model: gpt-4.1-2025-04-14
+  model: gemma3:12b-it-qat
   seed: 42
-  temperature: 0.0
+  temperature: 0.7

@@ -10,12 +10,12 @@ DATA_DIR.mkdir(exist_ok=True, parents=True)
 
 
 class SRFConfig:
-    N_CYCLES = 3
-    CYCLE_ITERATION_LIMIT = 20
+    N_CYCLES = 1
+    CYCLE_ITERATION_LIMIT = 5
 
 
 class SRSConfig:
-    N_CYCLES = 3
+    N_CYCLES = 1
     CONTEXT_WINDOW = 10
 
 

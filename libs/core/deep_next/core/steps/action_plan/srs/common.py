@@ -1,12 +1,16 @@
 from pathlib import Path
 
 from deep_next.common.llm import LLMConfigType, llm_from_config
+from deep_next.core.common import RemoveThinkingBlocksParser
 from langchain_core.language_models import BaseChatModel
 from pydantic import BaseModel, Field
 
 
 def _create_llm(seed: int | None = None) -> BaseChatModel:
-    return llm_from_config(LLMConfigType.SRS_ANALYZE, seed=seed)
+    return (
+        llm_from_config(LLMConfigType.SRS_ANALYZE, seed=seed)
+        | RemoveThinkingBlocksParser()
+    )
 
 
 class FileCodeContext(BaseModel):

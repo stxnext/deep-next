@@ -32,9 +32,11 @@ srs-analyze:
   temperature: 0.0
 
 implement:
-  model: gpt-4o-2024-08-06
+  model: codellama
   seed: 42
-  temperature: 0.0
+  temperature: 0.7
+  config:
+    base_url: http://localhost:11434
 
 code-review:
   model: gpt-4o-2024-08-06
@@ -45,3 +47,8 @@ default:
   model: gpt-4o-mini-2024-07-18
   seed: 42
   temperature: 0.0
+
+ollama-example:
+  model: codellama
+  seed: 42
+  temperature: 0.7
