@@ -4,6 +4,11 @@ Your AI-powered junior software engineering assistant that takes an issue descri
 
 DeepNext is an advanced AI system that automatically analyzes a code repository, prepares a solution plan, and implements the necessary code for software engineering tasks using Large Language Models, saving developers hours of repetitive work.
 
+---
+
+**Note:**  
+As of June 2024, the codebase contains no references to Playground DI or Playground-related dependency injection logic. No further action is required for Playground DI removal.
+
 ## Quick start
 
 ### Installation
