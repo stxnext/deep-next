@@ -17,13 +17,13 @@ class BranchCheckoutError(GitRepositoryError):
     """Branch checkout error."""
 
 
-def setup_local_git_repo(repo_dir: Path, ssh_url: str) -> "GitRepository":
+def setup_local_git_repo(repo_dir: Path, clone_url: str) -> "GitRepository":
     """Creates git repository if not exists, otherwise gets from repo pool."""
     if repo_dir.exists():
         logger.info(f"Using existing git repository: {repo_dir}")
         return GitRepository(repo_dir)
 
-    return GitRepository.from_git_clone(url=ssh_url, output_dir=repo_dir)
+    return GitRepository.from_git_clone(url=clone_url, output_dir=repo_dir)
 
 
 class FeatureBranch:

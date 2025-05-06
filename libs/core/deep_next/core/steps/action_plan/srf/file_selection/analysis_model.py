@@ -2,7 +2,6 @@ import json
 
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
 
 overview_desc = (
     "Analyze all available knowledge, file dependencies, code location, import "
@@ -43,9 +42,17 @@ next_steps_desc = (
 )
 
 
-class RelevantFile(TypedDict):
+class RelevantFile(BaseModel):
     path: str
     explanation: str
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def __eq__(self, other):
+        if isinstance(other, RelevantFile):
+            return self.path == other.path
+        return False
 
 
 class Analysis(BaseModel):
@@ -60,16 +67,6 @@ class Analysis(BaseModel):
     @property
     def json_str(self) -> str:
         return json.dumps(self.model_dump())
-
-    @classmethod
-    def empty(cls):
-        return cls(
-            overview="",
-            relevant_files_so_far=[],
-            reasoning="",
-            unknowns=[],
-            next_steps=[],
-        )
 
 
 analysis_parser = PydanticOutputParser(pydantic_object=Analysis)

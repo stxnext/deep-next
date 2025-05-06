@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Annotated, Literal, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.config import SRFConfig
 from deep_next.core.steps.action_plan.srf.common import (
     _create_llm_analyze,
@@ -13,6 +12,7 @@ from deep_next.core.steps.action_plan.srf.common import (
 )
 from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
     Analysis,
+    RelevantFile,
     analysis_parser,
     example_output_next_steps,
     example_output_select_files,
@@ -147,8 +147,8 @@ class State(TypedDict):
     _messages: Annotated[list[AnyMessage], operator.add]
 
     # Output
-    relevant_files: list[Path] | None
-    invalid_files: list[Path] | None
+    relevant_files: list[RelevantFile] | None
+    invalid_files: list[RelevantFile] | None
 
 
 def _fix_invalid_analysis(e: OutputParserException) -> Analysis | None:
@@ -187,15 +187,16 @@ def _invoke_fixable_llm_analysis_chain(
 
 
 def _call_analyze_llm(state: State) -> Analysis:
+    relevant_files_so_far_str = json.dumps(
+        [f.model_dump() for f in state["_current_analysis"].relevant_files_so_far]
+    )
+
     messages = [
         ("system", AnalyzeKnowledgePrompt.role_description),
         HumanMessage(state["query"]),
         ("human", AnalyzeKnowledgePrompt.additional_context),
         HumanMessage(f"Previous overview:\n{state['_current_analysis'].overview}"),
-        HumanMessage(
-            f"Previously relevant files:"
-            f"\n{json.dumps(state['_current_analysis'].relevant_files_so_far)}"
-        ),
+        HumanMessage(f"Previously relevant files:" f"\n{relevant_files_so_far_str}"),
         HumanMessage(f"Previous reasoning:\n{state['_current_analysis'].reasoning}"),
         HumanMessage(
             f"Previous unknowns:" f"\n{json.dumps(state['_current_analysis'].unknowns)}"
@@ -221,7 +222,7 @@ def _call_analyze_llm(state: State) -> Analysis:
     return _invoke_fixable_llm_analysis_chain(prompt, data)
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def analyze_knowledge(state: State) -> dict:
         """
@@ -270,11 +271,11 @@ class _Node(BaseNode):
                 f"decision. Next steps: `{state['_current_analysis'].next_steps}`"
             )
 
-        relevant_files, invalid_files = validate_files(
+        valid_files, invalid_files = validate_files(
             state["_current_analysis"].relevant_files_so_far, state["root_path"]
         )
 
-        return {"relevant_files": relevant_files, "invalid_files": invalid_files}
+        return {"relevant_files": valid_files, "invalid_files": invalid_files}
 
 
 def _is_analysis_stuck(state: State) -> bool:
@@ -370,7 +371,7 @@ class FileSelectionGraph(BaseGraph):
         query: str,
         root_path: Path,
         print_conversations: bool = False,
-    ) -> list[Path]:
+    ) -> list[RelevantFile]:
         initial_state = self.create_init_state(
             query=query,
             root_path=root_path,
