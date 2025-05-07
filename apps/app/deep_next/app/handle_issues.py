@@ -28,6 +28,7 @@ def _create_mr_and_comment(
     ref_branch: str,
     deep_next_state: DeepNextState = DeepNextState.PENDING_E2E,
 ):
+    """Create an MR/PR to solve an issue and link the MR/PR in an issue's comment."""
     try:
         issue.remove_label(deep_next_state)
 
