@@ -18,12 +18,11 @@ for dir_path in [DATA_DIR, RESULTS_DIR, REPOSITORIES_DIR]:
 
 REF_BRANCH = "develop"
 
-FEATURE_BRANCH_NAME_TMPL = "deep_next/issue_{issue_no}/{note}"
 
 SCHEDULE_INTERVAL_ENV_VAR = "DEEP_NEXT_SCHEDULE_INTERVAL"
 
 
-class DeepNextState(Enum):
+class DeepNextLabel(Enum):
     """State of the DeepNext process."""
 
     PENDING_E2E = "deep_next"

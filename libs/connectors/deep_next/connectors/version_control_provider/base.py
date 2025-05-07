@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 
 from deep_next.app.common import extract_issue_number_from_mr
-from deep_next.app.config import DeepNextState
+from deep_next.app.config import DeepNextLabel
 from deep_next.connectors.version_control_provider.utils import label_to_str
 
 
@@ -143,21 +143,25 @@ class BaseMR(ABC):
         """Returns the labels of the MR."""
 
     @abstractmethod
-    def add_label(self, label: str | DeepNextState):
+    def add_label(self, label: str | DeepNextLabel):
         """Add a label to the MR."""
 
     @abstractmethod
-    def remove_label(self, label: str | DeepNextState):
+    def remove_label(self, label: str | DeepNextLabel):
         """Remove a label from the MR."""
 
     @abstractmethod
     def add_comment(self, comment: str, info_header: bool = False) -> None:
         """Adds a comment to the MR."""
 
+    @property
+    @abstractmethod
+    def comments(self) -> list[BaseComment]:
+        """Returns the comments of the MR."""
 
 class BaseConnector(ABC):
     @abstractmethod
-    def list_issues(self, label=None) -> list[BaseIssue]:
+    def list_issues(self, label: str | Enum | None = None) -> list[BaseIssue]:
         """Fetches all issues"""
 
     @abstractmethod

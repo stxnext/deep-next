@@ -4,11 +4,11 @@ from typing import Iterable
 import gitlab
 
 from deep_next.app.common import format_comment_with_header
-from deep_next.app.config import DeepNextState
+from deep_next.app.config import DeepNextLabel
 from deep_next.connectors.version_control_provider.base import (
     BaseConnector,
     BaseIssue,
-    BaseMR,
+    BaseMR, BaseComment,
 )
 from gitlab.v4.objects.discussions import ProjectIssueDiscussion
 from gitlab.v4.objects.issues import ProjectIssue
@@ -30,6 +30,21 @@ def filter_by_label(issues_or_mrs: list, label: str) -> list:
     """Filter issues or labels by label."""
     return [issue_or_mr for issue_or_mr in issues_or_mrs if label in issue_or_mr.labels]
 
+
+class GitLabComment(BaseComment):
+    def __init__(self, comment: ProjectIssueDiscussion):
+        self._comment = comment
+
+    @property
+    def body(self) -> str:
+        return self._comment.body
+
+    def edit(self, body: str) -> None:
+        self._comment.update(body=body)
+
+    @property
+    def author(self) -> str:
+        return self._comment.author["name"]
 
 class GitLabIssue(BaseIssue):
     def __init__(self, issue: ProjectIssue):
@@ -170,13 +185,13 @@ class GitLabMR(BaseMR):
         """Returns the labels of the MR."""
         return self._mr.labels
 
-    def add_label(self, label: str | DeepNextState):
+    def add_label(self, label: str | DeepNextLabel):
         """Add a label to the MR."""
         label = label_to_str(label)
         # TODO(iwanicki): Replace with the proper implementation.
         self._mr.add_to_labels(label)
 
-    def remove_label(self, label: str | DeepNextState):
+    def remove_label(self, label: str | DeepNextLabel):
         """Remove a label from the MR."""
         label = label_to_str(label)
         # TODO(iwanicki): Replace with the proper implementation.
@@ -185,6 +200,11 @@ class GitLabMR(BaseMR):
     def add_comment(self, comment: str, info_header: bool = False) -> None:
         """Adds a comment to the MR."""
         self._mr.notes.create({"body": comment})
+
+    @property
+    def comments(self) -> list[BaseComment]:
+        """Returns the comments of the MR."""
+        return [GitLabComment(comment) for comment in self._mr.notes.list()]  # TODO(iwanicki): Handle the correct type.
 
 class GitLabConnector(BaseConnector):
     def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
@@ -196,8 +216,9 @@ class GitLabConnector(BaseConnector):
 
         self.project_id = self.project.id
 
-    def list_issues(self, label=None) -> list[GitLabIssue]:
+    def list_issues(self, label: str | Enum | None = None) -> list[GitLabIssue]:
         """Fetches all issues"""
+        label = label_to_str(label)
         all_issues = self.project.issues.list(all=True)
         issues = filter_by_label(all_issues, label) if label else all_issues
 

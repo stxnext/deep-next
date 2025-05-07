@@ -1,13 +1,14 @@
 from loguru import logger
 
+from deep_next.app.common import create_feature_branch_name, DEEP_NEXT_PR_DESCRIPTION
 from deep_next.app.config import (
     REF_BRANCH,
     REPOSITORIES_DIR,
-    DeepNextState,
+    DeepNextLabel,
 )
-from deep_next.app.git import GitRepository, setup_local_git_repo
-from deep_next.app.handle_issues import handle_e2e, handle_human_in_the_loop
-from deep_next.app.handle_mrs import handle_mr_e2e
+from deep_next.app.git import GitRepository, setup_local_git_repo, FeatureBranch
+from deep_next.app.handle_mr.e2e import handle_mr_e2e
+from deep_next.app.handle_mr.hitl import handle_mr_human_in_the_loop
 from deep_next.app.utils import get_connector
 from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
 from deep_next.connectors.version_control_provider import (
@@ -35,24 +36,65 @@ ACTION_PLAN_RESPONSE_INSTRUCTIONS = (
 )
 
 
-def find_issues(vcs_connector: BaseConnector, label: DeepNextState) -> list[BaseIssue]:
-    """Fetches all issues to be solved by DeepNext.
+def create_mr_and_comment(
+    vcs_config: VCSConfig,
+    issue: BaseIssue,
+    local_repo: GitRepository,
+    ref_branch: str,
+    deep_next_state: DeepNextLabel,
+):
+    """Create an MR/PR to solve an issue and link the MR/PR in an issue's comment."""
+    try:
+        issue.remove_label(deep_next_state)
 
-    Excludes labels that are not allowed to be processed.
-    """
+        feature_branch: FeatureBranch = local_repo.new_feature_branch(
+            ref_branch,
+            feature_branch=create_feature_branch_name(issue.no),
+        )
 
-    return vcs_connector.list_issues(label=label.value)
+        change_id = feature_branch.make_temporary_change()
+        feature_branch.commit_all("Temporary change - undo after MR is created.")
+        feature_branch.push_to_remote()
+
+        mr = vcs_config.create_mr(
+            merge_branch=feature_branch.name,
+            into_branch=ref_branch,
+            title=f"Resolve '{issue.title}'",
+            description=f"{DEEP_NEXT_PR_DESCRIPTION.format(issue_no=issue.no)}"
+                        f"\n\nDo not modify this part of the description. You can add additional information below this line."
+                        f"\n\n---\n\n",
+            issue=issue,
+        )
+
+        feature_branch.remove_temporary_change(change_id)
+        feature_branch.commit_all("Temporary change undone.")
+        feature_branch.push_to_remote()
+
+        mr.add_label(deep_next_state)
+
+        message = (
+            f"Assigned feature branch: `{feature_branch.name}`"
+            f"\n"
+            f"\n🟢 Issue #{issue.no} solution: {mr.url}"
+        )
+
+        issue.add_comment(message, info_header=True)
+        logger.info(message)
+    except Exception as e:
+        message = f"🔴 Failed to create MR/PR:\n\n{e}"
+        logger.info(message)
+        issue.add_comment(message, info_header=True)
 
 
-def find_mrs(vcs_connector: BaseConnector, label: DeepNextState) -> list[BaseMR]:
+def find_mrs(vcs_connector: BaseConnector, label: DeepNextLabel) -> list[BaseMR]:
     """Fetches all merge requests to be solved by DeepNext.
 
     Excludes labels that are not allowed to be processed.
     """
     excluding_labels = [
-        DeepNextState.FAILED.value,
-        DeepNextState.SOLVED.value,
-        DeepNextState.IN_PROGRESS.value,
+        DeepNextLabel.FAILED.value,
+        DeepNextLabel.SOLVED.value,
+        DeepNextLabel.IN_PROGRESS.value,
     ]
 
     resp = []
@@ -291,20 +333,23 @@ def handle_issues(vcs_config: VCSConfig) -> None:
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
-    for issue in find_issues(vcs_connector, label=DeepNextState.PENDING_E2E):
-        handle_e2e(
+
+    for issue in vcs_connector.list_issues(label=DeepNextLabel.PENDING_E2E):
+        create_mr_and_comment(
             vcs_config,
             issue,
             local_repo,
-            ref_branch=REF_BRANCH
+            ref_branch=REF_BRANCH,
+            deep_next_state=DeepNextLabel.PENDING_E2E,
         )
 
-    for issue in find_issues(vcs_connector, label=DeepNextState.PENDING_HITL):
-        handle_human_in_the_loop(
+    for issue in vcs_connector.list_issues(label=DeepNextLabel.PENDING_HITL):
+        create_mr_and_comment(
             vcs_config,
             issue,
             local_repo,
-            ref_branch=REF_BRANCH
+            ref_branch=REF_BRANCH,
+            deep_next_state=DeepNextLabel.PENDING_HITL,
         )
 
 
@@ -316,8 +361,15 @@ def handle_mrs(vcs_config: VCSConfig) -> None:
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
-    for mr in find_mrs(vcs_connector, label=DeepNextState.PENDING_E2E):
+    for mr in find_mrs(vcs_connector, label=DeepNextLabel.PENDING_E2E):
         handle_mr_e2e(
+            mr,
+            local_repo,
+            vcs_connector,
+        )
+
+    for mr in find_mrs(vcs_connector, label=DeepNextLabel.PENDING_HITL):
+        handle_mr_human_in_the_loop(
             mr,
             local_repo,
             vcs_connector,

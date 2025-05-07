@@ -3,10 +3,8 @@ import textwrap
 from enum import Enum
 from typing import List
 
-from deep_next.app.common import format_comment_with_header, \
-    extract_issue_number_from_mr
-from deep_next.app.config import DeepNextState
-from deep_next.app.git import GitRepository
+from deep_next.app.common import format_comment_with_header
+from deep_next.app.config import DeepNextLabel
 from deep_next.connectors.version_control_provider.base import (
     BaseComment,
     BaseConnector,
@@ -196,12 +194,12 @@ class GitHubMR(BaseMR):
         """Returns the labels of the MR."""
         return [label.name for label in self._pr.get_labels()]
 
-    def add_label(self, label: str | DeepNextState):
+    def add_label(self, label: str | DeepNextLabel):
         """Add a label to the MR."""
         label = label_to_str(label)
         self._pr.add_to_labels(label)
 
-    def remove_label(self, label: str | DeepNextState):
+    def remove_label(self, label: str | DeepNextLabel):
         """Remove a label from the MR."""
         label = label_to_str(label)
         self._pr.remove_from_labels(label)
@@ -213,12 +211,18 @@ class GitHubMR(BaseMR):
 
         self._pr.create_issue_comment(comment)
 
+    @property
+    def comments(self) -> list[GitHubComment]:
+        """Returns the comments of the MR."""
+        return [GitHubComment(comment) for comment in self._pr.get_issue_comments()]
+
 class GitHubConnector(BaseConnector):
     def __init__(self, *_, token: str, repo_name: str):
         self.github = Github(token)
         self.repo: Repository = self.github.get_repo(repo_name)
 
-    def list_issues(self, label: str | None = None) -> List[GitHubIssue]:
+    def list_issues(self, label: str | Enum | None = None) -> List[GitHubIssue]:
+        label = label_to_str(label)
         if label:
             try:
                 issues = list(
