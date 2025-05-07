@@ -182,7 +182,13 @@ def main() -> None:
 
 if __name__ == "__main__":
     from deep_next.common.common import load_monorepo_dotenv
+    import os
 
     load_monorepo_dotenv()
+
+    # Configure loguru logging level from LOG_LEVEL env var, default to INFO
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
 
     main()
