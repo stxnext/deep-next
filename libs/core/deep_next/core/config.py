@@ -8,7 +8,7 @@ ROOT_DIR = SRC_DIR.parent.parent  # 🛠core
 DATA_DIR = MONOREPO_DATA_PATH / "core"
 DATA_DIR.mkdir(exist_ok=True, parents=True)
 
-AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS = 2
+AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS = 1
 
 
 class SRFConfig:
