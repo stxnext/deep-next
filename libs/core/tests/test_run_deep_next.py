@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from deep_next.common.utils.fs import tmp_git_dir
-from deep_next.core.graph import deep_next_graph
+from deep_next.core.graph import DeepNextResult, deep_next_graph
 from tests.utils import EXAMPLE_REPO_ROOT_DIR, clean
 
 _problem_statement = (
@@ -48,9 +48,9 @@ def test_run_deep_next(
     root_dir: Path, problem_statement: str, hints: str, expected: str
 ) -> None:
     with tmp_git_dir(root_dir) as git_root_dir:
-        git_diff: str = deep_next_graph(
+        result: DeepNextResult = deep_next_graph(
             problem_statement=problem_statement,
             hints="\n".join(hints),
             root=git_root_dir,
         )
-        assert clean(git_diff) == clean(expected)
+        assert clean(result.git_diff) == clean(expected)
