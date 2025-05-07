@@ -35,6 +35,7 @@ DeepNext operates through a pipeline that handles the entire software engineerin
   - Generates comprehensive git diff for review
 - **Outputs**: Complete implementation as **git diff** or **pull/merge request**
 
+
 ## Project Structure
 
 The project is structured as a monorepo with specialized components:
