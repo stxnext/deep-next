@@ -1,3 +1,4 @@
+import os
 import time
 from datetime import datetime
 
@@ -20,6 +21,11 @@ from deep_next.connectors.version_control_provider import (
 )
 from deep_next.core.entrypoint import main as deep_next_pipeline
 from loguru import logger
+
+# Set Loguru logging level from LOG_LEVEL env variable (default: INFO)
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+logger.remove()
+logger.add(lambda msg: print(msg, end=""), level=LOG_LEVEL)
 
 
 def _create_feature_branch_name(issue_no: int) -> str:
