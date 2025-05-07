@@ -50,7 +50,7 @@ def test_run_deep_next(
     with tmp_git_dir(root_dir) as git_root_dir:
         result: DeepNextResult = deep_next_graph(
             problem_statement=problem_statement,
-            hints="\n".join(hints),
+            hints=hints,
             root=git_root_dir,
         )
         assert clean(result.git_diff) == clean(expected)
