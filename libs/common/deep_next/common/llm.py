@@ -51,14 +51,12 @@ class Model(str, Enum):
     GPT_4O_2024_08_06 = "gpt-4o-2024-08-06"
     GPT_4_1_2025_04_14 = "gpt-4.1-2025-04-14"
 
-    OLLAMA_LLAMA3 = "llama3"
-    OLLAMA_MISTRAL = "mistral"
-    OLLAMA_CODELLAMA = "codellama"
-    OLLAMA_GEMMA = "gemma3"
+    OLLAMA_GEMMA = "gemma3:4b"
     OLLAMA_GEMMA_12B_QAT = "gemma3:12b-it-qat"
+    OLLAMA_GEMMA_27B_QAT = "gemma3:27b-it-qat"
     OLLAMA_CODELLAMA_PYTHON = "codellama:python"
     OLLAMA_DEEPCODER = "deepcoder"
-    OLLAMA_QWEN = "qwen3"
+    OLLAMA_QWEN_14B = "qwen3:14b"
 
     @property
     def provider(self) -> Provider:
@@ -73,14 +71,12 @@ _provider = {
     Model.GPT_4O_MINI_2024_07_18: Provider.OPENAI,
     Model.GPT_4O_2024_08_06: Provider.OPENAI,
     Model.GPT_4_1_2025_04_14: Provider.OPENAI,
-    Model.OLLAMA_LLAMA3: Provider.OLLAMA,
-    Model.OLLAMA_MISTRAL: Provider.OLLAMA,
-    Model.OLLAMA_CODELLAMA: Provider.OLLAMA,
     Model.OLLAMA_GEMMA: Provider.OLLAMA,
     Model.OLLAMA_GEMMA_12B_QAT: Provider.OLLAMA,
+    Model.OLLAMA_GEMMA_27B_QAT: Provider.OLLAMA,
     Model.OLLAMA_CODELLAMA_PYTHON: Provider.OLLAMA,
     Model.OLLAMA_DEEPCODER: Provider.OLLAMA,
-    Model.OLLAMA_QWEN: Provider.OLLAMA,
+    Model.OLLAMA_QWEN_14B: Provider.OLLAMA,
 }
 
 
