@@ -37,7 +37,7 @@ class GitLabComment(BaseComment):
 
     @property
     def body(self) -> str:
-        return self._comment.body
+        return self._comment.body.replace("\r\n", "\n")
 
     def edit(self, body: str) -> None:
         self._comment.update(body=body)

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from deep_next.common.common import prepare_issue_statement
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.steps.action_plan import action_plan_graph
 from deep_next.core.steps.action_plan.data_model import ActionPlan
@@ -15,23 +16,48 @@ from pydantic import BaseModel, Field
 class _StateActionPlan(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
-    problem_statement: str = Field(description="The issue title and body.")
-    hints: str = Field(description="Comments made on the issue.")
+    issue_title: str = Field(description="The issue title.")
+    issue_description: str = Field(description="The issue description.")
+    issue_comments: list[str] = Field(
+        default_factory=list,
+        description="Comments made on the issue."
+    )
 
     project_knowledge: str | None = Field(default=None)
     action_plan: ActionPlan | None = Field(default=None)
+
+    @property
+    def issue_statement(self) -> str:
+        return prepare_issue_statement(
+            issue_title=self.issue_title,
+            issue_description=self.issue_description,
+            issue_comments=self.issue_comments,
+        )
 
 
 class _StateImplement(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
-    problem_statement: str = Field(description="Problem statement.")
+    issue_title: str = Field(description="The issue title.")
+    issue_description: str = Field(description="The issue description.")
+    issue_comments: list[str] = Field(
+        default_factory=list,
+        description="Comments made on the issue."
+    )
     action_plan: ActionPlan | None = Field(default=None)
 
     git_diff: str | None = Field(
         default=None,
         description="Final result: git diff of the changes made to the source code.",
     )
+
+    @property
+    def issue_statement(self) -> str:
+        return prepare_issue_statement(
+            issue_title=self.issue_title,
+            issue_description=self.issue_description,
+            issue_comments=self.issue_comments,
+        )
 
 
 class _NodeActionPlan:
@@ -47,7 +73,7 @@ class _NodeActionPlan:
     def create_action_plan(state: _StateActionPlan) -> dict:
         init_state = action_plan_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             project_knowledge=state.project_knowledge,
         )
         final_state = action_plan_graph.compiled.invoke(init_state)
@@ -60,7 +86,7 @@ class _NodeImplement:
     def implement(state: _StateImplement) -> dict:
         init_state = implement_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             action_plan=state.action_plan,
         )
         final_state = implement_graph.compiled.invoke(init_state)
@@ -71,7 +97,7 @@ class _NodeImplement:
     def review_code(state: _StateImplement) -> dict:
         initial_state = code_review_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             project_knowledge=state.project_knowledge,
             git_diff=state.git_diff,
         )
@@ -99,19 +125,20 @@ class DeepNextActionPlanGraph(BaseGraph):
         self.add_quick_edge(_NodeActionPlan.create_action_plan, END)
 
     def create_init_state(
-        self, root_path: Path, problem_statement: str, hints: str = ""
+        self, root_path: Path, issue_title: str, issue_description: str, issue_comments: list[str]
     ) -> _StateActionPlan:
         return _StateActionPlan(
             root_path=root_path,
-            problem_statement=problem_statement,
-            hints=hints,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments
         )
 
     def __call__(
-        self, *_, root_path: Path, problem_statement: str, hints: str = ""
+        self, *_, root_path: Path, issue_title: str, issue_description: str, issue_comments: list[str]
     ) -> ActionPlan:
         initial_state = self.create_init_state(
-            root_path=root_path, problem_statement=problem_statement, hints=hints
+            root_path=root_path, issue_title=issue_title, issue_description=issue_description, issue_comments=issue_comments
         )
         final_state = self.compiled.invoke(initial_state)
 
@@ -137,12 +164,16 @@ class DeepNextImplementGraph(BaseGraph):
     def create_init_state(
         self,
         root_path: Path,
-        problem_statement: str,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str],
         action_plan: ActionPlan,
     ) -> _StateImplement:
         return _StateImplement(
             root_path=root_path,
-            problem_statement=problem_statement,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments,
             action_plan=action_plan,
         )
 
@@ -150,12 +181,16 @@ class DeepNextImplementGraph(BaseGraph):
         self,
         *_,
         root_path: Path,
-        problem_statement: str,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str],
         action_plan: ActionPlan,
     ) -> str:
         initial_state = self.create_init_state(
             root_path=root_path,
-            problem_statement=problem_statement,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments,
             action_plan=action_plan,
         )
         final_state = self.compiled.invoke(initial_state)

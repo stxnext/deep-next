@@ -26,8 +26,9 @@ def _solve_issue_e2e(
     try:
         deep_next_graph(
             root=local_repo.repo_dir,
-            problem_statement=issue.title + "\n" + issue.description,
-            hints="",
+            issue_title=issue.title,
+            issue_description=issue.description,
+            issue_comments=[],
         )
     finally:
         exec_time = time.time() - start_time

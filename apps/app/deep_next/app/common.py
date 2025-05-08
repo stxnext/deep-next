@@ -50,6 +50,6 @@ def format_comment_with_header(comment: str) -> str:
 def trimm_comment_header(comment: str) -> str:
     """Trims the header from the comment."""
     if comment.startswith(_COMMENT_HEADER):
-        return comment[len(_COMMENT_HEADER) + 1:].strip()
+        return comment[len(_COMMENT_HEADER):].strip()
 
     return comment

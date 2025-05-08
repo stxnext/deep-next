@@ -49,6 +49,10 @@ class BaseIssue(ABC):
         """"""
 
     @property
+    def issue_statement(self) -> str:
+        return self.title + "\n\n" + self.description
+
+    @property
     @abstractmethod
     def comments(self) -> list[BaseComment]:
         """"""
