@@ -1,5 +1,4 @@
 import re
-import textwrap
 from enum import Enum
 from typing import List
 
@@ -79,46 +78,10 @@ class GitHubIssue(BaseIssue):
             comment = format_comment_with_header(comment)
 
         self._create_comment(comment)
-        return
-
-        ###
-        if independent:
-            self._create_comment(comment)
-
-        if self._anchor_comment is None:
-            self._anchor_comment = self._get_or_create_anchor_comment()
-
-        body = self.prettify_comment(comment)
-
-        if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
-
-        updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
-        self._anchor_comment.edit(updated_body)
 
     def _create_comment(self, body: str) -> GitHubComment:
         """Create a new comment."""
         return GitHubComment(self._issue.create_comment(body))
-
-    def _get_or_create_anchor_comment(self) -> GitHubComment:
-        """Find existing DeepNext thread or create a new one."""
-        for issue_comment in self._issue.get_comments():
-            if issue_comment.body.startswith(self._comment_prefix):
-                return GitHubComment(issue_comment)
-
-        return self._create_comment(self.comment_thread_header)
-
-    @staticmethod
-    def _format_file_attachment(filename: str, content: str) -> str:
-        """Simulate file attachment using Markdown code block."""
-        return textwrap.dedent(
-            f"""\
-            **Attached file** `{filename}`:
-            ```text
-            {content}
-            ```
-        """
-        )
 
     def add_label(self, label: str | Enum) -> None:
         label = label_to_str(label)
@@ -277,6 +240,5 @@ class GitHubConnector(BaseConnector):
             head=merge_branch,
             base=into_branch,
             body=description,
-            # issue=issue._issue
         )
         return GitHubMR(pr)

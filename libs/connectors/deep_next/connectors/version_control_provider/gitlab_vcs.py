@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Iterable
 
 import gitlab
 
@@ -86,7 +85,6 @@ class GitLabIssue(BaseIssue):
         if info_header:
             comment = format_comment_with_header(comment)
 
-        # TODO(iwanicki): Handle the situiation when a comment is added to a discussion after the user added a comment.
         if self._discussion is None:
             self._discussion = self._issue.discussions.create(
                 {"body": self.comment_thread_header}
@@ -188,13 +186,13 @@ class GitLabMR(BaseMR):
     def add_label(self, label: str | DeepNextLabel):
         """Add a label to the MR."""
         label = label_to_str(label)
-        # TODO(iwanicki): Replace with the proper implementation.
+        # TODO: Replace with the proper implementation.
         self._mr.add_to_labels(label)
 
     def remove_label(self, label: str | DeepNextLabel):
         """Remove a label from the MR."""
         label = label_to_str(label)
-        # TODO(iwanicki): Replace with the proper implementation.
+        # TODO: Replace with the proper implementation.
         self._mr.remove_from_labels(label)
 
     def add_comment(self, comment: str, info_header: bool = False) -> None:
@@ -204,7 +202,8 @@ class GitLabMR(BaseMR):
     @property
     def comments(self) -> list[BaseComment]:
         """Returns the comments of the MR."""
-        return [GitLabComment(comment) for comment in self._mr.notes.list()]  # TODO(iwanicki): Handle the correct type.
+        # TODO: Replace with the proper implementation.
+        return [GitLabComment(comment) for comment in self._mr.notes.list()]
 
 class GitLabConnector(BaseConnector):
     def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
