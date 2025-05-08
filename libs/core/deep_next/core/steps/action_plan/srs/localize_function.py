@@ -79,7 +79,7 @@ def _create_llm_agent() -> RunnableSerializable:
 
 
 def localize_function_from_compressed_files(
-    file_names: list[Path],
+    file_paths: list[Path],
     structure: dict,
     problem_statement: str,
 ):
@@ -94,7 +94,7 @@ def localize_function_from_compressed_files(
         "src/models/foo.py": "class: MyClass3\nfunction: my_function_2\n variable: foo",
     }
     """
-    file_contents = get_repo_files(structure, file_names)
+    file_contents = get_repo_files(structure, file_paths)
     compressed_file_contents = {
         fn: get_skeleton(code) for fn, code in file_contents.items()
     }
@@ -111,7 +111,7 @@ def localize_function_from_compressed_files(
         }
     )
 
-    model_found_locs_separated = extract_locs_for_files([raw_output.dump()], file_names)
+    model_found_locs_separated = extract_locs_for_files([raw_output.dump()], file_paths)
 
     return model_found_locs_separated
 

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.project_info import ProjectInfo, get_project_info
 from deep_next.core.steps.action_plan.srf.graph import SelectRelatedFilesGraph
 from deep_next.core.steps.gather_project_knowledge.project_description.generate_project_description import (  # noqa: E501
@@ -30,7 +29,7 @@ class _State(BaseModel):
     project_description_output: str
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def generate_questions(state: _State) -> dict:
         project_tree = tree(path=state.root_path)
@@ -60,7 +59,9 @@ class _Node(BaseNode):
         )
 
         return {
-            "related_files": final_srf_state["final_results"],
+            "related_files": [
+                Path(result.path) for result in final_srf_state["final_results"]
+            ],
         }
 
     @staticmethod

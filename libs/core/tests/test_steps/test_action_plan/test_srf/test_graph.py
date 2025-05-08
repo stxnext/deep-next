@@ -21,11 +21,12 @@ def test_find_files_graph(
     root_path: Path,
     expected_files: list[Path],
 ) -> None:
-    files, _, _ = select_related_files_graph(
+    relevant_files, _, _ = select_related_files_graph(
         root_path=root_path,
         query=query,
     )
+    relevant_paths = [Path(file.path) for file in relevant_files]
 
     assert all(
-        path in files for path in expected_files
-    ), f"expected files: {expected_files}\nfound files: {files}"
+        path in relevant_paths for path in expected_files
+    ), f"expected files: {expected_files}\nfound files: {relevant_paths}"

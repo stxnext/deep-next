@@ -4,6 +4,7 @@ from pathlib import Path
 from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
     RelevantFile,
 )
+from loguru import logger
 
 
 def tools_to_json(tools):
@@ -22,17 +23,21 @@ def tools_to_json(tools):
 
 def validate_files(
     files: list[RelevantFile], root_path: Path
-) -> tuple[list[Path], list[Path]]:
-    relevant_files = []
-    invalid_files = []
+) -> tuple[list[RelevantFile], list[RelevantFile]]:
+    valid = []
+    invalid = []
     for file in files:
-        try:
-            path = root_path / Path(file["path"])
-            if path.is_file():
-                relevant_files.append(path)
-            else:
-                invalid_files.append(path)
-        except ValueError:
-            pass
+        path = root_path / Path(file.path)
 
-    return relevant_files, invalid_files
+        if path.is_file():
+            valid.append(RelevantFile(path=str(path), explanation=file.explanation))
+        else:
+            logger.warning(f"File not found: {path}")
+            invalid.append(
+                RelevantFile(
+                    path=str(file.path),
+                    explanation=f"[Invalid path] {file.explanation}",
+                )
+            )
+
+    return valid, invalid

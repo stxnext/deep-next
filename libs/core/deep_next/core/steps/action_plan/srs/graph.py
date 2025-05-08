@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Annotated, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.base_node import BaseNode
 from deep_next.core.config import SRSConfig
 from deep_next.core.steps.action_plan.srs._agentless import (
     create_structure,
@@ -62,7 +61,7 @@ class _State(TypedDict):
     """A dict mapping file names to specific lines in the file."""
 
 
-class _Node(BaseNode):
+class _Node:
     @staticmethod
     def localize_function(state: _State) -> dict:
         """Localize the function in the given file."""
@@ -162,8 +161,8 @@ class SelectRelatedSnippetsGraph(BaseGraph):
 
     def __call__(
         self,
-        problem_statement: str,
         root_path: Path,
+        problem_statement: str,
         files: list[Path],
         structure: dict | None = None,
     ) -> dict[str, list[list[int]]]:
