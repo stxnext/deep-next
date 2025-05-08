@@ -9,7 +9,7 @@ from pydantic_core._pydantic_core import ValidationError
 from deep_next.app.common import trimm_comment_header
 from deep_next.app.config import DeepNextLabel
 from deep_next.app.git import GitRepository
-from deep_next.app.utils import convert_paths_to_str
+from deep_next.app.utils import convert_paths_to_str, convert_str_to_paths
 from deep_next.connectors.version_control_provider import BaseMR, BaseConnector
 from deep_next.connectors.version_control_provider.base import BaseComment
 from deep_next.core.graph_hitl import deep_next_action_plan_graph, deep_next_implement_graph
@@ -204,7 +204,9 @@ def _implement_action_plan(
 ) -> float:
     """Implement an action plan."""
     try:
-        action_plan = ActionPlan.model_validate(json.loads(action_plan))
+        action_plan = json.loads(action_plan)
+        action_plan = convert_str_to_paths(action_plan)
+        action_plan = ActionPlan.model_validate(action_plan)
     except (ValidationError, JSONDecodeError) as e:
         raise ActionPlanParserError(str(e))
 
@@ -292,10 +294,13 @@ def handle_mr_human_in_the_loop(
                 mr.add_comment(message, info_header=True)
                 return False
 
-            logger.success(
+            message = (
                 f"🟢 Issue #{issue_no} solved."
                 f"\nDeepNext core total execution time: {execution_time:.0f} seconds"
             )
+            logger.success(message)
+            mr.add_comment(message, info_header=True)
+            mr.add_label(DeepNextLabel.SOLVED)
 
         success = True
 
