@@ -3,7 +3,8 @@ from loguru import logger
 
 
 def load_monorepo_dotenv() -> None:
-    """Loads the .env file from the monorepo root."""
+    """Loads the .env file from the monorepo root and sets Loguru log level."""
+    import os
     from deep_next.common.config import MONOREPO_ROOT_PATH
 
     path = MONOREPO_ROOT_PATH / ".env"
@@ -11,9 +12,12 @@ def load_monorepo_dotenv() -> None:
     if not path.exists():
         raise FileNotFoundError(f"No .env file found: {path}")
 
-    logger.debug(f"Loading .env file: '{str(path)}'")
-
     assert load_dotenv(path, verbose=True, override=True)
+
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
+    logger.debug(f"Loading .env file: '{str(path)}' with LOG_LEVEL={log_level}")
 
 
 def gitignore_name(name: str) -> str:
