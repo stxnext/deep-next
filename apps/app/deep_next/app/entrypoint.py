@@ -17,25 +17,6 @@ from deep_next.connectors.version_control_provider import (
     BaseMR,
 )
 
-MESSAGE_TO_DEEPNEXT_PREFIX = "@deepnext"
-
-ACTION_PLAN_PREFIX = "## Action Plan"
-ACTION_PLAN_RESPONSE_INSTRUCTIONS = (
-    "## How to respond?"
-    "\nTo ACCEPT the action plan, respond with:"
-    "\n```"
-    f"\n{MESSAGE_TO_DEEPNEXT_PREFIX}"
-    "\nOK"
-    "\n```"
-    "\n"
-    "\nTo REQUEST CHANGES to the action plan, talk to DeepNext using the following message format:"  # noqa: E501
-    "\n```"
-    f"\n{MESSAGE_TO_DEEPNEXT_PREFIX}"
-    "\n*<message to deepnext>*"
-    "\n```"
-)
-
-
 def create_mr_and_comment(
     vcs_config: VCSConfig,
     issue: BaseIssue,
@@ -107,14 +88,6 @@ def find_mrs(vcs_connector: BaseConnector, label: DeepNextLabel) -> list[BaseMR]
         resp.append(mr)
 
     return resp
-
-
-def _get_last_action_plan(issue: BaseIssue) -> str | None:
-    for comment in issue.comments[::-1]:
-        if comment.body.startswith(ACTION_PLAN_PREFIX):
-            action_plan = comment.body[len(ACTION_PLAN_PREFIX) :].strip()
-            return action_plan
-    return None
 
 
 def handle_issues(vcs_config: VCSConfig) -> None:

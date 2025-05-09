@@ -2,6 +2,7 @@ import time
 
 from deep_next.app.config import DeepNextLabel
 from deep_next.app.git import GitRepository
+from deep_next.app.handle_mr.messages import msg_deepnext_started, msg_issue_solved
 from deep_next.connectors.version_control_provider import BaseMR, BaseConnector
 from loguru import logger
 
@@ -14,7 +15,7 @@ def _solve_issue_e2e(
     connector: BaseConnector,
 ) -> float:
     """Solves a single issue."""
-    mr.add_comment(f"DeepNext is onto it! Hold on...", info_header=True)
+    mr.add_comment(msg_deepnext_started(), info_header=True)
 
     issue = mr.issue(connector)
     if issue is None:
@@ -34,7 +35,7 @@ def _solve_issue_e2e(
         exec_time = time.time() - start_time
 
     feature_branch = local_repo.get_feature_branch(mr.source_branch_name)
-    feature_branch.commit_all(commit_msg=f"DeepNext resolves #{mr.no}: {mr.title}")
+    feature_branch.commit_all(commit_msg=f"DeepNext resolved #{mr.no}: {mr.title}")
     feature_branch.push_to_remote()
 
     return exec_time
@@ -51,7 +52,7 @@ def handle_mr_e2e(
     success: bool
     try:
         mr.add_label(DeepNextLabel.IN_PROGRESS)
-        execution_time = _solve_issue_e2e(mr, local_repo, vcs_connector)
+        exec_time = _solve_issue_e2e(mr, local_repo, vcs_connector)
     except Exception as e:
         err_msg = f"🔴 DeepNext app failed for MR #{mr.no}: {str(e)}"
         logger.error(f"{err_msg}\n\n{e}")
@@ -61,14 +62,8 @@ def handle_mr_e2e(
 
         success = False
     else:
-        msg = (
-            f"🟢 Issue #{mr.issue(vcs_connector).no} solved."
-           f"\nDeepNext core total execution time: {execution_time:.0f} seconds"
-        )
-        logger.success(msg)
-
+        mr.add_comment(msg_issue_solved(exec_time=exec_time), info_header=True, log='SUCCESS')
         mr.add_label(DeepNextLabel.SOLVED)
-        mr.add_comment(msg, info_header=True)
 
         success = True
     finally:

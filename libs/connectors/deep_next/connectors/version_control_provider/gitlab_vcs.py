@@ -195,8 +195,14 @@ class GitLabMR(BaseMR):
         # TODO: Replace with the proper implementation.
         self._mr.remove_from_labels(label)
 
-    def add_comment(self, comment: str, info_header: bool = False) -> None:
+    def add_comment(self, comment: str, info_header: bool = False, log: int | str | None = None) -> None:
         """Adds a comment to the MR."""
+        if info_header:
+            comment = format_comment_with_header(comment)
+
+        if log is not None:
+            logger.log(log, comment)
+
         self._mr.notes.create({"body": comment})
 
     @property

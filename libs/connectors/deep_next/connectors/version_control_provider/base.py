@@ -155,7 +155,7 @@ class BaseMR(ABC):
         """Remove a label from the MR."""
 
     @abstractmethod
-    def add_comment(self, comment: str, info_header: bool = False) -> None:
+    def add_comment(self, comment: str, info_header: bool = False, log: int | str | None = None) -> None:
         """Adds a comment to the MR."""
 
     @property
