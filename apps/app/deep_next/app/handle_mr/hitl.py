@@ -90,7 +90,7 @@ def _comment_action_plan(
     comment = msg_present_action_plan(action_plan)
 
     if execution_time:
-        step_time_message = _msg_step_exec_time(execution_time)
+        step_time_message = _msg_step_exec_time(execution_time, additional_info="Waiting for your response...")
         comment += (
             f"\n---"
             f"\n{step_time_message}"
@@ -117,6 +117,23 @@ def _propose_action_plan(
     return action_plan, execution_time
 
 
+def _fix_action_plan_prompt(old_action_plan: str, edit_instructions: list[str]) -> str:
+    """Fix the action plan prompt."""
+    edit_instructions = "\n\n".join([f"- {instruction}" for instruction in edit_instructions])
+
+    return (
+        f"The following action plan (describing how to complete the issue) was created:"
+        f"\n```old-action-plan"
+        f"\n{old_action_plan}"
+        f"\n```"
+        f"\nUnfortunately, it turned out to be faulty. The task should be completed following on a new action plan, fixed based collected feedback to the action plan:"
+        f"\n```edit-instructions"
+        f"\n{edit_instructions}"
+        f"\n```"
+        f"\n"
+        f"\nComplete the task by modifying the action plan to fulfill the task. Be as precise as possible. Modify ONLY what has been mentioned in the feedback. Precisely retain and copy each element of the old action plan if there were no objections to it."
+    )
+
 def _fix_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
@@ -129,18 +146,7 @@ def _fix_action_plan(
     issue = mr.issue(vcs_connector)
 
     if old_action_plan and edit_instructions:
-        issue_comment = (
-            f"The following action plan (describing how to complete the issue) was created:"
-            f"\n```old-action-plan"
-            f"\n{old_action_plan}"
-            f"\n```"
-            f"\nUnfortunately, it turned out to be faulty. The task should be completed following on a new action plan, fixed based collected feedback to the action plan:"
-            f"\n```edit-instructions"
-            f"\n{edit_instructions}"
-            f"\n```"
-            f"\n"
-            f"\nComplete the task by modifying the action plan to fulfill the task. Be as precise as possible. Modify ONLY what has been mentioned in the feedback. Precisely retain and copy each element of the old action plan if there were no objections to it."
-        )
+        issue_comment = _fix_action_plan_prompt()
     else:
         issue_comment = ""
 

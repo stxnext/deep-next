@@ -19,9 +19,7 @@ def _solve_issue_e2e(
 
     issue = mr.issue(connector)
     if issue is None:
-        raise ValueError(
-            f"Cannot extract issue number from the MR description."
-        )
+        raise ValueError(f"Cannot extract issue number from the MR description.")
 
     start_time = time.time()
     try:
