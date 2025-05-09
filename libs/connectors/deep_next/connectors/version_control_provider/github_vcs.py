@@ -46,14 +46,22 @@ class GitHubIssue(BaseIssue):
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
     ) -> None:
-        """Create or append to the DeepNext anchor comment."""
+        """Create or append to the DeepNext anchor comment, attach file via Gist."""
         if self._anchor_comment is None:
             self._anchor_comment = self._get_or_create_anchor_comment()
 
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            gist_url = self._create_gist(file_name, file_content)
+            if gist_url:
+                body += (
+                    f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+                )
+            else:
+                body += (
+                    f"\n\n:warning: Failed to attach file `{file_name}` as Gist."
+                )
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)
@@ -79,6 +87,19 @@ class GitHubIssue(BaseIssue):
             ```
         """
         )
+
+    def _create_gist(self, filename: str, content: str) -> str | None:
+        """Create a GitHub Gist and return its URL, or None on failure."""
+        try:
+            gist = self._issue._requester._Github__requester.github.get_user().create_gist(
+                public=False,
+                files={filename: {"content": content}},
+                description=f"Attachment for issue #{self.no}: {filename}",
+            )
+            return gist.html_url
+        except Exception as e:
+            logger.error(f"Failed to create gist for file '{filename}': {e}")
+            return None
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
