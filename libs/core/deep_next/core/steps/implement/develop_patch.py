@@ -27,7 +27,7 @@ class Prompt:
         DEVELOPMENT GUIDELINES
         ------------------------
         - Type Hints: Use type hints to enhance code clarity and maintainability.
-        - Docstrings: Include concise, informative single-line docstrings for all functions and methods.
+        - Docstrings: Include concise, informative single-line docstrings for all new functions and methods (if task doesn't state differently).
         - Line Length: Preferably fit in 88 chars in line.
         - Pythonic Code: Embrace the Zen of Python by writing simple, readable, and direct code.
         ------------------------
@@ -48,6 +48,7 @@ class Prompt:
         ------------------------
         1. File To Change
         The specific file assigned to you that requires modifications.
+        This is part a larger task and you are responsible for only this file.
 
         2. High-lvl description
         High-level description of necessary changes in a given file.
@@ -56,9 +57,14 @@ class Prompt:
         Additional requirements needed in the module to meet the expectations.
 
         4. Issue statement
-        Completes the context for better understanding given requirements.
+        Original issue that defines the full task, from which this file-specific step was derived.
+        Gives broader context to better understand why the change is needed.
+
+        5. Related Changes (Git Diff)
+        A summary of changes from earlier steps in this task, shown as a Git diff.
+        Helps identify reusable code or utilities already implemented in other files, so you can avoid duplication and improve consistency.
         ------------------------
-        """
+        """  # noqa: E501
     )
 
     input_data = textwrap.dedent(
@@ -81,6 +87,10 @@ class Prompt:
         <issue_statement>
         {issue_statement}
         </issue_statement>
+
+        <git_diff>
+        {git_diff}
+        </git_diff>
         ------------------------
         """
     )
@@ -266,7 +276,7 @@ class ParsePatchesError(Exception):
     """Raised for issues encountered during parse patches process."""
 
 
-def develop_single_file_patches(step: Step, issue_statement: str) -> str:
+def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str) -> str:
     if not step.target_file.exists():
         logger.warning(f"Creating new file: '{step.target_file}'")
 
@@ -280,6 +290,7 @@ def develop_single_file_patches(step: Step, issue_statement: str) -> str:
             "high_level_description": step.title,
             "description": step.description,
             "issue_statement": issue_statement,
+            "git_diff": git_diff,
         }
     )
 
