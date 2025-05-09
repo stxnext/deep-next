@@ -36,17 +36,33 @@ class BaseIssue(ABC):
 
     @abstractmethod
     def add_comment(
-        self, comment: str, file_content: str | None = None, file_name="content.txt"
+        self, 
+        comment: str, 
+        file_content: str | None = None, 
+        file_name: str = "content.txt"
     ) -> None:
-        """"""
+        """
+        Add a comment to the issue.
+
+        If file_content is provided, attach the file to the comment.
+        For GitHub, this is implemented by uploading the file as a Gist and
+        including the Gist link in the comment, since GitHub does not support
+        native file attachments in issue comments.
+        For GitLab, native file attachments are supported and should be used.
+
+        Args:
+            comment: The comment text to add.
+            file_content: Optional file content to attach.
+            file_name: The name of the file to attach (default: "content.txt").
+        """
 
     @abstractmethod
     def add_label(self, label: str) -> None:
-        """"""
+        """Add a label to the issue."""
 
     @abstractmethod
     def remove_label(self, label: str) -> None:
-        """"""
+        """Remove a label from the issue."""
 
     @property
     def _comment_prefix(self) -> str:

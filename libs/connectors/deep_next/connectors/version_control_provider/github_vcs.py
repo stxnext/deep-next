@@ -11,6 +11,7 @@ from github.Issue import Issue
 from github.IssueComment import IssueComment
 from github.PullRequest import PullRequest
 from github.Repository import Repository
+from github.Gist import Gist
 from loguru import logger
 
 
@@ -53,10 +54,31 @@ class GitHubIssue(BaseIssue):
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            try:
+                gist_url = self._create_gist(file_name, file_content)
+                body += (
+                    f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+                    f"\n\n<details><summary>Preview</summary>\n\n"
+                    f"```text\n{file_content}\n```\n</details>"
+                )
+            except Exception as exc:
+                logger.error(
+                    f"Failed to attach file '{file_name}' to issue #{self.no}: {exc}"
+                )
+                body += (
+                    f"\n\n**Failed to attach file `{file_name}` due to error.**"
+                    f"\n\n<details><summary>Preview</summary>\n\n"
+                    f"```text\n{file_content}\n```\n</details>"
+                )
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
-        self._anchor_comment.edit(updated_body)
+        try:
+            self._anchor_comment.edit(updated_body)
+        except Exception as exc:
+            logger.error(
+                f"Failed to post comment to issue #{self.no}: {exc}"
+            )
+            raise
 
     def _get_or_create_anchor_comment(self) -> IssueComment:
         """Find existing DeepNext thread or create a new one."""
@@ -79,6 +101,22 @@ class GitHubIssue(BaseIssue):
             ```
         """
         )
+
+    def _create_gist(self, filename: str, content: str) -> str:
+        """Create a GitHub Gist and return its URL. Log and raise on error."""
+        try:
+            github = self._issue._requester._Github__github
+            gist = github.get_user().create_gist(
+                public=False,
+                files={filename: {"content": content}},
+                description=f"Attachment for issue #{self.no}: {filename}",
+            )
+            return gist.html_url
+        except Exception as exc:
+            logger.error(
+                f"Failed to create gist for file '{filename}' in issue #{self.no}: {exc}"
+            )
+            raise
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
