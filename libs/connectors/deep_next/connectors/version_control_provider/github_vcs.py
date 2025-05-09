@@ -53,7 +53,10 @@ class GitHubIssue(BaseIssue):
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            gist_url = self._upload_gist(file_name, file_content)
+            body += (
+                f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+            )
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)
@@ -79,6 +82,17 @@ class GitHubIssue(BaseIssue):
             ```
         """
         )
+
+    def _upload_gist(self, file_name: str, file_content: str) -> str:
+        """Upload file as a GitHub Gist and return the Gist file URL."""
+        gist = self._issue._requester._Github__requester.github.get_user().create_gist(
+            public=False,
+            files={file_name: {"content": file_content}},
+            description=f"Attachment for issue #{self.no}: {file_name}",
+        )
+        # Get the URL to the file in the Gist
+        file_info = gist.files[file_name]
+        return file_info.raw_url
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
