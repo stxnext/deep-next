@@ -19,10 +19,10 @@ def _msg_step_exec_time(exec_time: float) -> str:
 def msg_issue_solved(exec_time: float | None = None) -> str:
     if exec_time:
         return (
-            "🎉 Issue solved!"
+            "🎉 **Issue solved!** See you next time!"
             f"\n{_msg_deep_next_exec_time(exec_time)}"
         )
-    return "🎉 Issue solved!"
+    return "🎉 **Issue solved!** See you next time!"
 
 
 MSG_TO_DEEPNEXT_PREFIX = "@deepnext"
@@ -66,6 +66,7 @@ _MSG_ACTION_PLAN_INVALID_FORMAT = (
 def msg_action_plan_invalid_format(err_msg: str) -> str:
     return (
         f"{_MSG_ACTION_PLAN_INVALID_FORMAT}"
+        f"\n"
         f"\n---"
         f"\n```"
         f"\n{err_msg}"
@@ -74,9 +75,11 @@ def msg_action_plan_invalid_format(err_msg: str) -> str:
 
 def msg_action_plan_implemented(execution_time: float) -> str:
     return (
-        "🟢 Action plan successfully implemented."
+        "💾 Action plan successfully implemented."
+        "\n"
         "\n---"
         f"\n{_msg_step_exec_time(execution_time)}"
+        "\n"
         "\n---"
         f"\n{msg_issue_solved()}"
     )
