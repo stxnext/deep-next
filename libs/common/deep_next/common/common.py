@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from loguru import logger
+import os
 
 
 def load_monorepo_dotenv() -> None:
@@ -27,3 +28,11 @@ def gitignore_name(name: str) -> str:
             )
 
     return f"___{name}"
+
+
+def setup_logging() -> None:
+    """Configures Loguru logger with LOG_LEVEL from env, defaulting to INFO."""
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    # Remove all existing handlers to ensure idempotency
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)

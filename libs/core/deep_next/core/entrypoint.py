@@ -5,6 +5,11 @@ from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
 from loguru import logger
 
+from deep_next.common.common import setup_logging
+
+# Ensure logging is configured before any logger usage
+setup_logging()
+
 
 def main(
     problem_statement: str,
