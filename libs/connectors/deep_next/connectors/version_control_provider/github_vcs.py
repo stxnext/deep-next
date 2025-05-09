@@ -19,6 +19,50 @@ class GitHubIssue(BaseIssue):
         self._issue = issue
         self._anchor_comment: IssueComment | None = None
 
+    def _upload_file_to_gist(self, content: str, filename: str) -> str | None:
+        """
+        Upload file content to a GitHub Gist and return the raw URL.
+        Returns None if upload fails.
+        """
+        try:
+            user = self._issue._requester._Github__requester._Github__authorizationHeader
+            # Use the same Github instance as the issue object if possible
+            github = self._issue._requester._Github__requester._Github__github
+        except Exception:
+            github = None
+
+        # Try to get a Github instance from the issue object, fallback to new one
+        try:
+            from github import Github
+            gh = getattr(self._issue, "_github", None)
+            if gh is None:
+                gh = Github()
+        except Exception:
+            return None
+
+        # Use the authenticated user if possible
+        try:
+            gh = self._issue._requester._Github__requester._Github__github
+        except Exception:
+            pass
+
+        try:
+            # Use the same token as the repo if possible
+            gh = getattr(self._issue, "_github", None) or Github()
+            gist = gh.get_user().create_gist(
+                public=False,
+                files={filename: {"content": content}},
+                description="File attached via DeepNext GitHub connector",
+            )
+            # Return the raw URL for the file
+            file_obj = gist.files.get(filename)
+            if file_obj and hasattr(file_obj, "raw_url"):
+                return file_obj.raw_url
+            return gist.html_url
+        except Exception as e:
+            logger.error(f"Failed to upload file to gist: {e}")
+            return None
+
     @property
     def url(self) -> str:
         return self._issue.html_url
@@ -46,14 +90,20 @@ class GitHubIssue(BaseIssue):
     def add_comment(
         self, comment: str, file_content: str | None = None, file_name="content.txt"
     ) -> None:
-        """Create or append to the DeepNext anchor comment."""
+        """Create or append to the DeepNext anchor comment, with file upload if possible."""
         if self._anchor_comment is None:
             self._anchor_comment = self._get_or_create_anchor_comment()
 
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            file_url = self._upload_file_to_gist(file_content, file_name)
+            if file_url:
+                body += (
+                    f"\n\n**Attached file** [`{file_name}`]({file_url})"
+                )
+            else:
+                body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)

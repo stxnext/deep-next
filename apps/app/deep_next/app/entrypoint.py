@@ -79,7 +79,10 @@ def solve_issue(
 
         msg = f"DeepNext core total execution time: {exec_time:.0f} seconds"
         logger.info(msg)
-        issue.add_comment(msg)
+        try:
+            issue.add_comment(msg)
+        except Exception as e:
+            logger.error(f"Failed to add execution time comment: {e}")
 
     feature_branch.commit_all(
         commit_msg=f"DeepNext resolves #{issue.no}: {issue.title}"
@@ -153,9 +156,20 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
             logger.error(err_msg)
 
             issue.add_label(FAILED_LABEL)
-            issue.add_comment(
-                comment=err_msg, file_content=str(e), file_name="error_message.txt"
-            )
+            try:
+                issue.add_comment(
+                    comment=err_msg, file_content=str(e), file_name="error_message.txt"
+                )
+            except Exception as file_exc:
+                logger.error(
+                    f"Failed to attach error file to issue #{issue.no}: {file_exc}"
+                )
+                try:
+                    issue.add_comment(err_msg)
+                except Exception as comment_exc:
+                    logger.error(
+                        f"Failed to add fallback error comment to issue #{issue.no}: {comment_exc}"
+                    )
         else:
             success.append(issue)
 
@@ -163,7 +177,10 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
             logger.success(msg)
 
             issue.add_label(SOLVED_LABEL)
-            issue.add_comment(msg)
+            try:
+                issue.add_comment(msg)
+            except Exception as e:
+                logger.error(f"Failed to add solved comment to issue #{issue.no}: {e}")
 
         finally:
             issue.remove_label(IN_PROGRESS_LABEL)
