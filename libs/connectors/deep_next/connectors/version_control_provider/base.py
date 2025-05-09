@@ -89,7 +89,7 @@ class BaseIssue(ABC):
     @staticmethod
     def prettify_comment(txt: str) -> str:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return f"**Status update ({timestamp}):**" f"\n" f"\n{txt}"
+        return f"**Status update ({timestamp}):**\n\n{txt}"
 
 
 class BaseMR(ABC):

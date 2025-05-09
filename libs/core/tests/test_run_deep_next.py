@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 from deep_next.common.utils.fs import tmp_git_dir
-from deep_next.core.graph import deep_next_graph
+from deep_next.core.graph import DeepNextResult, deep_next_graph
 from tests.utils import EXAMPLE_REPO_ROOT_DIR, clean
 
 _issue_title = "Add type hints to `src/hello_world.py`"
@@ -57,10 +57,10 @@ def test_run_deep_next(
     expected: str,
 ) -> None:
     with tmp_git_dir(root_dir) as git_root_dir:
-        git_diff: str = deep_next_graph(
+        result: DeepNextResult = deep_next_graph(
             issue_title=issue_title,
             issue_description=issue_description,
             issue_comments=issue_comments,
             root=git_root_dir,
         )
-        assert clean(git_diff) == clean(expected)
+        assert clean(result.git_diff) == clean(expected)
