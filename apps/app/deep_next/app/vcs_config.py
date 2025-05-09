@@ -2,14 +2,17 @@ import os
 from abc import ABC, abstractmethod
 from typing import Literal
 
-from pydantic import BaseModel, Field
-
 from deep_next.app.utils import get_connector
-from deep_next.connectors.version_control_provider import BaseMR, BaseIssue
-from deep_next.connectors.version_control_provider.github_vcs import GitHubMR, \
-    GitHubConnector
-from deep_next.connectors.version_control_provider.gitlab_vcs import GitLabMR, \
-    GitLabConnector
+from deep_next.connectors.version_control_provider import BaseIssue, BaseMR
+from deep_next.connectors.version_control_provider.github_vcs import (
+    GitHubConnector,
+    GitHubMR,
+)
+from deep_next.connectors.version_control_provider.gitlab_vcs import (
+    GitLabConnector,
+    GitLabMR,
+)
+from pydantic import BaseModel, Field
 
 
 class EnvVars:

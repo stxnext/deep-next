@@ -1,9 +1,12 @@
 from pathlib import Path
-
-from deep_next.connectors.version_control_provider import BaseConnector, \
-    GitHubConnector, GitLabConnector
-
 from typing import TYPE_CHECKING
+
+from deep_next.connectors.version_control_provider import (
+    BaseConnector,
+    GitHubConnector,
+    GitLabConnector,
+)
+
 if TYPE_CHECKING:
     from deep_next.app.vcs_config import VCSConfig
 
@@ -21,19 +24,28 @@ def convert_paths_to_str(json_obj):
 
 
 def convert_str_to_paths(json_obj):
-    """Recursively convert strings representing Path objects back to Path objects in nested dictionaries and lists."""
+    """
+    Convert paths into strings.
+
+    Recursively convert strings representing Path objects back to Path objects in nested
+    dictionaries and lists.
+    """
     if isinstance(json_obj, dict):
         return {k: convert_str_to_paths(v) for k, v in json_obj.items()}
     elif isinstance(json_obj, list):
         return [convert_str_to_paths(item) for item in json_obj]
-    elif isinstance(json_obj, str) and json_obj.startswith("Path(") and json_obj.endswith(")"):
+    elif (
+        isinstance(json_obj, str)
+        and json_obj.startswith("Path(")
+        and json_obj.endswith(")")
+    ):
         path_str = json_obj[5:-1]  # Remove "Path(" at the beginning and ")" at the end
         return Path(path_str)
     else:
         return json_obj
 
 
-def get_connector(config: 'VCSConfig') -> BaseConnector:
+def get_connector(config: "VCSConfig") -> BaseConnector:
     """Creates a connector for the given project configuration."""
     if config.vcs == "github":
         return GitHubConnector(

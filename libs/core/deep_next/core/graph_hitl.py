@@ -19,8 +19,7 @@ class _StateActionPlan(BaseModel):
     issue_title: str = Field(description="The issue title.")
     issue_description: str = Field(description="The issue description.")
     issue_comments: list[str] = Field(
-        default_factory=list,
-        description="Comments made on the issue."
+        default_factory=list, description="Comments made on the issue."
     )
 
     project_knowledge: str | None = Field(default=None)
@@ -41,8 +40,7 @@ class _StateImplement(BaseModel):
     issue_title: str = Field(description="The issue title.")
     issue_description: str = Field(description="The issue description.")
     issue_comments: list[str] = Field(
-        default_factory=list,
-        description="Comments made on the issue."
+        default_factory=list, description="Comments made on the issue."
     )
     action_plan: ActionPlan | None = Field(default=None)
 
@@ -121,24 +119,38 @@ class DeepNextActionPlanGraph(BaseGraph):
         self.add_node(_NodeActionPlan.create_action_plan)
 
         self.add_quick_edge(START, _NodeActionPlan.gather_project_knowledge)
-        self.add_quick_edge(_NodeActionPlan.gather_project_knowledge, _NodeActionPlan.create_action_plan)
+        self.add_quick_edge(
+            _NodeActionPlan.gather_project_knowledge, _NodeActionPlan.create_action_plan
+        )
         self.add_quick_edge(_NodeActionPlan.create_action_plan, END)
 
     def create_init_state(
-        self, root_path: Path, issue_title: str, issue_description: str, issue_comments: list[str]
+        self,
+        root_path: Path,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str],
     ) -> _StateActionPlan:
         return _StateActionPlan(
             root_path=root_path,
             issue_title=issue_title,
             issue_description=issue_description,
-            issue_comments=issue_comments
+            issue_comments=issue_comments,
         )
 
     def __call__(
-        self, *_, root_path: Path, issue_title: str, issue_description: str, issue_comments: list[str]
+        self,
+        *_,
+        root_path: Path,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str],
     ) -> ActionPlan:
         initial_state = self.create_init_state(
-            root_path=root_path, issue_title=issue_title, issue_description=issue_description, issue_comments=issue_comments
+            root_path=root_path,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments,
         )
         final_state = self.compiled.invoke(initial_state)
 

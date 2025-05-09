@@ -39,10 +39,22 @@ index 534b8eb..9e8a211 100644
 @pytest.mark.llm
 @pytest.mark.parametrize(
     "root_dir, issue_title, issue_description, issue_comments, expected",
-    ((EXAMPLE_REPO_ROOT_DIR, _issue_title, _issue_description, _issue_comments, _expected),),
+    (
+        (
+            EXAMPLE_REPO_ROOT_DIR,
+            _issue_title,
+            _issue_description,
+            _issue_comments,
+            _expected,
+        ),
+    ),
 )
 def test_run_deep_next(
-    root_dir: Path, issue_title: str, issue_description: str, issue_comments: str, expected: str
+    root_dir: Path,
+    issue_title: str,
+    issue_description: str,
+    issue_comments: str,
+    expected: str,
 ) -> None:
     with tmp_git_dir(root_dir) as git_root_dir:
         git_diff: str = deep_next_graph(

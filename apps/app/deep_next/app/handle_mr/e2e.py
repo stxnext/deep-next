@@ -3,10 +3,9 @@ import time
 from deep_next.app.config import DeepNextLabel
 from deep_next.app.git import GitRepository
 from deep_next.app.handle_mr.messages import msg_deepnext_started, msg_issue_solved
-from deep_next.connectors.version_control_provider import BaseMR, BaseConnector
-from loguru import logger
-
+from deep_next.connectors.version_control_provider import BaseConnector, BaseMR
 from deep_next.core.graph import deep_next_graph
+from loguru import logger
 
 
 def _solve_issue_e2e(
@@ -19,7 +18,7 @@ def _solve_issue_e2e(
 
     issue = mr.issue(connector)
     if issue is None:
-        raise ValueError(f"Cannot extract issue number from the MR description.")
+        raise ValueError("Cannot extract issue number from the MR description.")
 
     start_time = time.time()
     try:
@@ -44,9 +43,7 @@ def handle_mr_e2e(
     local_repo: GitRepository,
     vcs_connector: BaseConnector,
 ):
-    """
-    Handle MRs/PRs for the given issue.
-    """
+    """Handle MRs/PRs for the given issue."""
     success: bool
     try:
         mr.add_label(DeepNextLabel.IN_PROGRESS)
@@ -60,7 +57,9 @@ def handle_mr_e2e(
 
         success = False
     else:
-        mr.add_comment(msg_issue_solved(exec_time=exec_time), info_header=True, log='SUCCESS')
+        mr.add_comment(
+            msg_issue_solved(exec_time=exec_time), info_header=True, log="SUCCESS"
+        )
         mr.add_label(DeepNextLabel.SOLVED)
 
         success = True

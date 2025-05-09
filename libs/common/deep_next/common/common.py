@@ -52,10 +52,10 @@ def prepare_issue_statement(
         f"""\
         # Issue title:
         {issue_title}
-        
+
         # Issue description:
         {issue_description}
-        
+
         # Issue comment:
         {issue_comments_str}
         """

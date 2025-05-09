@@ -10,6 +10,7 @@ from deep_next.connectors.version_control_provider.base import (
     BaseIssue,
     BaseMR,
 )
+from deep_next.connectors.version_control_provider.utils import label_to_str
 from github import Github
 from github.GithubException import UnknownObjectException
 from github.Issue import Issue
@@ -17,8 +18,6 @@ from github.IssueComment import IssueComment
 from github.PullRequest import PullRequest
 from github.Repository import Repository
 from loguru import logger
-
-from deep_next.connectors.version_control_provider.utils import label_to_str
 
 
 class GitHubComment(BaseComment):
@@ -167,7 +166,9 @@ class GitHubMR(BaseMR):
         label = label_to_str(label)
         self._pr.remove_from_labels(label)
 
-    def add_comment(self, comment: str, info_header: bool = False, log: int | str | None = None) -> None:
+    def add_comment(
+        self, comment: str, info_header: bool = False, log: int | str | None = None
+    ) -> None:
         """Adds a comment to the MR."""
         if info_header:
             comment = format_comment_with_header(comment)
@@ -181,6 +182,7 @@ class GitHubMR(BaseMR):
     def comments(self) -> list[GitHubComment]:
         """Returns the comments of the MR."""
         return [GitHubComment(comment) for comment in self._pr.get_issue_comments()]
+
 
 class GitHubConnector(BaseConnector):
     def __init__(self, *_, token: str, repo_name: str):
@@ -203,7 +205,9 @@ class GitHubConnector(BaseConnector):
             issues = list(self.repo.get_issues(state="open"))
 
         # GitHub returns both issues and pull requests in the same list.
-        issues = [issue for issue in issues if not re.search(r'pull/\d+$', issue.html_url)]
+        issues = [
+            issue for issue in issues if not re.search(r"pull/\d+$", issue.html_url)
+        ]
 
         return [GitHubIssue(i) for i in issues]
 

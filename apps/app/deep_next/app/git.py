@@ -6,7 +6,6 @@ from deep_next.common.cmd import RunCmdError, run_command
 from loguru import logger
 
 
-
 class GitRepositoryError(Exception):
     """Git repository error."""
 

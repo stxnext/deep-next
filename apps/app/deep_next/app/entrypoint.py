@@ -1,12 +1,6 @@
-from loguru import logger
-
-from deep_next.app.common import create_feature_branch_name, DEEP_NEXT_PR_DESCRIPTION
-from deep_next.app.config import (
-    REF_BRANCH,
-    REPOSITORIES_DIR,
-    DeepNextLabel,
-)
-from deep_next.app.git import GitRepository, setup_local_git_repo, FeatureBranch
+from deep_next.app.common import DEEP_NEXT_PR_DESCRIPTION, create_feature_branch_name
+from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, DeepNextLabel
+from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
 from deep_next.app.handle_mr.e2e import handle_mr_e2e
 from deep_next.app.handle_mr.hitl import handle_mr_human_in_the_loop
 from deep_next.app.utils import get_connector
@@ -16,6 +10,8 @@ from deep_next.connectors.version_control_provider import (
     BaseIssue,
     BaseMR,
 )
+from loguru import logger
+
 
 def create_mr_and_comment(
     vcs_config: VCSConfig,
@@ -41,9 +37,16 @@ def create_mr_and_comment(
             merge_branch=feature_branch.name,
             into_branch=ref_branch,
             title=f"Resolve '{issue.title}'",
-            description=f"{DEEP_NEXT_PR_DESCRIPTION.format(issue_no=issue.no)}"
-                        f"\n\nDo not modify this part of the description. You can add additional information below this line."
-                        f"\n\n---\n\n",
+            description=(
+                f"{DEEP_NEXT_PR_DESCRIPTION.format(issue_no=issue.no)}"
+                f"\n"
+                f"\nDo not modify this part of the description. You can add additional "
+                f"information below this line."
+                f"\n"
+                f"\n---"
+                f"\n"
+                f"\n"
+            ),
             issue=issue,
         )
 
@@ -97,7 +100,6 @@ def handle_issues(vcs_config: VCSConfig) -> None:
         repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
-
 
     for issue in vcs_connector.list_issues(label=DeepNextLabel.PENDING_E2E):
         create_mr_and_comment(

@@ -93,8 +93,7 @@ class BaseIssue(ABC):
 
 
 class BaseMR(ABC):
-
-    def issue(self, connector: 'BaseConnector') -> BaseIssue | None:
+    def issue(self, connector: "BaseConnector") -> BaseIssue | None:
         """Returns the issue associated with the MR."""
         issue_no = extract_issue_number_from_mr(self)
         if issue_no is None:
@@ -155,13 +154,16 @@ class BaseMR(ABC):
         """Remove a label from the MR."""
 
     @abstractmethod
-    def add_comment(self, comment: str, info_header: bool = False, log: int | str | None = None) -> None:
+    def add_comment(
+        self, comment: str, info_header: bool = False, log: int | str | None = None
+    ) -> None:
         """Adds a comment to the MR."""
 
     @property
     @abstractmethod
     def comments(self) -> list[BaseComment]:
         """Returns the comments of the MR."""
+
 
 class BaseConnector(ABC):
     @abstractmethod
@@ -181,5 +183,7 @@ class BaseConnector(ABC):
         """Fetches a single merge request."""
 
     @abstractmethod
-    def create_mr(self, merge_branch: str, into_branch: str, title: str, issue: BaseIssue) -> BaseMR:
+    def create_mr(
+        self, merge_branch: str, into_branch: str, title: str, issue: BaseIssue
+    ) -> BaseMR:
         """Creates new merge request."""

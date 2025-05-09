@@ -19,8 +19,7 @@ class _State(BaseModel):
     issue_title: str = Field(description="The issue title.")
     issue_description: str = Field(description="The issue description.")
     issue_comments: list[str] = Field(
-        default_factory=list,
-        description="Comments made on the issue."
+        default_factory=list, description="Comments made on the issue."
     )
 
     project_knowledge: str | None = Field(default=None)
@@ -111,7 +110,7 @@ class DeepNextGraph(BaseGraph):
         root: Path,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str]
+        issue_comments: list[str],
     ) -> _State:
         return _State(
             root_path=root,
@@ -120,12 +119,19 @@ class DeepNextGraph(BaseGraph):
             issue_comments=issue_comments,
         )
 
-    def __call__(self, *_, issue_title: str, issue_description: str, issue_comments: list[str], root: Path) -> str:
+    def __call__(
+        self,
+        *_,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str],
+        root: Path,
+    ) -> str:
         initial_state = self.create_init_state(
             root=root,
             issue_title=issue_title,
             issue_description=issue_description,
-            issue_comments=issue_comments
+            issue_comments=issue_comments,
         )
         final_state = self.compiled.invoke(initial_state)
 

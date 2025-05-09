@@ -1,6 +1,5 @@
 import re
 from datetime import datetime
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -20,7 +19,7 @@ def create_feature_branch_name(issue_no: int) -> str:
     )
 
 
-def extract_issue_number_from_mr(mr: 'BaseMR'):
+def extract_issue_number_from_mr(mr: "BaseMR"):
 
     to_replace = r"{issue_no}"
     replace_with = r"(\d+)"
@@ -42,6 +41,7 @@ def is_snake_case(txt: str) -> bool:
 
 _COMMENT_HEADER = "## 🚧 DeepNext status update"
 
+
 def format_comment_with_header(comment: str) -> str:
     """Format the content with a header."""
     return f"{_COMMENT_HEADER}\n\n{comment}"
@@ -50,6 +50,6 @@ def format_comment_with_header(comment: str) -> str:
 def trimm_comment_header(comment: str) -> str:
     """Trims the header from the comment."""
     if comment.startswith(_COMMENT_HEADER):
-        return comment[len(_COMMENT_HEADER):].strip()
+        return comment[len(_COMMENT_HEADER) :].strip()
 
     return comment

@@ -1,20 +1,19 @@
 from enum import Enum
 
 import gitlab
-
 from deep_next.app.common import format_comment_with_header
 from deep_next.app.config import DeepNextLabel
 from deep_next.connectors.version_control_provider.base import (
+    BaseComment,
     BaseConnector,
     BaseIssue,
-    BaseMR, BaseComment,
+    BaseMR,
 )
+from deep_next.connectors.version_control_provider.utils import label_to_str
 from gitlab.v4.objects.discussions import ProjectIssueDiscussion
 from gitlab.v4.objects.issues import ProjectIssue
 from gitlab.v4.objects.merge_requests import ProjectMergeRequest
 from loguru import logger
-
-from deep_next.connectors.version_control_provider.utils import label_to_str
 
 
 class GitLabConnectorError(Exception):
@@ -44,6 +43,7 @@ class GitLabComment(BaseComment):
     @property
     def author(self) -> str:
         return self._comment.author["name"]
+
 
 class GitLabIssue(BaseIssue):
     def __init__(self, issue: ProjectIssue):
@@ -195,7 +195,9 @@ class GitLabMR(BaseMR):
         # TODO: Replace with the proper implementation.
         self._mr.remove_from_labels(label)
 
-    def add_comment(self, comment: str, info_header: bool = False, log: int | str | None = None) -> None:
+    def add_comment(
+        self, comment: str, info_header: bool = False, log: int | str | None = None
+    ) -> None:
         """Adds a comment to the MR."""
         if info_header:
             comment = format_comment_with_header(comment)
@@ -210,6 +212,7 @@ class GitLabMR(BaseMR):
         """Returns the comments of the MR."""
         # TODO: Replace with the proper implementation.
         return [GitLabComment(comment) for comment in self._mr.notes.list()]
+
 
 class GitLabConnector(BaseConnector):
     def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
@@ -243,7 +246,7 @@ class GitLabConnector(BaseConnector):
 
         return GitLabIssue(issue)
 
-    def list_mrs(self, label: str | None =None) -> list[GitLabMR]:
+    def list_mrs(self, label: str | None = None) -> list[GitLabMR]:
         """Fetches all MRs"""
         all_mrs = self.project.mergerequests.list(all=True)
         mrs = filter_by_label(all_mrs, label) if label else all_mrs
@@ -286,8 +289,6 @@ class GitLabConnector(BaseConnector):
                 }
             )
         except gitlab.exceptions.GitlabGetError as e:
-            raise GitLabConnectorError(
-                f"Error while creating MR: {e}"
-            ) from e
+            raise GitLabConnectorError(f"Error while creating MR: {e}") from e
 
         return GitLabMR(mr)
