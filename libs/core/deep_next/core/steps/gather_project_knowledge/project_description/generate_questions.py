@@ -4,9 +4,12 @@ from deep_next.core.project_info import NOT_FOUND, ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.common import (
     _create_llm,
 )
+from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
+    ExistingQuestionContext,
+    example_output_loc_cfl,
+)
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
-from pydantic import BaseModel, Field
 
 
 class Prompt:
@@ -40,23 +43,6 @@ class Prompt:
         --------------------
         """  # noqa: E501
     )
-
-
-class QuestionContext(BaseModel):
-    reasoning: str = Field(default="", description="Reasoning for the question")
-    question: str = Field(default="", description="Question to the git repository")
-
-
-class ExistingQuestionContext(BaseModel):
-    overview_description: str = Field(
-        default="", description="Overview description of the project"
-    )
-    question_context: list[QuestionContext] = Field(
-        default_factory=list, description="List of questions to the git repository"
-    )
-
-    def dump(self) -> str:
-        return "\n".join([question.question for question in self.question_context])
 
 
 def generate_questions(
@@ -105,61 +91,3 @@ def get_documentation(project_info: ProjectInfo) -> str:
         documentation += f"SETUP.CFG:\n```\n{project_info.setup_cfg}\n```\n\n"
 
     return documentation
-
-
-example_output_loc_cfl = ExistingQuestionContext(
-    overview_description=(
-        "The repository is a Python project that has readme.md and setup.py in the "
-        "root directory. The project uses main.py as the entry point, so definitely we"
-        " need to read this file. The project contain tests, so we need to read some "
-        "test files to check the test framework. We should read some .py files to "
-        "check for the important classes and functions. "
-    ),
-    question_context=[
-        QuestionContext(
-            reasoning=(
-                "The project uses main.py as the entry point, so definitely we "
-                "need to read this file."
-            ),
-            question=(
-                "What is the main.py file doing? What is the entry point of the "
-                "project?"
-            ),
-        ),
-        QuestionContext(
-            reasoning=(
-                "The project contain tests, so we need to read some test files "
-                "to check the test framework."
-            ),
-            question="What is the test framework used in the project?",
-        ),
-        QuestionContext(
-            reasoning=(
-                "We should read some .py files to check for the important "
-                "classes and functions."
-            ),
-            question="What are the important classes and functions in the project?",
-        ),
-        QuestionContext(
-            reasoning=(
-                "We should check for readme.md to understand the project " "better."
-            ),
-            question="What is the content of the readme.md file?",
-        ),
-        QuestionContext(
-            reasoning=(
-                "There is setup.py in the repo tree. "
-                "We should check for setup.py to understand the project better."
-            ),
-            question="What is the content of the setup.py file?",
-        ),
-        QuestionContext(
-            reasoning=(
-                "I see in the project tree that the project uses "
-                "pyproject.toml. We should check for pyproject.toml to "
-                "understand the libraries used in the project."
-            ),
-            question="What is the content of the pyproject.toml file?",
-        ),
-    ],
-)
