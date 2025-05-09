@@ -1,4 +1,4 @@
-def say_hello() -> None:
+def say_hello():
     """Say hello!"""
     print("Hello World")
 
@@ -13,6 +13,6 @@ def foo() -> str:
     return "bar"
 
 
-def add_integers(a: int, b: int) -> int:
+def add_integers(a, b):
     """Add two integers."""
     return int(a + b)
