@@ -72,12 +72,19 @@ class ExistingProjectDescriptionContext(BaseModel):
 
     def dump(self) -> str:
         project_description = ""
-        project_description += f"Overview description: {self.overview_description}\n"
-        project_description += "Project description context:\n"
+        project_description += (
+            f"\nOverview description:\n{self.overview_description}\n\n"
+        )
+
+        project_description += "\nProject description context:\n"
         for context in self.project_description_context:
-            project_description += f"- Reasoning: {context.reasoning}\n"
             project_description += f"- Key observation: {context.key_observation}\n"
-        project_description += f"Project description: {self.project_description}\n"
+            project_description += (
+                f"|___ Rationale (Reasoning): {context.reasoning}\n\n"
+            )
+
+        project_description += f"\nProject description:\n{self.project_description}\n"
+
         return project_description
 
 
