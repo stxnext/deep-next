@@ -185,8 +185,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv
+    from deep_next.common.common import load_monorepo_dotenv, configure_logging_from_env
 
     load_monorepo_dotenv()
+    configure_logging_from_env()
 
     main()
