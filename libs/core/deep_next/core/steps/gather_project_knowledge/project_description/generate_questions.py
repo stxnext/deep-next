@@ -59,7 +59,10 @@ class ExistingQuestionContext(BaseModel):
         return "\n".join([question.question for question in self.question_context])
 
 
-def _create_llm_agent():
+def generate_questions(
+    repository_tree: str, project_info: ProjectInfo
+) -> ExistingQuestionContext:
+
     design_solution_prompt_template = ChatPromptTemplate.from_messages(
         [
             (
@@ -75,13 +78,9 @@ def _create_llm_agent():
 
     parser = PydanticOutputParser(pydantic_object=ExistingQuestionContext)
 
-    return design_solution_prompt_template | _create_llm() | parser
+    llm_agent = design_solution_prompt_template | _create_llm() | parser
 
-
-def generate_questions(
-    repository_tree: str, project_info: ProjectInfo
-) -> ExistingQuestionContext:
-    response = _create_llm_agent().invoke(
+    return llm_agent.invoke(
         {
             "project_name": project_info.name,
             "documentation": get_documentation(project_info),
@@ -89,8 +88,6 @@ def generate_questions(
             "example_generate_questions": example_output_loc_cfl.model_dump_json(),
         }
     )
-
-    return response
 
 
 def get_documentation(project_info: ProjectInfo) -> str:

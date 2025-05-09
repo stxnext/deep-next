@@ -13,7 +13,9 @@ from deep_next.core.steps.gather_project_knowledge.project_map import tree
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import START
 from langgraph.graph import END
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# project_info=get_project_info(root_path),
 
 
 class _State(BaseModel):
@@ -21,12 +23,12 @@ class _State(BaseModel):
     root_path: Path
 
     # Internal
-    questions: str
-    related_files: list[Path]
+    questions: str = Field(default="<MISSING>")
+    related_files: list[Path] = Field(default_factory=list)
     project_info: ProjectInfo
 
     # Output
-    project_description_output: str
+    project_description_output: str = Field(default="<MISSING>")
 
 
 class _Node:
@@ -39,7 +41,6 @@ class _Node:
             project_info=state.project_info,
         )
 
-        print(questions.dump())
         return {
             "questions": questions.dump(),
         }
@@ -76,8 +77,8 @@ class _Node:
         return {"project_description_output": project_description}
 
 
-class GatherProjectKnowledgeGraph(BaseGraph):
-    """Implementation of "Gather Project Knowledge" step in LangGraph"""
+class GatherProjectDescriptionGraph(BaseGraph):
+    """Implementation of "Gather Project Description" step in LangGraph"""
 
     def __init__(self):
         super().__init__(_State)
@@ -95,13 +96,7 @@ class GatherProjectKnowledgeGraph(BaseGraph):
         self.add_quick_edge(_Node.project_description, END)
 
     def create_init_state(self, root_path: Path) -> _State:
-        return _State(
-            root_path=root_path,
-            questions="<MISSING>",
-            related_files=[Path("<MISSING>")],
-            project_info=get_project_info(root_path),
-            project_description_output="<MISSING>",
-        )
+        return _State(root_path=root_path, project_info=get_project_info(root_path))
 
     def __call__(self, root_path: Path) -> str:
         init_state = self.create_init_state(root_path)
@@ -109,7 +104,7 @@ class GatherProjectKnowledgeGraph(BaseGraph):
         return state["project_description_output"]
 
 
-gather_project_description_graph = GatherProjectKnowledgeGraph()
+gather_project_description_graph = GatherProjectDescriptionGraph()
 
 
 if __name__ == "__main__":

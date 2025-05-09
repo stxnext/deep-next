@@ -2,7 +2,7 @@ import textwrap
 from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
-from deep_next.core.steps.gather_project_knowledge.project_description.graph import (
+from deep_next.core.steps.gather_project_knowledge.project_description import (
     gather_project_description_graph,
 )
 from deep_next.core.steps.gather_project_knowledge.project_map import tree
@@ -39,7 +39,7 @@ class _Node:
             root_path=state.root_path
         )
 
-        return {"project_description": project_description.dump()}
+        return {"project_description": project_description.to_str()}
 
     @staticmethod
     def parse_final_state(state: _State) -> dict:

@@ -70,7 +70,7 @@ class ExistingProjectDescriptionContext(BaseModel):
     )
     project_description: str = Field(default="", description="Project description")
 
-    def dump(self) -> str:
+    def to_str(self) -> str:
         project_description = ""
         project_description += (
             f"\nOverview description:\n{self.overview_description}\n\n"
@@ -88,7 +88,13 @@ class ExistingProjectDescriptionContext(BaseModel):
         return project_description
 
 
-def _create_llm_agent():
+def generate_project_description(
+    questions: str,
+    related_files: list[Path],
+    repository_tree: str,
+    project_info: ProjectInfo,
+) -> ExistingProjectDescriptionContext:
+    """Generate project description based on the repository tree and related files."""
     design_solution_prompt_template = ChatPromptTemplate.from_messages(
         [
             (
@@ -104,20 +110,12 @@ def _create_llm_agent():
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
-    return design_solution_prompt_template | _create_llm() | parser
-
-
-def generate_project_description(
-    questions: str,
-    related_files: list[Path],
-    repository_tree: str,
-    project_info: ProjectInfo,
-) -> ExistingProjectDescriptionContext:
+    llm_agent = design_solution_prompt_template | _create_llm() | parser
 
     related_code_context = "\n".join(
         [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
     )
-    response = _create_llm_agent().invoke(
+    return llm_agent.invoke(
         {
             "project_name": project_info.name,
             "repository_tree": repository_tree,
@@ -126,8 +124,6 @@ def generate_project_description(
             "example_project_description": example_output_loc_cfl.model_dump_json(),
         }
     )
-
-    return response
 
 
 example_output_loc_cfl = ExistingProjectDescriptionContext(
