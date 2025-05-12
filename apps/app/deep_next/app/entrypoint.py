@@ -153,9 +153,12 @@ def solve_project_issues(vcs_config: VCSConfig) -> None:
             logger.error(err_msg)
 
             issue.add_label(FAILED_LABEL)
+            # Test file attachment workflow: add comment with file content
             issue.add_comment(
                 comment=err_msg, file_content=str(e), file_name="error_message.txt"
             )
+            # If the connector supports file attachments (e.g., GitHub via Gist),
+            # the comment should include a link to the uploaded file.
         else:
             success.append(issue)
 

@@ -18,6 +18,9 @@ class GitHubIssue(BaseIssue):
     def __init__(self, issue: Issue):
         self._issue = issue
         self._anchor_comment: IssueComment | None = None
+        self._github = issue._requester._Github__requester._Github__github \
+            if hasattr(issue, "_requester") and hasattr(issue._requester, "_Github__github") \
+            else None
 
     @property
     def url(self) -> str:
@@ -53,7 +56,15 @@ class GitHubIssue(BaseIssue):
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            gist_url = self._upload_file_as_gist(file_name, file_content)
+            if gist_url:
+                body += (
+                    f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+                )
+            else:
+                body += (
+                    "\n\n*Failed to upload file as Gist. No attachment available.*"
+                )
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)
@@ -70,15 +81,27 @@ class GitHubIssue(BaseIssue):
 
     @staticmethod
     def _format_file_attachment(filename: str, content: str) -> str:
-        """Simulate file attachment using Markdown code block."""
-        return textwrap.dedent(
-            f"""\
-            **Attached file** `{filename}`:
-            ```text
-            {content}
-            ```
-        """
-        )
+        """[DEPRECATED] Simulate file attachment using Markdown code block."""
+        # This method is deprecated and no longer used.
+        return ""
+
+    def _upload_file_as_gist(self, filename: str, content: str) -> str | None:
+        """Upload file content as a GitHub Gist and return the Gist URL."""
+        try:
+            github = self._github
+            if github is None:
+                logger.warning("GitHub API client not available for Gist upload.")
+                return None
+            user = github.get_user()
+            gist = user.create_gist(
+                public=False,
+                files={filename: {"content": content}},
+                description=f"Attachment for GitHub Issue #{self.no}: {filename}",
+            )
+            return gist.html_url
+        except Exception as e:
+            logger.error(f"Failed to upload file as Gist: {e}")
+            return None
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
