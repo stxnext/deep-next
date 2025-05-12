@@ -8,18 +8,21 @@ app_run:
 
 .PHONY: app_docker_build
 app_docker_build:
-	docker build \
-		--build-arg SSH_PRIVATE_KEY="$$(cat ~/.ssh/id_rsa)" \
-		--build-arg DOT_ENV_CONTENT="$$(cat .env)" \
-		-t deep_next_app:latest \
-		-f apps/app/Dockerfile .
+	docker build -t deep_next_app:latest -f apps/app/Dockerfile .
 
 .PHONY: _app_docker_run
 _app_docker_run:
+	@if [ ! -f .env ]; then \
+		echo "Error: .env file not found in $(shell pwd)"; \
+		exit 1; \
+	fi
+
 	docker run -d \
-		-v $$(pwd)/apps/app/___data/configs:/deep-next/apps/app/___data/configs \
 		--name "$(CONTAINER_NAME)" \
+		-v $(HOME)/.ssh:/root/.ssh:ro \
+		-v $(shell pwd)/.env:/deep-next/.env:ro \
 		deep_next_app:latest
+
 	@echo -e 'Inspect logs:\ndocker logs -f $(CONTAINER_NAME)'
 
 .PHONY: app_docker_run
