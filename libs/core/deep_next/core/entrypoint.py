@@ -121,8 +121,9 @@ def cli(
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv
+    from deep_next.common.common import load_monorepo_dotenv, setup_logging_from_env
 
     load_monorepo_dotenv()
+    setup_logging_from_env()
 
     cli()
