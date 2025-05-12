@@ -4,7 +4,7 @@ Your AI-powered junior software engineering assistant that takes an issue descri
 
 DeepNext is an advanced AI system that automatically analyzes a code repository, prepares a solution plan, and implements the necessary code for software engineering tasks using Large Language Models, saving developers hours of repetitive work.
 
-See [documentation](stxnext.github.io/deep-next) for more information.
+See [documentation](https://stxnext.github.io/deep-next/) for more information.
 
 ## Quick start
 
