@@ -122,7 +122,13 @@ def cli(
 
 if __name__ == "__main__":
     from deep_next.common.common import load_monorepo_dotenv
+    import os
 
     load_monorepo_dotenv()
+
+    # Configure Loguru log level from LOG_LEVEL env variable (default: INFO)
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
 
     cli()
