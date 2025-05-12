@@ -16,6 +16,15 @@ def load_monorepo_dotenv() -> None:
     assert load_dotenv(path, verbose=True, override=True)
 
 
+def configure_logging_from_env() -> None:
+    """Configures Loguru logger level from LOG_LEVEL env variable."""
+    import os
+
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
+
+
 def gitignore_name(name: str) -> str:
     """Converts the name so that it'll be ignored by git."""
     from deep_next.common.config import MONOREPO_ROOT_PATH
