@@ -1,0 +1,16 @@
+.venv/
+.idea/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+*.egg-info
+.vscode
+.env
+
+# SWE-Bench
+logs/
+
+# Custom prefix to ignore
+___*
+
+.cache/
