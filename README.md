@@ -4,6 +4,8 @@ Your AI-powered junior software engineering assistant that takes an issue descri
 
 DeepNext is an advanced AI system that automatically analyzes a code repository, prepares a solution plan, and implements the necessary code for software engineering tasks using Large Language Models, saving developers hours of repetitive work.
 
+See [documentation](stxnext.github.io/deep-next) for more information.
+
 ## Quick start
 
 ### Installation
@@ -30,70 +32,11 @@ poetry run python -m deep_next.core.entrypoint \
   --root-dir /path/to/repository
 ```
 
-
-## How it works
-
-DeepNext operates through a pipeline that handles the entire software engineering process:
-
-![DeepNext Workflow](libs/core/graph.png)
-
-### 1. Gather Project Knowledge
-- **Inputs**: Repository **root directory**
-- **Process**:
-  - Creates comprehensive project description by analyzing READMEs, configuration files, and code structure
-  - Generates project map showing directory organization and component relationships
-- **Outputs**: Consolidated **project knowledge** description
-
-### 2. Create Action Plan
-- **Inputs**: **Project knowledge** and **issue description**
-- **Process**:
-  - Selects relevant files through multiple parallel analysis cycles
-  - Uses AI to deduce which files need modifications
-  - Combines results from multiple analysis passes for higher accuracy
-  - Creates detailed, structured solution design with specific file changes
-- **Outputs**: **Action plan** with ordered steps for implementation
-
-### 3. Implement Changes
-- **Inputs**: **Action plan** and access to the files for modification
-- **Process**:
-  - Develops edits for each file with proper context and formatting
-  - Applies changes using exact matching first, then fuzzy matching for resilience
-  - Generates comprehensive git diff for review
-- **Outputs**: Complete implementation as **git diff** or **pull/merge request**
-
-The project is structured as a monorepo with specialized components:
-- **Apps**: Main DeepNext application for Github/GitLab integration (app/)
-- **Libs**: Core processing logic, connectors for external services, and common utilities
-    - `core/`: Main logic for analyzing repositories and generating solutions
-    - `connectors/`: Integration with external services
-    - `common/`: Shared utilities and configurations
-
 ## GitHub/GitLab integration
 
 Running as a service to automatically process issues:
 
-```bash
-# Start the DeepNext app in Docker
-make app_docker_build
-make app_docker_run
-```
-
-Configuration for GitLab:
-```json
-{
-    "project_name": "deep_next",
-    "gitlab": {
-        "project_id": "<project_id>",
-        "base_url": "<url>",
-        "access_token": "<access_token>"
-    },
-    "git": {
-        "ref_branch": "develop",
-        "repo_url": "<repo_url.git>",
-        "label": "git_label"
-    }
-}
-```
+[See integration details](https://stxnext.github.io/deep-next/integration.html)
 
 ## Configuration
 
@@ -105,14 +48,7 @@ Create an `llm-config.yaml` file based on the example provided to configure mode
 
 For tracking and metrics, DeepNext integrates with LangSmith. Set up your credentials in the `.env` file.
 
-```
-# OpenAI access
-OPENAI_API_KEY=...
-
-# AWS Bedrock access
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
-```
+[See configuration details](https://stxnext.github.io/deep-next/configuration.html)
 
 ## Roadmap
 
