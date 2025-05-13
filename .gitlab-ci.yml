@@ -1,0 +1,15 @@
+# Comment added at creation time to indicate empty file.
+
+stages:
+  - lint
+
+flake8-lint:
+  stage: lint
+  image: python:3.11
+  script:
+    - pip install poetry
+    - poetry install
+    - poetry run flake8
+  only:
+    - merge_requests
+    - branches
