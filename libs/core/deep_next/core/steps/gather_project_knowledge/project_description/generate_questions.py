@@ -6,7 +6,7 @@ from deep_next.core.steps.gather_project_knowledge.project_description.common im
 )
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
     ExistingQuestionContext,
-    example_output_loc_cfl,
+    example_output_existing_question_context,
 )
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -71,7 +71,7 @@ def generate_questions(
             "project_name": project_info.name,
             "documentation": get_documentation(project_info),
             "repository_tree": repository_tree,
-            "example_generate_questions": example_output_loc_cfl.model_dump_json(),
+            "example_generate_questions": example_output_existing_question_context.model_dump_json(),  # noqa: E501
         }
     )
 

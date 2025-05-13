@@ -18,6 +18,7 @@ from deep_next.connectors.version_control_provider import (
     GitHubConnector,
     GitLabConnector,
 )
+from deep_next.core.entrypoint import DeepNextResult
 from deep_next.core.entrypoint import main as deep_next_pipeline
 from loguru import logger
 
@@ -65,11 +66,14 @@ def solve_issue(
 
     start_time = time.time()
     try:
-        _ = deep_next_pipeline(
+        result: DeepNextResult = deep_next_pipeline(
             problem_statement=issue.title + "\n" + issue.description,
             hints=issue.comments,
             root_dir=local_repo.repo_dir,
         )
+
+        issue.add_comment(f"REASONING:\n\n{result.reasoning}")
+        issue.add_comment(f"ACTION PLAN:\n\n{result.action_plan}")
     finally:
         exec_time = time.time() - start_time
 

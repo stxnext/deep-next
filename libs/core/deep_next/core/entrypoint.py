@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import click
-from deep_next.core.config import DATA_DIR
-from deep_next.core.graph import deep_next_graph
-from deep_next.core.io import read_txt, write_txt
+from deep_next.core.graph import DeepNextResult, deep_next_graph
+from deep_next.core.io import read_txt
 from loguru import logger
 
 
@@ -11,22 +10,18 @@ def main(
     problem_statement: str,
     hints: str,
     root_dir: Path,
-    output_file: Path | str = DATA_DIR / "result.diff",
-) -> str:
+) -> DeepNextResult:
     """Deep NEXT data pipeline."""
     logger.info(f"\n{problem_statement=}\n{hints=}\n{root_dir=}")
 
-    git_diff: str = deep_next_graph(
+    result: DeepNextResult = deep_next_graph(
         problem_statement=problem_statement, hints=hints, root=root_dir
     )
 
-    logger.debug(git_diff)
-    write_txt(txt=git_diff, path=output_file)
-    logger.info(f"Result saved to: '{output_file}'")
-
+    logger.debug(result.git_diff)
     logger.success("DeepNext pipeline completed successfully.")
 
-    return git_diff
+    return result
 
 
 def _validate_exclusive_options(
@@ -92,17 +87,6 @@ def _validate_exclusive_options(
     required=True,
     help="Absolute path to the repo root directory.",
 )
-@click.option(
-    "--output-file",
-    type=click.Path(
-        exists=False, file_okay=True, dir_okay=False, writable=True, path_type=Path
-    ),
-    default=DATA_DIR / "result.diff",
-    help=(
-        "Path to a file where the output will be saved. "
-        "If not provided, the output will be printed to the console."
-    ),
-)
 @click.pass_context
 def cli(
     ctx,
@@ -111,7 +95,6 @@ def cli(
     hints: str,
     hints_file: Path,
     root_dir: Path,
-    output_file: Path | str | None,
 ) -> None:
     """Command-line interface for Deep NEXT pipeline."""
     problem_statement = _validate_exclusive_options(
@@ -134,7 +117,6 @@ def cli(
         problem_statement=problem_statement,
         hints=hints,
         root_dir=root_dir,
-        output_file=output_file,
     )
 
 
