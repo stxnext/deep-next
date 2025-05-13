@@ -8,7 +8,7 @@ from deep_next.core.steps.gather_project_knowledge.project_description.common im
 )
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
     ExistingProjectDescriptionContext,
-    example_output_loc_cfl,
+    example_output_existing_project_description_context,
 )
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -94,6 +94,6 @@ def generate_project_description(
             "repository_tree": repository_tree,
             "related_code_context": related_code_context,
             "questions": questions,
-            "example_project_description": example_output_loc_cfl.model_dump_json(),
+            "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
         }
     )

@@ -31,7 +31,7 @@ class ExistingProjectDescriptionContext(BaseModel):
         return project_description
 
 
-example_output_loc_cfl = ExistingProjectDescriptionContext(
+example_output_existing_project_description_context = ExistingProjectDescriptionContext(
     overview_description=(
         "Browser-use combines Playwright browser automation with LLM orchestration "
         "using Python 3.11+ async features. The architecture employs multiple design "
@@ -202,7 +202,7 @@ class ExistingQuestionContext(BaseModel):
         return "\n".join([question.question for question in self.question_context])
 
 
-example_output_loc_cfl = ExistingQuestionContext(
+example_output_existing_question_context = ExistingQuestionContext(
     overview_description=(
         "The repository is a Python project that has readme.md and setup.py in the "
         "root directory. The project uses main.py as the entry point, so definitely we"
