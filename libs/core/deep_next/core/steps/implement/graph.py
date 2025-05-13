@@ -50,7 +50,10 @@ class _Node:
     def select_next_step(state: _State) -> dict:
         step: Step = state.steps_remaining.pop(0)
 
-        logger.info(f"Implementing solution for: '{step.title}'")
+        logger.info(
+            f"Implementing solution for: '{step.title}'\n"
+            f"Description: {step.description}"
+        )
 
         return {"selected_step": step, "steps_remaining": state.steps_remaining}
 
@@ -64,7 +67,12 @@ class _Node:
         state: _State,
     ) -> _State:
         raw_patches = develop_single_file_patches(
-            step=state.selected_step, issue_statement=state.issue_statement
+            step=state.selected_step,
+            issue_statement=state.issue_statement,
+            git_diff=(
+                generate_diff(state.root_path)
+                or "<Empty Git Diff, no modifications found>"
+            ),
         )
 
         patches: list[CodePatch] = parse_patches(raw_patches)

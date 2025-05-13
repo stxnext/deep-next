@@ -19,9 +19,6 @@ WORKDIR /deep-next
 RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.2 python3 -
 ENV PATH="/root/.local/bin:$PATH"
 
-ARG DOT_ENV_CONTENT
-RUN echo "$DOT_ENV_CONTENT" > /deep-next/.env
-
 COPY ../.. /deep-next
 
 RUN make install_venv

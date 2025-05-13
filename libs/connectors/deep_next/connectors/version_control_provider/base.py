@@ -63,12 +63,17 @@ class BaseIssue(ABC):
     @staticmethod
     def prettify_comment(txt: str) -> str:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return textwrap.dedent(
-            f"""\
-            **Status update ({timestamp}):**
 
-            > {txt}
-            """
+        wrapped = "\n".join(
+            textwrap.fill(line, width=88, replace_whitespace=False)
+            for line in txt.splitlines()
+        )
+
+        return (
+            f"**Status update ({timestamp}):**\n\n"
+            f"---\n"
+            f"```text\n{wrapped}\n```\n"
+            f"---\n"
         )
 
 
