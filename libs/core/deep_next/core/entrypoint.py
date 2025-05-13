@@ -1,5 +1,9 @@
 from pathlib import Path
 
+from deep_next.common.logging import configure_logging
+
+configure_logging()
+
 import click
 from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt

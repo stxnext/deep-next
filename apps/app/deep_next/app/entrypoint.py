@@ -1,6 +1,10 @@
 import time
 from datetime import datetime
 
+from deep_next.common.logging import configure_logging
+
+configure_logging()
+
 from deep_next.app.config import (
     FAILED_LABEL,
     FEATURE_BRANCH_NAME_TMPL,

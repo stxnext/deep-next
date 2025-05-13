@@ -1,5 +1,9 @@
 import time
 
+from deep_next.common.logging import configure_logging
+
+configure_logging()
+
 import click
 from deep_next.app.config import SCHEDULE_INTERVAL_ENV_VAR
 from deep_next.app.entrypoint import main
