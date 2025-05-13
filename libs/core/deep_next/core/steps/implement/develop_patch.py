@@ -3,8 +3,8 @@ from __future__ import annotations
 import difflib
 import textwrap
 from pathlib import Path
+from typing import List
 
-from deep_next.core.io import read_txt
 from deep_next.core.parser import has_tag_block, parse_tag_block
 from deep_next.core.steps.action_plan.data_model import Step
 from deep_next.core.steps.implement import acr
@@ -65,7 +65,6 @@ class Prompt:
         """
         INPUT DATA
         ------------------------
-        File path: '{path}'
         ```
         {code_context}
         ```
@@ -105,10 +104,7 @@ class Prompt:
         Within `<patched>...</patched>` code, pay attention to indentation, it's \
         Python code.
 
-        The requested modifications you are assigned with are part of a larger coding \
-        task. For context, you are given the task issue statement. Some code changes \
-        have already been made for the task by other developers. When developing the \
-        your modifications, build upon the changes made so far (if plausible).
+        {single_modification_output_format}
 
         If you want to add new code, DO NOT output only empty line in the 'original' \
         block. Use part of the existing code near which you want to add the new code. \
@@ -146,6 +142,8 @@ class Prompt:
         MODIFICATIONS EXAMPLE
         ------------------------
         ## File to change
+
+        File: /home/patryk/my_project/src/hello_world.py
         ```python
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -164,7 +162,11 @@ class Prompt:
             return int(a + b)
         ```
 
+        {logger_file_example}
+
+        ----------
         ## Goal
+        {multiple_modification_code_example}
         Introduce Python 3.11 syntax type hints and implement remove_integers function.
 
         ## Modifications
@@ -273,17 +275,126 @@ def develop_single_file_patches(step: Step, issue_statement: str) -> str:
         with open(step.target_file, "w") as f:
             f.write("# Comment added at creation time to indicate empty file.\n")
 
+    single_modification_output_format = textwrap.dedent(
+        """
+    The requested modifications you are assigned with are part of a larger coding \
+    task. For context, you are given the task issue statement. Some code changes \
+    have already been made for the task by other developers. When developing the \
+    your modifications, build upon the changes made so far (if plausible).
+    """
+    )
+
     raw_edits = _create_llm_agent().invoke(
         {
-            "path": step.target_file,
-            "code_context": read_txt(step.target_file),
+            "code_context": (
+                f"File path: '{step.target_file}'\n" "{read_txt(step.target_file)}"
+            ),
             "high_level_description": step.title,
             "description": step.description,
             "issue_statement": issue_statement,
+            "single_modification_output_format": single_modification_output_format,
+            "logger_file_example": "",
+            "multiple_modification_code_example": "",
         }
     )
 
     return raw_edits
+
+
+def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
+    """Develop patches for all steps in a single run.
+
+    Args:
+        steps: List of steps to implement
+        issue_statement: The issue statement
+
+    Returns:
+        The combined raw patches text for all files
+    """
+    logger.info(f"Developing patches for {len(steps)} steps at once")
+
+    for step in steps:
+        if not step.target_file.exists():
+            logger.warning(f"Creating new file: '{step.target_file}'")
+            with open(step.target_file, "w") as f:
+                f.write("# Comment added at creation time to indicate empty file.\n")
+
+    steps_description = "\n".join(
+        [
+            f"Step {i+1}: {step.title}\n"
+            f"File: {step.target_file}\n"
+            f"Description: {step.description}\n"
+            for i, step in enumerate(steps)
+        ]
+    )
+
+    files_content = ""
+    for step in steps:
+        files_content += (
+            f"\nFile: {step.target_file}\n"
+            "```python\n{read_txt(step.target_file)}\n```\n"
+        )
+
+    logger_file_example = textwrap.dedent(
+        """
+        File: /home/patryk/my_project/src/logger.py
+        ```python
+        # Placeholder for code content
+        ```
+
+        """
+    )
+
+    multiple_modification_code_example = textwrap.dedent(
+        """
+        Implement logger and add logging functionality to the `say_hello` function in `hello_world.py`.
+
+        ## Modifications
+        <modifications>
+        # modification 1
+        <file>/home/patryk/my_project/src/logger.py</file>
+        <original>
+        # Placeholder for code content
+        </original>
+        <patched>
+        from loguru import logger
+        logger.add("file.log", rotation="1 MB")
+
+        def log(msg: str) -> None:
+            logger.info(f">>> {{msg}}")
+        </patched>
+        # modification 2
+        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <original>
+        def say_hello():
+            \"\"\"Say hello!\"\"\"
+            print("Hello World")
+        </original>
+        <patched>
+        def say_hello():
+            \"\"\"Say hello!\"\"\"
+            print("Hello World")
+            log("Hello World printed")
+        </patched>
+
+        ----------
+        ## Goal (Another example)
+        """  # noqa: E501
+    )
+
+    raw_modifications = _create_llm_agent().invoke(
+        {
+            "issue_statement": issue_statement,
+            "description": steps_description,
+            "code_context": files_content,
+            "high_level_description": step.title,
+            "single_modification_output_format": "",
+            "logger_file_example": logger_file_example,
+            "multiple_modification_code_example": multiple_modification_code_example,
+        }
+    )
+
+    return raw_modifications
 
 
 def _git_diff(before: str, after: str, path: str) -> str:

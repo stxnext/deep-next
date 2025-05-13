@@ -4,11 +4,13 @@ from typing import Literal
 
 import tenacity
 from deep_next.core.base_graph import BaseGraph
+from deep_next.core.config import IMPLEMENTATION_MODE, ImplementationModes
 from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
 from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
 from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.develop_patch import (
     ParsePatchesError,
+    develop_all_patches,
     develop_single_file_patches,
     parse_patches,
 )
@@ -79,6 +81,31 @@ class _Node:
     def generate_git_diff(state: _State) -> dict:
         return {"git_diff": generate_diff(state.root_path)}
 
+    @staticmethod
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(5),
+        retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
+        reraise=True,
+    )
+    def develop_all_at_once(
+        state: _State,
+    ) -> _State:
+        """Develop all patches for all steps at once."""
+        raw_patches = develop_all_patches(
+            steps=state.steps, issue_statement=state.issue_statement
+        )
+
+        patches: list[CodePatch] = parse_patches(raw_patches)
+        patches = [patch for patch in patches if patch.before != patch.after]
+
+        for patch in patches:
+            apply_patch(patch)
+
+        # Empty the steps_remaining list since we've processed all steps at once
+        state.steps_remaining = []
+
+        return state
+
 
 def _select_next_or_end(
     state: _State,
@@ -99,16 +126,31 @@ class ImplementGraph(BaseGraph):
         super().__init__(_State)
 
     def _build(self) -> None:
-        self.add_quick_node(_Node.select_next_step)
-        self.add_quick_node(_Node.code_development)
-        self.add_quick_node(_Node.generate_git_diff)
+        if IMPLEMENTATION_MODE == ImplementationModes.SINGLE_FILE:
+            self.add_quick_node(_Node.select_next_step)
+            self.add_quick_node(_Node.code_development)
+            self.add_quick_node(_Node.generate_git_diff)
 
-        self.add_quick_edge(START, _Node.select_next_step)
-        self.add_quick_edge(_Node.select_next_step, _Node.code_development)
+            self.add_quick_edge(START, _Node.select_next_step)
+            self.add_quick_edge(_Node.select_next_step, _Node.code_development)
 
-        self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
+            self.add_quick_conditional_edges(
+                _Node.code_development, _select_next_or_end
+            )
 
-        self.add_quick_edge(_Node.generate_git_diff, END)
+            self.add_quick_edge(_Node.generate_git_diff, END)
+        elif IMPLEMENTATION_MODE == ImplementationModes.ALL_AT_ONCE:
+            self.add_quick_node(_Node.develop_all_at_once)
+            self.add_quick_node(_Node.generate_git_diff)
+
+            self.add_quick_edge(START, _Node.develop_all_at_once)
+            self.add_quick_edge(_Node.develop_all_at_once, _Node.generate_git_diff)
+            self.add_quick_edge(_Node.generate_git_diff, END)
+        else:
+            raise ValueError(
+                f"Invalid implementation mode: {IMPLEMENTATION_MODE}. "
+                f"Expected one of: {ImplementationModes.__members__}"
+            )
 
     def create_init_state(
         self, root_path: Path, issue_statement: str, action_plan: ActionPlan
