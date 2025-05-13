@@ -53,7 +53,21 @@ class GitHubIssue(BaseIssue):
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            gist_url = None
+            try:
+                gist = self._create_gist(file_name, file_content)
+                gist_url = gist.html_url
+            except Exception as e:
+                logger.error(
+                    f"Failed to create gist for file '{file_name}': {e}. "
+                    "Falling back to inline file content."
+                )
+            if gist_url:
+                body += (
+                    f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+                )
+            else:
+                body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)
@@ -79,6 +93,23 @@ class GitHubIssue(BaseIssue):
             ```
         """
         )
+
+    def _create_gist(self, filename: str, content: str):
+        """Create a public gist with the given file and return the gist object."""
+        try:
+            gist = self._issue._requester.requestJsonAndCheck(
+                "POST",
+                "/gists",
+                input={
+                    "public": True,
+                    "files": {filename: {"content": content}},
+                    "description": f"Attachment for issue #{self.no}: {filename}",
+                },
+            )[2]
+            # Use PyGithub's get_gist to wrap the returned gist dict
+            return self._issue._requester.github.get_gist(gist["id"])
+        except Exception as e:
+            raise
 
     def add_label(self, label: str) -> None:
         if label not in self.labels:
