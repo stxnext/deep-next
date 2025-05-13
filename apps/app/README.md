@@ -1,6 +1,6 @@
 # DeepNext App
 
-DeepNext App is a Python application that uses the GitLab api and git repository to leverage
+DeepNext App is a Python application that uses the VCS API to leverage
 DeepNext core pipeline in production.
 
 Steps:
@@ -9,30 +9,13 @@ Steps:
 3. Run DeepNext core pipeline
 4. Create MR with the solution
 
----
-
-# Run the app
-
-> ⚠️ Required environment variables (use `.env` monorepo file):
->
->	```bash
->	# [...]
->
->	# APP
->	GITLAB_ACCESS_TOKEN="glpat-...-MxM2JY"
->	AWS_ACCESS_KEY_ID="AK...YHY"
->	AWS_SECRET_ACCESS_KEY="PQjzev...8RoZ"
->	AWS_DEFAULT_REGION="eu-central-1"
->	AWS_OUTPUT=json
->	```
-
 ## Run the app with Docker 🐳
 
 ### 1. Run Container
 
 ```bash
 # From monorepo root directory
-make app_docker_run
+:
 ```
 
 ## Execute DeepNext in GitLab / GitHub:

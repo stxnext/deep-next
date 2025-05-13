@@ -42,13 +42,37 @@ def generate_diff(git_repo_root_dir: Path) -> str:
     if not is_git_repo(git_repo_root_dir):
         raise FileNotFoundError(f"`.git` not found in directory: `{git_repo_root_dir}`")
 
-    result = subprocess.run(
-        ["git", "diff"],
-        cwd=git_repo_root_dir,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        check=False,
+    diffs = []
+
+    diffs.append(
+        subprocess.run(
+            ["git", "diff", "HEAD"],
+            cwd=git_repo_root_dir,
+            stdout=subprocess.PIPE,
+            text=True,
+        ).stdout
     )
 
-    return result.stdout
+    # Diff for untracked files
+    untracked = (
+        subprocess.run(
+            ["git", "ls-files", "--others", "--exclude-standard"],
+            cwd=git_repo_root_dir,
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        .stdout.strip()
+        .splitlines()
+    )
+
+    for file in untracked:
+        diffs.append(
+            subprocess.run(
+                ["git", "diff", "--no-index", "/dev/null", file],
+                cwd=git_repo_root_dir,
+                stdout=subprocess.PIPE,
+                text=True,
+            ).stdout
+        )
+
+    return "\n".join(diffs)
