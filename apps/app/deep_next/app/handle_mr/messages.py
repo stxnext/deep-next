@@ -1,6 +1,8 @@
 import json
+import textwrap
 
 from deep_next.app.utils import convert_paths_to_str
+from deep_next.connectors.version_control_provider.base import BaseComment
 from deep_next.core.steps.action_plan.data_model import ActionPlan
 
 
@@ -29,35 +31,61 @@ def msg_issue_solved(exec_time: float | None = None) -> str:
     return base_message
 
 
-MSG_TO_DEEPNEXT_PREFIX = "@deepnext"
-MSG_TO_DEEPNEXT_CONTENT_OK = "OK"
+MSG_TO_DEEP_NEXT_PREFIX = "@deepnext"
+
+
+def trim_msg_to_deep_next_prefix(msg: str | BaseComment) -> str:
+    """Trims the DeepNext prefix from the message."""
+    msg = msg.body if isinstance(msg, BaseComment) else msg
+    if msg.startswith(MSG_TO_DEEP_NEXT_PREFIX):
+        return msg[len(MSG_TO_DEEP_NEXT_PREFIX) + 1 :].strip()
+    return msg.strip()
+
+
+MSG_TO_DEEP_NEXT_CONTENT_OK = "OK"
+
+
+def is_msg_to_deep_next_ok(msg: str | BaseComment) -> bool:
+    """Checks if the message is a response to DeepNext and if it is OK."""
+    msg = msg.body if isinstance(msg, BaseComment) else msg
+    trimmed_msg = trim_msg_to_deep_next_prefix(msg)
+    return trimmed_msg.lower() == MSG_TO_DEEP_NEXT_CONTENT_OK
+
 
 MSG_ACTION_PLAN_RESPONSE_INSTRUCTIONS = (
     "## How to respond?"
-    "\nTo **ACCEPT** the action plan, respond with:"
+    "\n👌 To **ACCEPT** the action plan, respond with:"
     "\n```"
-    f"\n{MSG_TO_DEEPNEXT_PREFIX}"
-    f"\n{MSG_TO_DEEPNEXT_CONTENT_OK}"
+    f"\n{MSG_TO_DEEP_NEXT_PREFIX}"
+    f"\n{MSG_TO_DEEP_NEXT_CONTENT_OK}"
     "\n```"
     "\n"
-    "\nTo **REQUEST CHANGES** to the action plan, talk to DeepNext following the message format:"  # noqa: E501
+    "\n✏️ To **REQUEST CHANGES** to the action plan, talk to DeepNext following the message format:"  # noqa: E501
     "\n```"
-    f"\n{MSG_TO_DEEPNEXT_PREFIX}"
+    f"\n{MSG_TO_DEEP_NEXT_PREFIX}"
     "\n<message to DeepNext>"
     "\n```"
 )
 
 
 def msg_present_action_plan(action_plan: ActionPlan) -> str:
-    pretty_action_plan = json.dumps(
-        convert_paths_to_str(action_plan.model_dump()), indent=4
+    ordered_steps_json = [step.model_dump() for step in action_plan.ordered_steps]
+    ordered_steps_json = convert_paths_to_str(ordered_steps_json)
+
+    reasoning = "\n".join(
+        textwrap.fill(line, width=88, replace_whitespace=False)
+        for line in action_plan.reasoning.splitlines()
     )
 
     return (
-        "## Action Plan"
+        "## Reasoning (for context only)"
+        "\n```action-plan-reasoning"
+        f"\n{reasoning}"
+        "\n```"
+        "\n## Action Plan"
         "\nWhat do you think about the action plan below?"
-        "\n```action-plan"
-        f"\n{pretty_action_plan}"
+        "\n```action-plan-steps"
+        f"\n{json.dumps(ordered_steps_json, indent=4)}"
         "\n```"
         f"\n{MSG_ACTION_PLAN_RESPONSE_INSTRUCTIONS}"
     )

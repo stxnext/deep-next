@@ -47,7 +47,7 @@ def format_comment_with_header(comment: str) -> str:
     return f"{_COMMENT_HEADER}\n\n{comment}"
 
 
-def trimm_comment_header(comment: str) -> str:
+def trim_comment_header(comment: str) -> str:
     """Trims the header from the comment."""
     if comment.startswith(_COMMENT_HEADER):
         return comment[len(_COMMENT_HEADER) :].strip()

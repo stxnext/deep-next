@@ -4,20 +4,21 @@ from enum import Enum, auto
 from json import JSONDecodeError
 from typing import Any
 
-from deep_next.app.common import trimm_comment_header
+from deep_next.app.common import trim_comment_header
 from deep_next.app.config import DeepNextLabel
 from deep_next.app.git import GitRepository
 from deep_next.app.handle_mr.messages import (
     _MSG_ACTION_PLAN_INVALID_FORMAT,
-    MSG_TO_DEEPNEXT_CONTENT_OK,
-    MSG_TO_DEEPNEXT_PREFIX,
+    MSG_TO_DEEP_NEXT_PREFIX,
     _msg_step_exec_time,
+    is_msg_to_deep_next_ok,
     msg_action_plan_implemented,
     msg_action_plan_invalid_format,
     msg_deepnext_started,
     msg_present_action_plan,
+    trim_msg_to_deep_next_prefix,
 )
-from deep_next.app.utils import convert_str_to_paths
+from deep_next.app.utils import convert_paths_to_str, convert_str_to_paths
 from deep_next.connectors.version_control_provider import BaseConnector, BaseMR
 from deep_next.connectors.version_control_provider.base import BaseComment
 from deep_next.core.graph_hitl import (
@@ -42,19 +43,44 @@ class _State(Enum):
     ACTION_PLAN_IMPLEMENTATION_REQUEST = auto()
 
 
+def _extract_action_plan_from_comment(
+    comment: str,
+) -> ActionPlan:
+    """Extract action plan from the comment."""
+    try:
+        action_plan_reasoning = extract_code_from_block(
+            comment, "action-plan-reasoning"
+        )
+        action_plan_steps = extract_code_from_block(comment, "action-plan-steps")
+
+        action_plan_steps = json.loads(action_plan_steps)
+        action_plan_steps = convert_str_to_paths(action_plan_steps)
+
+        return ActionPlan.model_validate(
+            {
+                "reasoning": action_plan_reasoning,
+                "ordered_steps": action_plan_steps,
+            }
+        )
+
+    except (ValidationError, JSONDecodeError) as e:
+        raise ActionPlanParserError(str(e))
+
+
 def _get_last_action_plan(
     mr: BaseMR,
-) -> tuple[str, list[BaseComment]] | tuple[None, None]:
+) -> tuple[BaseComment, list[BaseComment]] | tuple[None, None]:
     """Get the last action plan from the comments addressed to Deep Next."""
-    comments_after_action_plan = []
+    succeeding_msgs_to_deep_next = []
 
     for comment in mr.comments[::-1]:
 
-        if has_code_block(comment.body, "action-plan"):
-            action_plan = extract_code_from_block(comment.body, "action-plan")
-            return action_plan, comments_after_action_plan[::-1]
-        elif comment.body.startswith(MSG_TO_DEEPNEXT_PREFIX):
-            comments_after_action_plan.append(comment)
+        if has_code_block(comment.body, "action-plan-reasoning") and has_code_block(
+            comment.body, "action-plan-steps"
+        ):
+            return comment, succeeding_msgs_to_deep_next[::-1]
+        elif comment.body.startswith(MSG_TO_DEEP_NEXT_PREFIX):
+            succeeding_msgs_to_deep_next.append(comment)
 
     return None, None
 
@@ -66,27 +92,29 @@ def _determine_state(mr: BaseMR) -> tuple[_State, Any]:
     Return the state of the MR and the data needed to push it further towards
     completion.
     """
-    last_action_plan, succeeding_comments = _get_last_action_plan(mr)
+    last_action_plan_comment, succeeding_msgs_to_deep_next = _get_last_action_plan(mr)
 
-    if last_action_plan is None:
+    if last_action_plan_comment is None:
         return _State.ACTION_PLAN_PROPOSITION_REQUEST, None
 
-    if len(succeeding_comments) == 0:
+    # For type hinting
+    last_action_plan_comment: BaseComment
+    succeeding_msgs_to_deep_next: list[BaseComment]
+
+    if len(succeeding_msgs_to_deep_next) == 0:
         return _State.AWAITING_HUMAN_FEEDBACK, None
 
-    comment_body = trimm_comment_header(mr.comments[-1].body)
+    comment_body = trim_comment_header(mr.comments[-1].body)
     if comment_body.startswith(_MSG_ACTION_PLAN_INVALID_FORMAT):
         return _State.ACTION_PLAN_INVALID_FORMAT, None
 
-    succeeding_comments = [
-        comment.body[len(MSG_TO_DEEPNEXT_PREFIX) :].strip()
-        for comment in succeeding_comments
-    ]
+    if is_msg_to_deep_next_ok(succeeding_msgs_to_deep_next[-1]):
+        return _State.ACTION_PLAN_IMPLEMENTATION_REQUEST, last_action_plan_comment
 
-    if succeeding_comments[-1].lower() == MSG_TO_DEEPNEXT_CONTENT_OK.lower():
-        return _State.ACTION_PLAN_IMPLEMENTATION_REQUEST, last_action_plan
-
-    return _State.ACTION_PLAN_FIX_REQUEST, (last_action_plan, succeeding_comments)
+    return _State.ACTION_PLAN_FIX_REQUEST, (
+        last_action_plan_comment,
+        succeeding_msgs_to_deep_next,
+    )
 
 
 def _comment_action_plan(
@@ -101,7 +129,7 @@ def _comment_action_plan(
         step_time_message = _msg_step_exec_time(
             execution_time, additional_info="Waiting for your response..."
         )
-        comment += f"\n---" f"\n{step_time_message}"
+        comment += f"\n---\n{step_time_message}"
 
     mr.add_comment(comment, info_header=True, log=log)
 
@@ -124,7 +152,9 @@ def _propose_action_plan(
     return action_plan, execution_time
 
 
-def _fix_action_plan_prompt(old_action_plan: str, edit_instructions: list[str]) -> str:
+def _fix_action_plan_prompt(
+    old_action_plan: ActionPlan, edit_instructions: list[str]
+) -> str:
     """Fix the action plan prompt."""
     edit_instructions = "\n\n".join(
         [f"- {instruction}" for instruction in edit_instructions]
@@ -133,7 +163,7 @@ def _fix_action_plan_prompt(old_action_plan: str, edit_instructions: list[str]) 
     return (
         f"The following action plan (describing how to complete the issue) was created:"
         f"\n```old-action-plan"
-        f"\n{old_action_plan}"
+        f"\n{json.dumps(convert_paths_to_str(old_action_plan.model_dump()))}"
         f"\n```"
         f"\nUnfortunately, it turned out to be faulty. The task should be completed "
         f"following on a new action plan, fixed based collected feedback to the action "
@@ -153,14 +183,14 @@ def _fix_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
     vcs_connector: BaseConnector,
-    old_action_plan: str,
+    old_action_plan: ActionPlan,
     edit_instructions: list[str],
 ) -> tuple[ActionPlan, float]:
     """Fix the action plan."""
     issue = mr.issue(vcs_connector)
 
     if old_action_plan and edit_instructions:
-        issue_comment = _fix_action_plan_prompt()
+        issue_comment = _fix_action_plan_prompt(old_action_plan, edit_instructions)
     else:
         issue_comment = ""
 
@@ -179,15 +209,10 @@ def _implement_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
     vcs_connector: BaseConnector,
-    action_plan: str,
+    action_plan_comment: str,
 ) -> float:
     """Implement an action plan."""
-    try:
-        action_plan = json.loads(action_plan)
-        action_plan = convert_str_to_paths(action_plan)
-        action_plan = ActionPlan.model_validate(action_plan)
-    except (ValidationError, JSONDecodeError) as e:
-        raise ActionPlanParserError(str(e))
+    action_plan = _extract_action_plan_from_comment(action_plan_comment)
 
     issue = mr.issue(vcs_connector)
 
@@ -241,9 +266,27 @@ def handle_mr_human_in_the_loop(
             return True
 
         if state == _State.ACTION_PLAN_FIX_REQUEST:
-            old_action_plan, comments = data
+            old_action_plan_comment: BaseComment = data[0]
+            comments: list[BaseComment] = data[1]
+
+            try:
+                old_action_plan = _extract_action_plan_from_comment(
+                    old_action_plan_comment.body
+                )
+            except ActionPlanParserError as e:
+                mr.add_comment(
+                    msg_action_plan_invalid_format(str(e)),
+                    info_header=True,
+                    log="WARNING",
+                )
+                return False
+
             action_plan, execution_time = _fix_action_plan(
-                mr, local_repo, vcs_connector, old_action_plan, comments
+                mr,
+                local_repo,
+                vcs_connector,
+                old_action_plan,
+                [trim_msg_to_deep_next_prefix(c) for c in comments],
             )
             _comment_action_plan(
                 mr, action_plan, execution_time=execution_time, log="SUCCESS"
