@@ -1,1 +1,1 @@
-from .flake8 import Flake8CodeReviewer
+from .flake8 import Flake8CodeReviewer  # noqa: F401

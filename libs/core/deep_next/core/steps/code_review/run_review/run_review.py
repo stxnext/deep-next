@@ -1,12 +1,16 @@
 from pathlib import Path
 
+from deep_next.core.steps.code_review.run_review.lint import Flake8CodeReviewer
+from deep_next.core.steps.code_review.run_review.llm import (
+    CodeStyleCodeReviewer,
+    DiffConsistencyCodeReviewer,
+)
 from loguru import logger
 
-from deep_next.core.steps.code_review.run_review.lint import Flake8CodeReviewer
-from deep_next.core.steps.code_review.run_review.llm import CodeStyleCodeReviewer, DiffConsistencyCodeReviewer
-
 all_reviewers = [
-    CodeStyleCodeReviewer(), DiffConsistencyCodeReviewer(), Flake8CodeReviewer()
+    CodeStyleCodeReviewer(),
+    DiffConsistencyCodeReviewer(),
+    Flake8CodeReviewer(),
 ]
 
 
