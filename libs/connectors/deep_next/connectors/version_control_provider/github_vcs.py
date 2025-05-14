@@ -167,7 +167,10 @@ class GitHubMR(BaseMR):
         self._pr.remove_from_labels(label)
 
     def add_comment(
-        self, comment: str, info_header: bool = False, log: int | str | None = None
+        self,
+        comment: str,
+        info_header: bool = False,
+        log: int | str | None = None
     ) -> None:
         """Adds a comment to the MR."""
         if info_header:
