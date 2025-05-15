@@ -49,8 +49,10 @@ class CodeStyleCodeReviewer(BaseLLMCodeReviewer):
     def name(self) -> str:
         return "code_style_code_reviewer"
 
+    @property
     def code_review_parser(self) -> PydanticOutputParser:
         return _code_style_code_review_parser
 
+    @property
     def example_output(self) -> CodeReviewModel:
         return _example_output_code_style_code_review

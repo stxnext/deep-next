@@ -10,8 +10,8 @@ from unidiff import PatchSet
 
 class CodeReviewResult(BaseModel):
 
-    issues: list[tuple[str, str]] = Field(
-        default_factory=list,
+    issues: dict[str, list[str]] = Field(
+        default_factory=dict,
         description="Code review issues found during the code review process.",
     )
     completed: dict[str, bool] = Field(
@@ -132,9 +132,7 @@ class CodeReviewGraph(BaseGraph):
             include_code_fragments,
         )
         final_state = self.compiled.invoke(initial_state)
-        final_state = _State.model_validate(final_state)
-
-        return final_state.result
+        return CodeReviewResult.model_validate(final_state["result"])
 
 
 code_review_graph = CodeReviewGraph()

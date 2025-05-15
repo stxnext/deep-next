@@ -71,8 +71,10 @@ class DiffConsistencyCodeReviewer(BaseLLMCodeReviewer):
     def name(self) -> str:
         return "diff_consistency_code_reviewer"
 
+    @property
     def code_review_parser(self) -> PydanticOutputParser:
         return _diff_consistency_code_review_parser
 
+    @property
     def example_output(self) -> CodeReviewModel:
         return _example_output_diff_consistency_code_review
