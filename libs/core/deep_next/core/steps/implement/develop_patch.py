@@ -28,7 +28,7 @@ class Prompt:
         DEVELOPMENT GUIDELINES
         ------------------------
         - Type Hints: Use type hints to enhance code clarity and maintainability.
-        {task_description_1}
+        - Docstrings: Include concise, informative single-line docstrings for all functions and methods.
         - Line Length: Preferably fit in 88 chars in line.
         - Pythonic Code: Embrace the Zen of Python by writing simple, readable, and direct code.
         ------------------------
@@ -49,7 +49,7 @@ class Prompt:
         ------------------------
         1. File To Change
         The specific file assigned to you that requires modifications.
-        {expected_input_data_description_1}
+
         2. High-lvl description
         High-level description of necessary changes in a given file.
 
@@ -57,7 +57,7 @@ class Prompt:
         Additional requirements needed in the module to meet the expectations.
 
         4. Issue statement
-        {expected_input_data_description_2}
+        Completes the context for better understanding given requirements.
         ------------------------
         """  # noqa: E501
     )
@@ -277,10 +277,6 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str)
         with open(step.target_file, "w") as f:
             f.write("# Comment added at creation time to indicate empty file.\n")
 
-    task_description_1 = textwrap.dedent(
-        """- Docstrings: Include concise, informative single-line docstrings for all new functions and methods (if task doesn't state differently)."""  # noqa: E501
-    )
-
     single_modification_output_format = textwrap.dedent(
         """
     The requested modifications you are assigned with are part of a larger coding \
@@ -288,23 +284,6 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str)
     have already been made for the task by other developers. When developing the \
     your modifications, build upon the changes made so far (if plausible).
     """
-    )
-
-    expected_input_data_description_1 = textwrap.dedent(
-        """
-    This is part a larger task and you are responsible for only this file.
-    """
-    )
-
-    expected_input_data_description_2 = textwrap.dedent(
-        """
-    Original issue that defines the full task, from which this file-specific step was derived.
-    Gives broader context to better understand why the change is needed.
-
-    5. Related Changes (Git Diff)
-    A summary of changes from earlier steps in this task, shown as a Git diff.
-    Helps identify reusable code or utilities already implemented in other files, so you can avoid duplication and improve consistency.
-    """  # noqa: E501
     )
 
     raw_edits = _create_llm_agent().invoke(
@@ -318,10 +297,7 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str)
             "single_modification_output_format": single_modification_output_format,
             "logger_file_example": "",
             "multiple_modification_code_example": "",
-            "task_description_1": task_description_1,
             "git_diff": f" <git_diff>\n{git_diff}\n</git_diff>",
-            "expected_input_data_description_1": expected_input_data_description_1,
-            "expected_input_data_description_2": expected_input_data_description_2,
         }
     )
 
@@ -361,10 +337,6 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
             f"\nFile: {step.target_file}\n"
             f"```python\n{read_txt(step.target_file)}\n```\n"
         )
-
-    task_description_1 = textwrap.dedent(
-        """- Docstrings: Include concise, informative single-line docstrings for all functions and methods."""  # noqa: E501
-    )
 
     logger_file_example = textwrap.dedent(
         """
@@ -413,10 +385,6 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
         """  # noqa: E501
     )
 
-    expected_input_data_description_2 = textwrap.dedent(
-        """Completes the context for better understanding given requirements."""
-    )
-
     raw_modifications = _create_llm_agent().invoke(
         {
             "issue_statement": issue_statement,
@@ -426,10 +394,7 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
             "single_modification_output_format": "",
             "logger_file_example": logger_file_example,
             "multiple_modification_code_example": multiple_modification_code_example,
-            "task_description_1": task_description_1,
             "git_diff": "",
-            "expected_input_data_description_1": "",
-            "expected_input_data_description_2": expected_input_data_description_2,
         }
     )
 
