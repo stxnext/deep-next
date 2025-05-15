@@ -2,9 +2,7 @@ from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.io import read_txt
-from deep_next.core.steps.code_review.run_review.review_code import (
-    review_code as _review_code,
-)
+from deep_next.core.steps.code_review.run_review.run_review import run_review
 from langgraph.graph import END, START
 from pydantic import BaseModel, Field
 from unidiff import PatchSet
@@ -47,7 +45,7 @@ class _State(BaseModel):
         description=(
             "Code review issues found during the code review process"
             " and potential errors."
-        ),
+        )
     )
 
 
@@ -71,7 +69,8 @@ class _Node:
 
     @staticmethod
     def review_code(state: _State) -> dict:
-        code_review_issues, code_review_completed = _review_code(
+        code_review_issues, code_review_completed = run_review(
+            state.root_path,
             state.issue_statement,
             state.project_knowledge,
             state.git_diff,
