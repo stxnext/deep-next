@@ -47,13 +47,18 @@ class GitHubIssue(BaseIssue):
         self, comment: str, file_content: str | None = None, file_name="content.txt"
     ) -> None:
         """Create or append to the DeepNext anchor comment."""
+        from github import GithubException
+
         if self._anchor_comment is None:
             self._anchor_comment = self._get_or_create_anchor_comment()
 
         body = self.prettify_comment(comment)
 
         if file_content:
-            body += f"\n\n{self._format_file_attachment(file_name, file_content)}"
+            gist_url = self._create_gist(file_name, file_content)
+            body += (
+                f"\n\n**Attached file** [`{file_name}`]({gist_url})"
+            )
 
         updated_body = f"{self._anchor_comment.body.rstrip()}\n\n---\n\n{body}"
         self._anchor_comment.edit(updated_body)
@@ -84,6 +89,15 @@ class GitHubIssue(BaseIssue):
         if label not in self.labels:
             self._issue.add_to_labels(label)
             self.labels.append(label)
+
+    def _create_gist(self, file_name: str, file_content: str) -> str:
+        """Create a public Gist with the given file and return its URL."""
+        gist = self._issue._requester._GithubObject__github.get_user().create_gist(
+            public=True,
+            files={file_name: {"content": file_content}},
+            description=f"Attachment for issue #{self.no}: {file_name}",
+        )
+        return gist.html_url
 
     def remove_label(self, label: str) -> None:
         if label not in self.labels:
