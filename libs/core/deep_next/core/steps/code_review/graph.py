@@ -40,8 +40,8 @@ class _State(BaseModel):
     )
 
     # Output
-    result: CodeReviewResult = Field(
-        default_factory=list,
+    result: CodeReviewResult | None = Field(
+        default=None,
         description=(
             "Code review issues found during the code review process"
             " and potential errors."
@@ -64,7 +64,10 @@ class _Node:
             modified_files_paths.append(modified_file_path)
 
         return {
-            "code_fragments": {path: [read_txt(path)] for path in modified_files_paths}
+            "code_fragments": {
+                str(path.relative_to(state.root_path)): [read_txt(path)]
+                for path in modified_files_paths
+            }
         }
 
     @staticmethod

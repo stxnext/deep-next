@@ -45,6 +45,7 @@ sortedcontainers = "^2.4.0"
 scipy = "^1.15.2"
 libcst = "^1.6.0"
 unidiff = "^0.7.5"
+flake8 = "^7.2.0"
 
 [tool.poetry.group.connectors.dependencies]
 deep_next_connectors = { path = "libs/connectors", develop = true  }

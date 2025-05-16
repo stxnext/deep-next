@@ -8,6 +8,15 @@ class Flake8CodeReviewer(BaseCodeReviewer):
     def name(self) -> str:
         return "flake8_code_reviewer"
 
+    errs_to_ignore = [
+        "E501",  # Line too long
+        "E722",  # Do not use bare except
+        "E731",  # Do not assign a lambda expression, use a def
+        "E741",  # Ambiguous variable name
+        "E722",  # Do not use bare except
+        "W503",  # Line break before binary operator
+    ]
+
     def run(
         self,
         root_path: Path,
@@ -19,10 +28,8 @@ class Flake8CodeReviewer(BaseCodeReviewer):
         """Run flake8 on the given code and return the issues found."""
         import subprocess
 
-        # Run flake8 on the git diff
         result = subprocess.run(
-            ["flake8", "--diff"],
-            input=git_diff,
+            ["flake8", "--select=E", "--ignore=E501", "-a"],
             text=True,
             capture_output=True,
             cwd=root_path,
