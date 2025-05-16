@@ -13,31 +13,26 @@ Running as a service to automatically process issues:
 
 ```bash
 # Start the DeepNext app in Docker
-make app_docker_build
 make app_docker_run
-```
-
-## Configuration for GitLab
-
-```json
-{
-    "project_name": "deep_next",
-    "gitlab": {
-        "project_id": "<project_id>",
-        "base_url": "<url>",
-        "access_token": "<access_token>"
-    },
-    "git": {
-        "ref_branch": "develop",
-        "repo_url": "<repo_url.git>",
-        "label": "git_label"
-    }
-}
 ```
 
 ## GitHub Integration
 
-Similar configuration is available for GitHub integration, using the GitHub connector module.
+```dotenv
+# VCS connector setup (required to connect core pipeline with VCS)
+VCS_PROVIDER=github
+VCS_ACCESS_TOKEN=<your GitHub access token>
+VCS_REPO_PATH=stxnext/deep-next
+```
+
+## Configuration for GitLab
+
+```dotenv
+# VCS connector setup (required to connect core pipeline with VCS)
+VCS_PROVIDER=gitlab
+VCS_ACCESS_TOKEN=<your GitLab access token>
+VCS_REPO_PATH=stxnext/deep-next
+```
 
 ## How It Works
 

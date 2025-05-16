@@ -4,33 +4,11 @@ Your AI-powered junior software engineering assistant that takes an issue descri
 
 DeepNext is an advanced AI system that automatically analyzes a code repository, prepares a solution plan, and implements the necessary code for software engineering tasks using Large Language Models, saving developers hours of repetitive work.
 
-See [documentation](stxnext.github.io/deep-next) for more information.
+See [documentation](https://stxnext.github.io/deep-next/) for more information.
 
 ## Quick start
 
-### Installation
-
-```bash
-# Clone the repository
-git clone git@github.com:stxnext/deep-next.git
-cd deep-next
-
-# Install dependencies
-make install_venv
-
-# Test the installation
-make test_unit
-```
-
-### Example usage
-
-```bash
-# Process a single issue
-poetry run python -m deep_next.core.entrypoint \
-  --problem-statement "Add type hints in file.py" \
-  --hints "The error occurs in file.py" \
-  --root-dir /path/to/repository
-```
+[Getting Started](https://stxnext.github.io/deep-next/getting-started.html)
 
 ## GitHub/GitLab integration
 
@@ -52,10 +30,8 @@ For tracking and metrics, DeepNext integrates with LangSmith. Set up your creden
 
 ## Roadmap
 
-- **May 2025**: First public release
-- Future enhancements:
-  - Improved code generation accuracy
-  - Support for more programming languages
+- **May 2025**: First public release (for registered STX Next employees)
+- **June 2025**: Open-source
 
 ## Why choose DeepNext?
 
