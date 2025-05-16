@@ -84,18 +84,20 @@ class _Node:
 
 
 class SelectRelatedFilesGraph(BaseGraph):
-    def __init__(self):
+    def __init__(self, n_cycles: int | None = None):
+        self.n_cycles = n_cycles or SRFConfig.N_CYCLES
+
         super().__init__(_State)
 
     def _add_independent_file_selection_nodes(self) -> None:
-        for i in range(SRFConfig.N_CYCLES):
+        for i in range(self.n_cycles):
             self.add_node(
                 f"{_Node.single_file_selection_cycle.__name__} {i + 1}",
                 _Node.single_file_selection_cycle,
             )
 
     def _add_independent_file_selection_nodes_edges(self, to_node) -> None:
-        for i in range(SRFConfig.N_CYCLES):
+        for i in range(self.n_cycles):
             self.add_quick_edge(
                 START,
                 f"{_Node.single_file_selection_cycle.__name__} {i + 1}",
