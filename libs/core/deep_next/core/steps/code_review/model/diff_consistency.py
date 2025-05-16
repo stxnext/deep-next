@@ -21,11 +21,12 @@ _issues_desc = textwrap.dedent(
     other piece of code is used to obtain a certain return value which in reality is \
     not at all returned by the used entity, e.g.: when a function returns a list, but \
     the developer is trying to use it as a dictionary, or when two values are \
-    returned, but the developer is trying to unpack it as three values."
+    returned, but the developer is trying to unpack it as three values.
+    - If there's a big opportunity to extract common code or structure it in better way. Focus on most obvious scenarios.
 
     Don't look for minor issues, code style issues, etc.. List only issues that are \
     fundamental and prevent the code from working correctly or fulfilling the task.
-    """
+    """  # noqa: E501
 )
 
 
