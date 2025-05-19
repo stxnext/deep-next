@@ -39,6 +39,10 @@ class _State(BaseModel):
         default=None,
         description="The resulting git diff after applying the implementation steps.",
     )
+    implementation_mode: ImplementationModes = Field(
+        default=IMPLEMENTATION_MODE,
+        description="The mode of implementation to be used.",
+    )
 
     @model_validator(mode="after")
     def initialize_steps_remaining(self) -> "_State":
@@ -127,6 +131,13 @@ def _select_next_or_end(
     return _Node.generate_git_diff.__name__
 
 
+def _select_implementation_mode(state: _State):
+    if state.implementation_mode == ImplementationModes.SINGLE_FILE:
+        return _Node.select_next_step.__name__
+    else:
+        return _Node.develop_all_at_once.__name__
+
+
 class ImplementGraph(BaseGraph):
     """Implementation of "Implement" step in LangGraph."""
 
@@ -134,31 +145,26 @@ class ImplementGraph(BaseGraph):
         super().__init__(_State)
 
     def _build(self) -> None:
-        if IMPLEMENTATION_MODE == ImplementationModes.SINGLE_FILE:
-            self.add_quick_node(_Node.select_next_step)
-            self.add_quick_node(_Node.code_development)
-            self.add_quick_node(_Node.generate_git_diff)
+        # Add nodes for both implementation modes
+        self.add_quick_node(_Node.select_next_step)
+        self.add_quick_node(_Node.code_development)
+        self.add_quick_node(_Node.develop_all_at_once)
+        self.add_quick_node(_Node.generate_git_diff)
 
-            self.add_quick_edge(START, _Node.select_next_step)
-            self.add_quick_edge(_Node.select_next_step, _Node.code_development)
+        # Add conditional edge from START based on implementation mode
+        self.add_quick_conditional_edges(START, _select_implementation_mode)
+        # self.add_quick_edge(START, _Node.develop_all_at_once)
+        # self.add_quick_edge(START, _Node.select_next_step)
 
-            self.add_quick_conditional_edges(
-                _Node.code_development, _select_next_or_end
-            )
+        # # SINGLE_FILE path
+        self.add_quick_edge(_Node.select_next_step, _Node.code_development)
+        self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
 
-            self.add_quick_edge(_Node.generate_git_diff, END)
-        elif IMPLEMENTATION_MODE == ImplementationModes.ALL_AT_ONCE:
-            self.add_quick_node(_Node.develop_all_at_once)
-            self.add_quick_node(_Node.generate_git_diff)
+        # ALL_AT_ONCE path
+        self.add_quick_edge(_Node.develop_all_at_once, _Node.generate_git_diff)
 
-            self.add_quick_edge(START, _Node.develop_all_at_once)
-            self.add_quick_edge(_Node.develop_all_at_once, _Node.generate_git_diff)
-            self.add_quick_edge(_Node.generate_git_diff, END)
-        else:
-            raise ValueError(
-                f"Invalid implementation mode: {IMPLEMENTATION_MODE}. "
-                f"Expected one of: {ImplementationModes.__members__}"
-            )
+        # Common end point
+        self.add_quick_edge(_Node.generate_git_diff, END)
 
     def create_init_state(
         self, root_path: Path, issue_statement: str, action_plan: ActionPlan
