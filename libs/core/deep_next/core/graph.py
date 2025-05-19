@@ -1,6 +1,6 @@
 import textwrap
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypedDict
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS
@@ -11,9 +11,16 @@ from deep_next.core.steps.gather_project_knowledge.graph import (
     gather_project_knowledge_graph,
 )
 from deep_next.core.steps.implement.graph import implement_graph
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import END, START
 from loguru import logger
 from pydantic import BaseModel, Field
+
+
+class DeepNextGraphConfig(TypedDict):
+    root: str
+    problem_statement: str
+    hints: str
 
 
 class DeepNextResult(BaseModel):
@@ -147,7 +154,7 @@ class DeepNextGraph(BaseGraph):
     """Main graph for DeepNext."""
 
     def __init__(self):
-        super().__init__(_State)
+        super().__init__(_State, config_schema=DeepNextGraphConfig)
 
     def _build(self):
         self.add_quick_node(_Node.gather_project_knowledge)
@@ -210,3 +217,14 @@ deep_next_graph = DeepNextGraph()
 
 if __name__ == "__main__":
     print(f"Saved to: {deep_next_graph.visualize(subgraph_depth=2)}")
+
+
+def deep_next_graph_studio(config: RunnableConfig):
+    conf = config.get("configurable", {})
+
+    config["configurable"]["thread_id"] = conf.get("thread_id", "default-thread")
+    graph = DeepNextGraph()
+    return graph.compile()
+
+
+__all__ = ["deep_next_graph_studio"]
