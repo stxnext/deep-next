@@ -23,26 +23,32 @@ class _WrappedCompiledStateGraph(CompiledStateGraph):
         self._setup_fn = setup_fn
         self._teardown_fn = teardown_fn
 
-        self.__dict__.update(self._compiled_graph.__dict__)
+        self.__dict__.update(self._compiled_graph.__dict__)  # ?
+
+    def __getattr__(self, name):
+        return getattr(self._compiled_graph, name)
 
     def invoke(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         """Run setup -> original invoke -> teardown."""
         state = kwargs.get("input", args[0])
-
         self._setup_fn(state)
-
         try:
             return self._compiled_graph.invoke(*args, **kwargs)
         finally:
             self._teardown_fn(state)
 
+    def copy(self, update=None):
+        """Let Studio clone the real compiled graph."""
+        return self._compiled_graph.copy(update)
+
 
 class BaseGraph(StateGraph, ABC):
     def __init__(
         self,
-        state_cls: type[BaseModel | BaseModel],
+        state_cls: type[BaseModel],
+        config_schema: type | None = None,  # ADD THIS
     ):
-        super().__init__(state_cls)
+        super().__init__(state_cls, config_schema=config_schema)
         self.setup_fn = lambda _: None
         self.teardown_fn = lambda _: None
         self._build()

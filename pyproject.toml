@@ -17,6 +17,7 @@ click = "^8.1.7"
 loguru = "^0.7.2"
 python-dotenv = "^1.0.1"
 pydantic = "^2.10.3"
+langgraph-cli = {extras = ["inmem"], version = "^0.2.10"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
