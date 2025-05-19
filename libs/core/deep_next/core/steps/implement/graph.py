@@ -131,7 +131,9 @@ def _select_next_or_end(
     return _Node.generate_git_diff.__name__
 
 
-def _select_implementation_mode(state: _State):
+def _select_implementation_mode(
+    state: _State,
+) -> Literal[_Node.select_next_step.__name__, _Node.develop_all_at_once.__name__]:
     if state.implementation_mode == ImplementationModes.SINGLE_FILE:
         return _Node.select_next_step.__name__
     else:
@@ -153,8 +155,6 @@ class ImplementGraph(BaseGraph):
 
         # Add conditional edge from START based on implementation mode
         self.add_quick_conditional_edges(START, _select_implementation_mode)
-        # self.add_quick_edge(START, _Node.develop_all_at_once)
-        # self.add_quick_edge(START, _Node.select_next_step)
 
         # # SINGLE_FILE path
         self.add_quick_edge(_Node.select_next_step, _Node.code_development)
