@@ -45,7 +45,7 @@ class _State(BaseModel):
         description=(
             "Code review issues found during the code review process"
             " and potential errors."
-        )
+        ),
     )
 
 

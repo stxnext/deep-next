@@ -1,5 +1,5 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 from deep_next.core.steps.code_review.run_review.code_reviewer import BaseCodeReviewer
 
@@ -27,7 +27,6 @@ class Flake8CodeReviewer(BaseCodeReviewer):
         code_fragments: dict[str, list[str]],
     ) -> list[str]:
         """Run flake8 on the given code and return the issues found."""
-
         ignore_msg = ",".join(self.errs_to_ignore)
 
         result = subprocess.run(
