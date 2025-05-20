@@ -8,6 +8,7 @@ from deep_next.core.steps.action_plan.path_tools import try_to_resolve_path
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import OutputParserException
+from loguru import logger
 from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 
@@ -110,16 +111,17 @@ def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
     if not action_plan.ordered_steps:
         raise ActionPlanValidationError("Action has no steps.")
 
-    for step in action_plan.ordered_steps:
+    # Copy the list ([:]) to avoid modifying it while iterating
+    for step in action_plan.ordered_steps[:]:
         try:
             step.target_file = try_to_resolve_path(step.target_file, root_path)
         except FileNotFoundError as e:
             raise ActionPlanValidationError(str(e))
 
         if step.target_file.is_dir():
-            raise ActionPlanValidationError(
-                f"Target file '{step.target_file}' is a directory, not a file"
-            )
+            logger.error(f"Target file '{step.target_file}' is a directory, not a file")
+            action_plan.ordered_steps.remove(step)
+            continue
 
         if not step.target_file.is_relative_to(root_path):
             raise ActionPlanValidationError(

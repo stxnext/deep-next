@@ -2,6 +2,7 @@ import operator
 from pathlib import Path
 from typing import Annotated, TypedDict
 
+import tenacity
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import SRFConfig
 from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
@@ -14,6 +15,7 @@ from deep_next.core.steps.action_plan.srf.file_selection.tools.tools import (
     dispose_tools,
     init_tools,
 )
+from langchain.schema.output_parser import OutputParserException
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import START
 from langgraph.graph import END
@@ -47,6 +49,11 @@ def cleanup_search_tools(state: _State) -> None:
 
 class _Node:
     @staticmethod
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        retry=tenacity.retry_if_exception_type((OutputParserException, ValueError)),
+        reraise=True,
+    )
     def single_file_selection_cycle(state: _State) -> dict:
         """
         Run a single cycle of file selection.
@@ -66,6 +73,10 @@ class _Node:
             config=RunnableConfig(recursion_limit=SRFConfig.CYCLE_ITERATION_LIMIT),
         )
 
+        if len(result["relevant_files"]) == 0:
+            logger.error("No relevant files found in cycle.")
+            raise ValueError("No relevant files found. Please check your query.")
+
         return {
             "_cycle_results": result["relevant_files"],
             "_cycle_invalid_results": result["invalid_files"],
@@ -77,6 +88,8 @@ class _Node:
         combined_results = set(state["_cycle_results"])
         combined_invalid_results = set(state["_cycle_invalid_results"])
 
+        if len(combined_results) == 0:
+            raise ValueError("No relevant files found. Please check your query.")
         return {
             "final_results": list(combined_results),
             "final_invalid_results": list(combined_invalid_results),
