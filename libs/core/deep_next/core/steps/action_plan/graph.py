@@ -4,7 +4,10 @@ import tenacity
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import SRFConfig
 from deep_next.core.io import read_txt
-from deep_next.core.steps.action_plan.action_plan import create_action_plan
+from deep_next.core.steps.action_plan.action_plan import (
+    ActionPlanValidationError,
+    create_action_plan,
+)
 from deep_next.core.steps.action_plan.data_model import (
     ActionPlan,
     ExistingCodeContext,
@@ -61,7 +64,9 @@ class _Node:
     @staticmethod
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(3),
-        retry=tenacity.retry_if_exception_type(OutputParserException),
+        retry=tenacity.retry_if_exception_type(
+            OutputParserException, ActionPlanValidationError
+        ),
         reraise=True,
     )
     def create_action_plan(state: _State) -> dict:
