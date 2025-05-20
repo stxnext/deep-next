@@ -65,7 +65,7 @@ class _Node:
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(3),
         retry=tenacity.retry_if_exception_type(
-            OutputParserException, ActionPlanValidationError
+            (OutputParserException, ActionPlanValidationError)
         ),
         reraise=True,
     )
