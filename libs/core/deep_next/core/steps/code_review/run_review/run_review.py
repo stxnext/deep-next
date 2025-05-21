@@ -1,5 +1,6 @@
-from pathlib import Path
+from pydantic import BaseModel, Field
 
+from deep_next.core.common import format_exception
 from deep_next.core.steps.code_review.run_review.lint import Flake8CodeReviewer
 from deep_next.core.steps.code_review.run_review.llm import (
     CodeStyleCodeReviewer,
@@ -7,40 +8,49 @@ from deep_next.core.steps.code_review.run_review.llm import (
 )
 from loguru import logger
 
-all_reviewers = [
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from deep_next.core.steps.code_review.graph import _State
+
+CODE_REVIEWERS = [
     CodeStyleCodeReviewer(),
     DiffConsistencyCodeReviewer(),
     Flake8CodeReviewer(),
 ]
 
 
-def run_review(
-    root_path: Path,
-    issue_statement: str,
-    project_knowledge: str,
-    git_diff: str,
-    code_fragments: dict[str, list[str]],
-) -> tuple[dict[str, list[str]], dict[str, bool]]:
+class CodeReviewResult(BaseModel):
+    issues: dict[str, list[str]] = Field(
+        description="Problems found in the code by the code reviewer."
+    )
+    review_completed: dict[str, bool] = Field(
+        description="Whether the code review has been successfully finished."
+    )
 
-    issues = {code_reviewer.name: [] for code_reviewer in all_reviewers}
-    review_completed = {code_reviewer.name: True for code_reviewer in all_reviewers}
 
-    for code_reviewer in all_reviewers:
+def run_review(state: '_State') -> CodeReviewResult:
+    issues = {code_reviewer.name: [] for code_reviewer in CODE_REVIEWERS}
+    review_completed = {code_reviewer.name: True for code_reviewer in CODE_REVIEWERS}
+
+    for code_reviewer in CODE_REVIEWERS:
         try:
             _issues = code_reviewer.run(
-                root_path,
-                issue_statement,
-                project_knowledge,
-                git_diff,
-                code_fragments,
+                state.root_path,
+                state.issue_statement,
+                state.project_knowledge,
+                state.git_diff,
+                state.code_fragments,
             )
 
             issues[code_reviewer.name].extend(_issues)
         except Exception as e:
             logger.warning(
                 f"Code reviewer {code_reviewer.name} failed to review the code. "
-                f"Exception:\n{e}"
+                f"Exception:\n{format_exception(e)}"
             )
             review_completed[code_reviewer.name] = False
 
-    return issues, review_completed
+    return CodeReviewResult(
+        issues=issues,
+        review_completed=review_completed
+    )

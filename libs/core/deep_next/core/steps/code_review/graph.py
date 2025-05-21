@@ -9,13 +9,10 @@ from unidiff import PatchSet
 
 
 class CodeReviewResult(BaseModel):
-
     issues: dict[str, list[str]] = Field(
-        default_factory=dict,
         description="Code review issues found during the code review process.",
     )
     completed: dict[str, bool] = Field(
-        default_factory=dict,
         description="Code review completed status for each file in the git diff.",
     )
 
@@ -52,37 +49,28 @@ class _State(BaseModel):
 class _Node:
     @staticmethod
     def select_code(state: _State) -> dict:
-        modified_files_paths = []
+        modified_files = {}
         for patch in PatchSet(state.git_diff):
-            modified_file_path: Path = state.root_path / Path(patch.path)
+            rel_path = Path(patch.path)
+            abs_path = state.root_path / rel_path
 
-            if not modified_file_path.is_file():
+            if not abs_path.is_file():
                 raise FileNotFoundError(
                     f"Critical error - cannot resolve path based on git diff. "
-                    f"File {Path(patch.path)} not found within {state.root_path}."
+                    f"File {rel_path} not found within {state.root_path}."
                 )
-            modified_files_paths.append(modified_file_path)
 
-        return {
-            "code_fragments": {
-                str(path.relative_to(state.root_path)): [read_txt(path)]
-                for path in modified_files_paths
-            }
-        }
+            modified_files[str(rel_path)] = [read_txt(abs_path)]
+
+        return {"code_fragments": modified_files}
 
     @staticmethod
     def review_code(state: _State) -> dict:
-        code_review_issues, code_review_completed = run_review(
-            state.root_path,
-            state.issue_statement,
-            state.project_knowledge,
-            state.git_diff,
-            state.code_fragments,
-        )
+        review_result = run_review(state)
         return {
             "result": {
-                "issues": code_review_issues,
-                "completed": code_review_completed,
+                "issues": review_result.issues,
+                "completed": review_result.review_completed,
             }
         }
 
