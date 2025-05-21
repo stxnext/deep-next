@@ -1,10 +1,9 @@
 import json
 import textwrap
 from abc import ABC, abstractmethod
-from pathlib import Path
 
 from deep_next.core.steps.code_review.common import _create_llm
-from deep_next.core.steps.code_review.run_review.code_reviewer import BaseCodeReviewer
+from deep_next.core.steps.code_review.run_review.code_reviewer import CodeReviewContext
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
 from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
@@ -92,7 +91,7 @@ class _Prompt:
     )
 
 
-class BaseLLMCodeReviewer(BaseCodeReviewer, ABC):
+class BaseLLMCodeReviewer(ABC):
 
     CODE_REVIEW_CHAIN_RETRY = 3
 
@@ -151,14 +150,10 @@ class BaseLLMCodeReviewer(BaseCodeReviewer, ABC):
 
     def run(
         self,
-        root_path: Path,
-        issue_statement: str,
-        project_knowledge: str,
-        git_diff: str,
-        code_fragments: dict[str, list[str]],
+        context: CodeReviewContext,
     ) -> list[str]:
 
-        combined_code_fragments = self._combine_code_fragments(code_fragments)
+        combined_code_fragments = self._combine_code_fragments(context.code_fragments)
 
         messages = [
             ("system", _Prompt.role_description),
@@ -179,9 +174,9 @@ class BaseLLMCodeReviewer(BaseCodeReviewer, ABC):
         )
 
         data = {
-            "issue_statement": issue_statement,
-            "project_knowledge": project_knowledge,
-            "git_diff": git_diff,
+            "issue_statement": context.issue_statement,
+            "project_knowledge": context.project_knowledge,
+            "git_diff": context.git_diff,
             "relevant_code_fragments": relevant_code_fragments,
             "example_output_code_review": json.dumps(self.example_output.model_dump()),
             "empty_output_code_review": json.dumps({"issues": []}),

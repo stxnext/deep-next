@@ -32,6 +32,4 @@ def dump_filepaths(file_paths: list[Path | str]) -> str:
 
 
 def format_exception(e: Exception) -> str:
-    return ''.join(
-        traceback.format_exception(type(e), value=e, tb=e.__traceback__)
-    )
+    return "".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__))

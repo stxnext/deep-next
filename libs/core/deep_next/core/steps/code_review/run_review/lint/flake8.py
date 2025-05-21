@@ -2,12 +2,11 @@ import re
 import subprocess
 from pathlib import Path
 
+from deep_next.core.steps.code_review.run_review.code_reviewer import CodeReviewContext
 from unidiff.patch import PatchSet
 
-from deep_next.core.steps.code_review.run_review.code_reviewer import BaseCodeReviewer
 
-
-class Flake8CodeReviewer(BaseCodeReviewer):
+class Flake8CodeReviewer:
     @property
     def name(self) -> str:
         return "flake8_code_reviewer"
@@ -31,7 +30,7 @@ class Flake8CodeReviewer(BaseCodeReviewer):
 
         raw_lines = result.stdout.splitlines()
 
-        pattern = re.compile(r'^(.*?):(\d+):\d+: \w+ .*$')
+        pattern = re.compile(r"^(.*?):(\d+):\d+: \w+ .*$")
         results = []
         for raw_line in raw_lines:
             match = pattern.match(raw_line)
@@ -45,25 +44,23 @@ class Flake8CodeReviewer(BaseCodeReviewer):
 
         lines_changed: dict[Path, list[int]] = {}
         for patch in PatchSet(git_diff):
-            lines_changed[Path(patch.path)] = [line.target_line_no for hunk in patch for line in hunk]
+            lines_changed[Path(patch.path)] = [
+                line.target_line_no for hunk in patch for line in hunk
+            ]
 
         return lines_changed
 
     def run(
         self,
-        root_path: Path,
-        issue_statement: str,
-        project_knowledge: str,
-        git_diff: str,
-        code_fragments: dict[str, list[str]],
+        context: CodeReviewContext,
     ) -> list[str]:
         """Run flake8 on the given code and return the issues found."""
-        linter_results = self._run_linter(root_path)
+        linter_results = self._run_linter(context.root_path)
 
-        lines_changed = self._lines_changed(git_diff)
+        lines_changed = self._lines_changed(context.git_diff)
 
         return [
             issue
             for file_path, line, issue in linter_results
-            if line in lines_changed[file_path]
+            if file_path in lines_changed and line in lines_changed[file_path]
         ]
