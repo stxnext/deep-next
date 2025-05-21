@@ -2,20 +2,21 @@ from pathlib import Path
 
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.io import read_txt
-from deep_next.core.steps.code_review.review_code import review_code as _review_code
+from deep_next.core.steps.code_review.run_review.code_reviewer import CodeReviewContext
+from deep_next.core.steps.code_review.run_review.run_review import (
+    ALL_CODE_REVIEWERS,
+    run_reviewers,
+)
 from langgraph.graph import END, START
 from pydantic import BaseModel, Field
 from unidiff import PatchSet
 
 
 class CodeReviewResult(BaseModel):
-
-    issues: list[tuple[str, str]] = Field(
-        default_factory=list,
+    issues: dict[str, list[str]] = Field(
         description="Code review issues found during the code review process.",
     )
     completed: dict[str, bool] = Field(
-        default_factory=dict,
         description="Code review completed status for each file in the git diff.",
     )
 
@@ -40,8 +41,8 @@ class _State(BaseModel):
     )
 
     # Output
-    result: CodeReviewResult = Field(
-        default_factory=list,
+    result: CodeReviewResult | None = Field(
+        default=None,
         description=(
             "Code review issues found during the code review process"
             " and potential errors."
@@ -52,33 +53,37 @@ class _State(BaseModel):
 class _Node:
     @staticmethod
     def select_code(state: _State) -> dict:
-        modified_files_paths = []
+        modified_files = {}
         for patch in PatchSet(state.git_diff):
-            modified_file_path: Path = state.root_path / Path(patch.path)
+            rel_path = Path(patch.path)
+            abs_path = state.root_path / rel_path
 
-            if not modified_file_path.is_file():
+            if not abs_path.is_file():
                 raise FileNotFoundError(
                     f"Critical error - cannot resolve path based on git diff. "
-                    f"File {Path(patch.path)} not found within {state.root_path}."
+                    f"File {rel_path} not found within {state.root_path}."
                 )
-            modified_files_paths.append(modified_file_path)
 
-        return {
-            "code_fragments": {path: [read_txt(path)] for path in modified_files_paths}
-        }
+            modified_files[str(rel_path)] = [read_txt(abs_path)]
+
+        return {"code_fragments": modified_files}
 
     @staticmethod
     def review_code(state: _State) -> dict:
-        code_review_issues, code_review_completed = _review_code(
-            state.issue_statement,
-            state.project_knowledge,
-            state.git_diff,
-            state.code_fragments,
+        review_result = run_reviewers(
+            ALL_CODE_REVIEWERS,
+            CodeReviewContext(
+                root_path=state.root_path,
+                issue_statement=state.issue_statement,
+                project_knowledge=state.project_knowledge,
+                git_diff=state.git_diff,
+                code_fragments=state.code_fragments,
+            ),
         )
         return {
             "result": {
-                "issues": code_review_issues,
-                "completed": code_review_completed,
+                "issues": review_result.issues,
+                "completed": review_result.review_completed,
             }
         }
 
@@ -131,9 +136,7 @@ class CodeReviewGraph(BaseGraph):
             include_code_fragments,
         )
         final_state = self.compiled.invoke(initial_state)
-        final_state = _State.model_validate(final_state)
-
-        return final_state.result
+        return CodeReviewResult.model_validate(final_state["result"])
 
 
 code_review_graph = CodeReviewGraph()

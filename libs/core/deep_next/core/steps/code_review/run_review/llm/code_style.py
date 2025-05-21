@@ -1,6 +1,9 @@
 import textwrap
 
-from deep_next.core.steps.code_review.model.base import CodeReviewer, CodeReviewModel
+from deep_next.core.steps.code_review.run_review.llm.base import (
+    BaseLLMCodeReviewer,
+    CodeReviewModel,
+)
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import Field
 
@@ -38,8 +41,18 @@ _example_output_code_style_code_review = CodeStyleCodeReview(
     ],
 )
 
-code_style_code_reviewer = CodeReviewer(
-    name="code_style_code_reviewer",
-    parser=_code_style_code_review_parser,
-    example_output=_example_output_code_style_code_review,
-)
+
+class CodeStyleCodeReviewer(BaseLLMCodeReviewer):
+    """Code style code reviewer."""
+
+    @property
+    def name(self) -> str:
+        return "code_style_code_reviewer"
+
+    @property
+    def code_review_parser(self) -> PydanticOutputParser:
+        return _code_style_code_review_parser
+
+    @property
+    def example_output(self) -> CodeReviewModel:
+        return _example_output_code_style_code_review

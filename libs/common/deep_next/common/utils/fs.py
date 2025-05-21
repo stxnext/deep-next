@@ -4,12 +4,13 @@ import tempfile
 import traceback
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Any, Generator
 
 from deep_next.core.steps.implement.git_diff import is_git_repo
 
 
 @contextmanager
-def create_temp_dir() -> Path:
+def create_temp_dir() -> Generator[Path, Any, None]:
     """Context manager to create a temporary directory.
 
     The directory is automatically removed after exiting the context.
@@ -19,6 +20,17 @@ def create_temp_dir() -> Path:
         yield tmp_dir
     finally:
         shutil.rmtree(tmp_dir)
+
+
+@contextmanager
+def create_tmp_file() -> Generator[Path, Any, None]:
+
+    tmp_file = Path(tempfile.mktemp())
+    try:
+        yield tmp_file
+    finally:
+        if tmp_file.exists():
+            tmp_file.unlink()
 
 
 @contextmanager

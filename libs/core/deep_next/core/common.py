@@ -1,4 +1,5 @@
 import textwrap
+import traceback
 from pathlib import Path
 
 from deep_next.core.io import read_txt
@@ -28,3 +29,7 @@ def dump_filepaths(file_paths: list[Path | str]) -> str:
     ]
 
     return "\n".join(dump)
+
+
+def format_exception(e: Exception) -> str:
+    return "".join(traceback.format_exception(type(e), value=e, tb=e.__traceback__))

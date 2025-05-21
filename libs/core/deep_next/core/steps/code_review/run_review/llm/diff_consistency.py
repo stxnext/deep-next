@@ -1,6 +1,9 @@
 import textwrap
 
-from deep_next.core.steps.code_review.model.base import CodeReviewer, CodeReviewModel
+from deep_next.core.steps.code_review.run_review.llm.base import (
+    BaseLLMCodeReviewer,
+    CodeReviewModel,
+)
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import Field
 
@@ -60,8 +63,18 @@ _example_output_diff_consistency_code_review = DiffConsistencyCodeReview(
     ],
 )
 
-diff_consistency_code_reviewer = CodeReviewer(
-    name="diff_consistency_code_reviewer",
-    parser=_diff_consistency_code_review_parser,
-    example_output=_example_output_diff_consistency_code_review,
-)
+
+class DiffConsistencyCodeReviewer(BaseLLMCodeReviewer):
+    """Code style code reviewer."""
+
+    @property
+    def name(self) -> str:
+        return "diff_consistency_code_reviewer"
+
+    @property
+    def code_review_parser(self) -> PydanticOutputParser:
+        return _diff_consistency_code_review_parser
+
+    @property
+    def example_output(self) -> CodeReviewModel:
+        return _example_output_diff_consistency_code_review

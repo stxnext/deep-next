@@ -1,0 +1,48 @@
+from deep_next.core.common import format_exception
+from deep_next.core.steps.code_review.run_review.code_reviewer import (
+    CodeReviewContext,
+    CodeReviewer,
+)
+from deep_next.core.steps.code_review.run_review.lint import Flake8CodeReviewer
+from deep_next.core.steps.code_review.run_review.llm import (
+    CodeStyleCodeReviewer,
+    DiffConsistencyCodeReviewer,
+)
+from loguru import logger
+from pydantic import BaseModel, Field
+
+ALL_CODE_REVIEWERS = [
+    CodeStyleCodeReviewer(),
+    DiffConsistencyCodeReviewer(),
+    Flake8CodeReviewer(),
+]
+
+
+class CodeReviewResult(BaseModel):
+    issues: dict[str, list[str]] = Field(
+        description="Problems found in the code by the code reviewer."
+    )
+    review_completed: dict[str, bool] = Field(
+        description="Whether the code review has been successfully finished."
+    )
+
+
+def run_reviewers(
+    reviewers: list[CodeReviewer], context: CodeReviewContext
+) -> CodeReviewResult:
+    issues = {code_reviewer.name: [] for code_reviewer in reviewers}
+    review_completed = {code_reviewer.name: True for code_reviewer in reviewers}
+
+    for code_reviewer in reviewers:
+        try:
+            _issues = code_reviewer.run(context)
+
+            issues[code_reviewer.name].extend(_issues)
+        except Exception as e:
+            logger.warning(
+                f"Code reviewer {code_reviewer.name} failed to review the code. "
+                f"Exception:\n{format_exception(e)}"
+            )
+            review_completed[code_reviewer.name] = False
+
+    return CodeReviewResult(issues=issues, review_completed=review_completed)
