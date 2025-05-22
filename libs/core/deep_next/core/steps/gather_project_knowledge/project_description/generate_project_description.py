@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+import tenacity
 from deep_next.core.io import read_txt
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.common import (
@@ -11,6 +12,7 @@ from deep_next.core.steps.gather_project_knowledge.project_description.data_mode
     example_output_existing_project_description_context,
 )
 from langchain.output_parsers import PydanticOutputParser
+from langchain.schema.output_parser import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
 
 
@@ -61,6 +63,11 @@ class Prompt:
     )
 
 
+@tenacity.retry(
+    stop=tenacity.stop_after_attempt(3),
+    retry=tenacity.retry_if_exception_type(OutputParserException),
+    reraise=True,
+)
 def generate_project_description(
     questions: str,
     related_files: list[Path],

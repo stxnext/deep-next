@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import tenacity
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.project_info import ProjectInfo, get_project_info
 from deep_next.core.steps.action_plan.srf.graph import SelectRelatedFilesGraph
@@ -11,7 +10,6 @@ from deep_next.core.steps.gather_project_knowledge.project_description.generate_
     generate_questions,
 )
 from deep_next.core.steps.gather_project_knowledge.project_map import tree
-from langchain.schema.output_parser import OutputParserException
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import START
 from langgraph.graph import END
@@ -51,7 +49,7 @@ class _Node:
     def get_srf_context(
         state: _State,
     ) -> dict:
-        srf_graph = SelectRelatedFilesGraph(n_cycles=1)
+        srf_graph = SelectRelatedFilesGraph(n_cycles=3)
         initial_state = srf_graph.create_init_state(
             root_path=state.root_path,
             query=state.questions,
@@ -68,11 +66,6 @@ class _Node:
         }
 
     @staticmethod
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        retry=tenacity.retry_if_exception_type(OutputParserException),
-        reraise=True,
-    )
     def project_description(state: _State) -> dict:
         project_description = generate_project_description(
             questions=state.questions,
