@@ -95,7 +95,7 @@ class _Node:
 
     @staticmethod
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
+        stop=tenacity.stop_after_attempt(3),
         retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
         reraise=True,
     )
