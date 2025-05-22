@@ -26,7 +26,7 @@ class ExistingCodeContext(BaseModel):
 class Step(BaseModel):
     title: str = Field(description="High level step overview.")
     description: str = Field(description="Detailed step description.")
-    target_file: Path = Field(description="Absolute path to the file to be modified.")
+    target_files: list[Path] = Field(description="Absolute paths to the files to be modified or taken into consideration.")
 
 
 class ActionPlan(BaseModel):

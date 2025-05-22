@@ -71,7 +71,6 @@ class Prompt:
         """
         INPUT DATA
         ------------------------
-        File path: '{path}'
         ```
         {code_context}
         ```
@@ -277,16 +276,23 @@ class ParsePatchesError(Exception):
 
 
 def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str) -> str:
-    if not step.target_file.exists():
-        logger.warning(f"Creating new file: '{step.target_file}'")
+    for target_file in step.target_files:
+        if not target_file.exists():
+            logger.warning(f"Creating new file: '{target_file}'")
 
-        with open(step.target_file, "w") as f:
-            f.write("# Comment added at creation time to indicate empty file.\n")
+            with open(target_file, "w") as f:
+                f.write("# Comment added at creation time to indicate empty file.\n")
+
+    code_context = "\n\n\n---\n\n\n".join(
+        [
+            f"{str(target_file)}:\n\n```{read_txt(target_file)}```"
+            for target_file in step.target_files
+        ]
+    )
 
     raw_edits = _create_llm_agent().invoke(
         {
-            "path": step.target_file,
-            "code_context": read_txt(step.target_file),
+            "code_context": code_context,
             "high_level_description": step.title,
             "description": step.description,
             "issue_statement": issue_statement,

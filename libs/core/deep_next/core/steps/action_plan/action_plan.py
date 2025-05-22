@@ -112,20 +112,23 @@ def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
 
     for step in action_plan.ordered_steps:
         try:
-            step.target_file = try_to_resolve_path(step.target_file, root_path)
+            step.target_files = [
+                try_to_resolve_path(target_file, root_path) for target_file in step.target_files
+            ]
         except FileNotFoundError as e:
             raise ActionPlanValidationError(str(e))
 
-        if step.target_file.is_dir():
-            raise ActionPlanValidationError(
-                f"Target file '{step.target_file}' is a directory, not a file"
-            )
+        for target_file in step.target_files:
+            if target_file.is_dir():
+                raise ActionPlanValidationError(
+                    f"Target file '{target_file}' is a directory, not a file"
+                )
 
-        if not step.target_file.is_relative_to(root_path):
-            raise ActionPlanValidationError(
-                f"Target file '{step.target_file}' is not part of project dir "
-                f"'{root_path}'"
-            )
+            if not target_file.is_relative_to(root_path):
+                raise ActionPlanValidationError(
+                    f"Target file '{target_file}' is not part of project dir "
+                    f"'{root_path}'"
+                )
 
     return action_plan
 

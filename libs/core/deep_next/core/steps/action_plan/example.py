@@ -88,22 +88,16 @@ as `apps/app/deep_next/app/entrypoint.py`, `apps/evaluation/deep_next/evaluation
 │           │   ├── 📄 example_tasks_165.py
 │           │   ├── 📄 example_tasks_mini.py
 │           │   ├── 📁 gt_apply_edits
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_and_after_
-│           │   │   │   patch.py
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_and_after_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_patch.py
 │           │   │   ├── 📄 fix_typehints-docstring_added.py
 │           │   │   ├── 📄 fix_typehints-docstring_removed.py
 │           │   │   ├── 📄 fix_typehints-exact_match.py
 │           │   │   ├── 📄 fix_typehints-line_1_mismatch.py
 │           │   │   ├── 📄 fix_typehints-line_2_mismatch.py
 │           │   │   ├── 📄 fix_typehints-line_3_mismatch.py
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-missing_indentation_in_before_and_afte
-│           │   │   │   r_patch.py
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-missing_indentation_in_before_patch.py
+│           │   │   ├── 📄 fix_typehints-missing_indentation_in_before_and_after_patch.py
+│           │   │   ├── 📄 fix_typehints-missing_indentation_in_before_patch.py
 │           │   │   ├── 📄 fix_typehints-newline_added_in_the_middle.py
 │           │   │   ├── 📄 fix_typehints-newline_removed_in_the_middle.py
 │           │   │   ├── 📄 fix_typehints-typehint_added.py
@@ -114,7 +108,7 @@ as `apps/app/deep_next/app/entrypoint.py`, `apps/evaluation/deep_next/evaluation
 │           │   └── 📁 project_knowledge
 │           ├── 📄 entrypoint.py
 │           ├── 📄 generate_gt_select_related_files_results.py
-│           ├── 📄 generate_gt_solution_desing_templates.py
+│           ├── 📄 generate_gt_solution_design_templates.py
 │           ├── 📄 generate_project_knowledge.py
 │           ├── 📄 results_evaluation.py
 │           ├── 📄 run_swe_prediction.py
@@ -357,7 +351,7 @@ action_plan = ActionPlan(
                 If `config.py` is missing, create it and structure it appropriately.
                 """  # noqa: E501
             ),
-            target_file=Path("libs/core/deep_next/core/config.py"),
+            target_files=[Path("libs/core/deep_next/core/config.py")],
         ),
         Step(
             title="Implement logging mechanism in log.py",
@@ -372,7 +366,7 @@ action_plan = ActionPlan(
                 - Provide reusable logging setup functions to keep entry points clean.
                 """
             ),
-            target_file=Path("libs/core/deep_next/core/log.py"),
+            target_files=[Path("libs/core/deep_next/core/log.py"), Path("libs/core/deep_next/core/config.py")],
         ),
         Step(
             title="Integrate logging into entrypoint.py",
@@ -386,7 +380,7 @@ action_plan = ActionPlan(
                 - Existing log statements are migrated to use the new structured logging approach with Loguru.
                 """
             ),
-            target_file=Path("libs/core/deep_next/core/entrypoint.py"),
+            target_files=[Path("libs/core/deep_next/core/entrypoint.py"), Path("libs/core/deep_next/core/log.py")],
         ),
     ],
 )
