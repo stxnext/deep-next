@@ -7,6 +7,7 @@ import yaml
 from boto3 import Session
 from deep_next.common.common import load_monorepo_dotenv
 from deep_next.common.config import MONOREPO_ROOT_PATH
+from deep_next.core.common import RemoveThinkingBlocksParser
 from langchain_aws import ChatBedrock
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import (
@@ -61,6 +62,13 @@ class Model(str, Enum):
     @property
     def provider(self) -> Provider:
         return _provider[self]
+
+
+models_with_thinking_blocks = [
+    Model.OLLAMA_QWEN_14B,
+    Model.AWS_DEEPSEEK_R1_v1_0,
+    Model.OLLAMA_DEEPCODER,
+]
 
 
 _provider = {
@@ -202,8 +210,10 @@ def _get_aws_bedrock_llm(
     boto3_session = Session(region_name=config.config["region"])
 
     model_kwargs = {}
-    if temperature := (temperature or config.temperature):
+    if temperature is not None:
         model_kwargs["temperature"] = temperature
+    elif config.temperature is not None:
+        model_kwargs["temperature"] = config.temperature
 
     return _ChatBedrock(
         beta_use_converse_api=True,
@@ -219,8 +229,10 @@ def _get_openai_llm(
 ) -> ChatOpenAI:
 
     metadata = {}
-    if seed := (seed or config.seed):
+    if seed is not None:
         metadata["seed"] = str(seed)
+    elif config.seed is not None:
+        metadata["seed"] = str(config.seed)
 
     return ChatOpenAI(
         model_name=config.model,
@@ -241,8 +253,10 @@ def _get_ollama_llm(config: LLMConfig, temperature: float | None = None) -> Chat
     """
     model_kwargs = {"num_ctx": 8192}
 
-    if temperature := (temperature or config.temperature):
+    if temperature is not None:
         model_kwargs["temperature"] = temperature
+    elif config.temperature is not None:
+        model_kwargs["temperature"] = config.temperature
 
     return ChatOllama(
         model=config.model,
@@ -276,6 +290,24 @@ def llm_from_config(
         )
     else:
         raise ValueError(f"Unknown LLM provider: {config.model.provider}")
+
+
+def create_llm(
+    config_type: LLMConfigType,
+    seed: int | None = None,
+    tools: list | None = None,
+    temperature: float | None = None,
+) -> BaseChatModel:
+    """Create a new LLM client"""
+    llm = llm_from_config(config_type, seed=seed, temperature=temperature)
+
+    llm = llm.bind_tools(tools) if tools else llm
+
+    config = LLMConfig.load(config_type=config_type)
+    if config.model in models_with_thinking_blocks:
+        return llm | RemoveThinkingBlocksParser()
+    else:
+        return llm
 
 
 if __name__ == "__main__":

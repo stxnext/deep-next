@@ -1,9 +1,7 @@
 import textwrap
 
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.project_info import NOT_FOUND, ProjectInfo
-from deep_next.core.steps.gather_project_knowledge.project_description.common import (
-    _create_llm,
-)
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
     ExistingQuestionContext,
     example_output_existing_question_context,
@@ -64,7 +62,9 @@ def generate_questions(
 
     parser = PydanticOutputParser(pydantic_object=ExistingQuestionContext)
 
-    llm_agent = design_solution_prompt_template | _create_llm() | parser
+    llm_agent = (
+        design_solution_prompt_template | create_llm(LLMConfigType.ACTION_PLAN) | parser
+    )
 
     return llm_agent.invoke(
         {
