@@ -86,10 +86,10 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
 
     steps_description = "\n".join(
         [
-            f"Step {i+1}: {step.title}\n"
+            f"Step {i}: {step.title}\n"
             f"File: {step.target_file}\n"
             f"Description: {step.description}\n"
-            for i, step in enumerate(steps)
+            for i, step in enumerate(steps, start=1)
         ]
     )
 
