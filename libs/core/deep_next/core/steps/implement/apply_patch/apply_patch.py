@@ -21,6 +21,9 @@ def _get_exact_match(text: str, match: str) -> CodeMatch | None:
         text: Text to search in.
         match: Text to search for.
     """
+    if text == match:
+        return CodeMatch(start=1, end=len(text.splitlines()), distance=0)
+
     result = text.split(match)
     if len(result) == 1:
         return None

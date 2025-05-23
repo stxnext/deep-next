@@ -1,7 +1,7 @@
 import textwrap
 from pathlib import Path
 
-from deep_next.core.io import read_txt
+from deep_next.core.io import read_txt_or_none
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.common import (
     _create_llm,
@@ -86,7 +86,7 @@ def generate_project_description(
     llm_agent = design_solution_prompt_template | _create_llm() | parser
 
     related_code_context = "\n".join(
-        [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
+        [f"File: {file_path}\n{read_txt_or_none(file_path) or '<Exception: Failed to read file>'}" for file_path in related_files]
     )
     return llm_agent.invoke(
         {
