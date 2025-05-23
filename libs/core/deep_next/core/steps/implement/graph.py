@@ -39,10 +39,6 @@ class _State(BaseModel):
         default=None,
         description="The resulting git diff after applying the implementation steps.",
     )
-    implementation_mode: ImplementationModes = Field(
-        default=IMPLEMENTATION_MODE,
-        description="The mode of implementation to be used.",
-    )
 
     @model_validator(mode="after")
     def initialize_steps_remaining(self) -> "_State":
@@ -131,10 +127,10 @@ def _select_next_or_end(
     return _Node.generate_git_diff.__name__
 
 
-def _select_implementation_mode(
-    state: _State,
-) -> Literal[_Node.select_next_step.__name__, _Node.develop_all_at_once.__name__]:
-    if state.implementation_mode == ImplementationModes.SINGLE_FILE:
+def _select_implementation_mode() -> Literal[
+    _Node.select_next_step.__name__, _Node.develop_all_at_once.__name__
+]:
+    if IMPLEMENTATION_MODE == ImplementationModes.SINGLE_FILE:
         return _Node.select_next_step.__name__
     else:
         return _Node.develop_all_at_once.__name__

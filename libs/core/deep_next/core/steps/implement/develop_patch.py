@@ -95,9 +95,15 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
 
     files_content = ""
     for step in steps:
+        markdown_style = "python" if step.target_file.suffix == ".py" else "txt"
+        try:
+            file_content = read_txt(step.target_file)
+        except Exception as e:
+            logger.warning(f"Failed to read file {step.target_file}: {e}")
+            file_content = ""
         files_content += (
             f"\nFile: {step.target_file}\n"
-            f"```python\n{read_txt(step.target_file)}\n```\n"
+            f"```{markdown_style}\n{file_content}\n```\n"
         )
 
     raw_modifications = _create_llm_agent(PromptAllAtOnceImplementation).invoke(
