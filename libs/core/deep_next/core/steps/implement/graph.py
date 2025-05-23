@@ -6,16 +6,14 @@ import tenacity
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import IMPLEMENTATION_MODE, ImplementationModes
 from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
-from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
 from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.develop_patch import (
     ParsePatchesError,
     develop_all_patches,
     develop_single_file_patches,
-    parse_patches,
+    parse_and_apply_patches,
 )
 from deep_next.core.steps.implement.git_diff import generate_diff
-from deep_next.core.steps.implement.utils import CodePatch
 from langgraph.graph import END, START
 from loguru import logger
 from pydantic import BaseModel, Field, model_validator
@@ -76,13 +74,7 @@ class _Node:
                 or "<Empty Git Diff, no modifications found>"
             ),
         )
-
-        patches: list[CodePatch] = parse_patches(raw_patches)
-        patches = [patch for patch in patches if patch.before != patch.after]
-
-        for patch in patches:
-            apply_patch(patch)
-
+        parse_and_apply_patches(raw_patches=raw_patches)
         return state
 
     @staticmethod
@@ -102,16 +94,10 @@ class _Node:
         raw_patches = develop_all_patches(
             steps=state.steps, issue_statement=state.issue_statement
         )
-
-        patches: list[CodePatch] = parse_patches(raw_patches)
-        patches = [patch for patch in patches if patch.before != patch.after]
-
-        for patch in patches:
-            apply_patch(patch)
+        parse_and_apply_patches(raw_patches=raw_patches)
 
         # Empty the steps_remaining list since we've processed all steps at once
         state.steps_remaining = []
-
         return state
 
 
@@ -127,9 +113,9 @@ def _select_next_or_end(
     return _Node.generate_git_diff.__name__
 
 
-def _select_implementation_mode() -> Literal[
-    _Node.select_next_step.__name__, _Node.develop_all_at_once.__name__
-]:
+def _select_implementation_mode(
+    state: _State,
+) -> Literal[_Node.select_next_step.__name__, _Node.develop_all_at_once.__name__]:
     if IMPLEMENTATION_MODE == ImplementationModes.SINGLE_FILE:
         return _Node.select_next_step.__name__
     else:

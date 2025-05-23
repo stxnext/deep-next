@@ -8,6 +8,7 @@ from deep_next.core.io import read_txt
 from deep_next.core.parser import has_tag_block, parse_tag_block
 from deep_next.core.steps.action_plan.data_model import Step
 from deep_next.core.steps.implement import acr
+from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
 from deep_next.core.steps.implement.common import _create_llm
 from deep_next.core.steps.implement.prompt_all_at_once_implemetation import (
     PromptAllAtOnceImplementation,
@@ -175,3 +176,12 @@ def parse_patches(txt: str) -> list[CodePatch]:
         )
         for edit in edits
     ]
+
+
+def parse_and_apply_patches(raw_patches: str) -> None:
+    """Parse and apply patches to the codebase."""
+    patches: list[CodePatch] = parse_patches(raw_patches)
+    patches = [patch for patch in patches if patch.before != patch.after]
+
+    for patch in patches:
+        apply_patch(patch)
