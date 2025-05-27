@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from enum import Enum
 from typing import Any, Callable, Iterable, Optional
 
@@ -19,6 +20,7 @@ from langchain_core.messages import (
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
+from langfuse.callback import CallbackHandler
 from loguru import logger
 from pydantic import BaseModel
 
@@ -195,6 +197,7 @@ def _get_aws_bedrock_llm(
         client=boto3_session.client("bedrock-runtime"),
         model_kwargs=model_kwargs,
         max_tokens=8 * 1024,
+        callbacks=_get_handler(),
     )
 
 
@@ -210,7 +213,16 @@ def _get_openai_llm(
         model_name=config.model,
         temperature=temperature or config.temperature,
         metadata=metadata,
+        callbacks=_get_handler(),
     )
+
+
+def _get_handler() -> list[CallbackHandler]:
+    if os.getenv("LANGFUSE_SECRET_KEY") is not None:
+        langfuse_handler = CallbackHandler()
+        return [langfuse_handler]
+    else:
+        return []
 
 
 def llm_from_config(
