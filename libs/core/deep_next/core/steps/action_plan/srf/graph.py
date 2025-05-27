@@ -53,11 +53,6 @@ def cleanup_search_tools(state: _State) -> None:
 
 class _Node:
     @staticmethod
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        retry=tenacity.retry_if_exception_type((OutputParserException, ValueError)),
-        reraise=True,
-    )
     def single_file_selection_cycle(state: _State) -> dict:
         """
         Run a single cycle of file selection.
