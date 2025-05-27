@@ -27,7 +27,7 @@ action_plan:
 
 ## Environment Variables
 
-For tracking and metrics, DeepNext integrates with LangSmith. Set up your credentials in the `.env` file.
+For tracking and metrics, DeepNext integrates with LangSmith and Langfuse. Set up your credentials in the `.env` file.
 
 ```
 # OpenAI access
@@ -36,6 +36,13 @@ OPENAI_API_KEY=...
 # AWS Bedrock access
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
+
+# langsmith support
+LANGSMITH_API_KEY=...
+LANGSMITH_TRACING_V2=true
+
+# Langfuse support
+LANGFUSE_PUBLIC_KEY=...
 ```
 
 ## Advanced Configuration
