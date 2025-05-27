@@ -1,5 +1,4 @@
 import subprocess
-import uuid
 from pathlib import Path
 
 from deep_next.common.cmd import RunCmdError, run_command
@@ -32,6 +31,7 @@ class FeatureBranch:
         self.name = name
 
         self._git_repo = git_repo
+        self.repo_dir = git_repo.repo_dir
 
     def commit_all(self, commit_msg: str) -> None:
         logger.info(f"Committing all changes from '{self.name}'...")
@@ -45,14 +45,6 @@ class FeatureBranch:
         self._git_repo.push_to_remote(self.name)
 
         logger.success(f"Pushed changes to remote: '{self.name}'")
-
-    def make_temporary_change(self):
-        unique_name = f"deep_next_tmp_{uuid.uuid4()}"
-        run_command(["touch", unique_name], cwd=self._git_repo.repo_dir)
-        return unique_name
-
-    def remove_temporary_change(self, change_id: str):
-        run_command(["rm", change_id], cwd=self._git_repo.repo_dir)
 
 
 # TODO: In evaluation similar git handler is used. It's refactor suggestion.

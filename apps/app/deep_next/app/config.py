@@ -17,16 +17,15 @@ for dir_path in [DATA_DIR, RESULTS_DIR, REPOSITORIES_DIR]:
     dir_path.mkdir(exist_ok=True, parents=True)
 
 REF_BRANCH = "develop"
-
-
 SCHEDULE_INTERVAL_ENV_VAR = "DEEP_NEXT_SCHEDULE_INTERVAL"
 
 
-class DeepNextLabel(Enum):
+class Label(Enum):
     """State of the DeepNext process."""
 
-    PENDING_E2E = "deep_next"
-    PENDING_HITL = "deep_next_human_in_the_loop"
+    TODO = "deep_next"
+    HUMAN_IN_THE_LOOP = "deep_next_human_in_the_loop"
+    AUTONOMOUS = "deep_next_autonomous"
 
     IN_PROGRESS = "deep_next_in_progress"
     AWAITING_RESPONSE = "deep_next_awaiting_response"

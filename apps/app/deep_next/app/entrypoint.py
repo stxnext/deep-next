@@ -1,156 +1,134 @@
-from deep_next.app.common import DEEP_NEXT_PR_DESCRIPTION, create_feature_branch_name
-from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, DeepNextLabel
+from deep_next.app.common import create_feature_branch_name
+from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, Label
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
 from deep_next.app.handle_mr.e2e import handle_mr_e2e
 from deep_next.app.handle_mr.hitl import handle_mr_human_in_the_loop
 from deep_next.app.utils import get_connector
 from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
-from deep_next.connectors.version_control_provider import (
-    BaseConnector,
-    BaseIssue,
-    BaseMR,
-)
+from deep_next.common.cmd import run_command
+from deep_next.connectors.version_control_provider import BaseIssue, BaseMR
 from loguru import logger
 
 
-def create_mr_and_comment(
+def _create_empty_commit(feature_branch: FeatureBranch) -> None:
+    """Creates an empty commit to allow MR creation when the branch has no changes."""
+    run_command(
+        [
+            "git",
+            "commit",
+            "--allow-empty",
+            "-m",
+            "chore: empty commit to initialize MR",
+        ],
+        cwd=feature_branch.repo_dir,
+    )
+    feature_branch.push_to_remote()
+
+
+def create_mr(
     vcs_config: VCSConfig,
     issue: BaseIssue,
     local_repo: GitRepository,
     ref_branch: str,
-    deep_next_state: DeepNextLabel,
-):
-    """Create an MR/PR to solve an issue and link the MR/PR in an issue's comment."""
+    labels: list[Label],
+) -> BaseMR:
+    """Creates a merge request for the given issue."""
     try:
-        issue.remove_label(deep_next_state)
-
         feature_branch: FeatureBranch = local_repo.new_feature_branch(
             ref_branch,
             feature_branch=create_feature_branch_name(issue.no),
         )
+        logger.info(f"Feature branch created: '{feature_branch.name}'")
 
-        change_id = feature_branch.make_temporary_change()
-        feature_branch.commit_all("Temporary change - undo after MR is created.")
-        feature_branch.push_to_remote()
+        _create_empty_commit(feature_branch)
 
-        mr = vcs_config.create_mr(
+        vcs_connector = get_connector(vcs_config)  # TODO: Move to a common place
+        mr = vcs_connector.create_mr(
             merge_branch=feature_branch.name,
             into_branch=ref_branch,
-            title=f"Resolve '{issue.title}'",
-            description=(
-                f"{DEEP_NEXT_PR_DESCRIPTION.format(issue_no=issue.no)}"
-                f"\n"
-                f"\nDo not modify this part of the description. You can add additional "
-                f"information below this line."
-                f"\n"
-                f"\n---"
-                f"\n"
-                f"\n"
-            ),
+            title=f"[DeepNext] Resolve issue #{issue.no}: {issue.title}",
+            description="This is description for the MR created by DeepNext.\n\n",
             issue=issue,
         )
 
-        feature_branch.remove_temporary_change(change_id)
-        feature_branch.commit_all("Temporary change undone.")
-        feature_branch.push_to_remote()
+        for label in labels:
+            mr.add_label(label)
 
-        mr.add_label(deep_next_state)
-
-        message = (
-            f"Assigned feature branch: `{feature_branch.name}`"
-            f"\n"
-            f"\n🟢 Issue #{issue.no} solution: {mr.url}"
-        )
-
-        issue.add_comment(message, info_header=True)
-        logger.info(message)
     except Exception as e:
         message = f"🔴 Failed to create MR/PR:\n\n{e}"
-        logger.info(message)
+        logger.error(message)
         issue.add_comment(message, info_header=True)
 
+        return
 
-def find_mrs(vcs_connector: BaseConnector, label: DeepNextLabel) -> list[BaseMR]:
-    """Fetches all merge requests to be solved by DeepNext.
+    message = (
+        f"Assigned feature branch: `{feature_branch.name}`\n"
+        f"🟢 Issue #{issue.no} solution: {mr.url}"
+    )
+    logger.success(message)
+    issue.add_comment(message, info_header=True)
 
-    Excludes labels that are not allowed to be processed.
-    """
-    excluding_labels = [
-        DeepNextLabel.FAILED.value,
-        DeepNextLabel.SOLVED.value,
-        DeepNextLabel.IN_PROGRESS.value,
-    ]
-
-    resp = []
-    for mr in vcs_connector.list_mrs(label=label.value):
-        if excluded := sorted([x for x in excluding_labels if x in mr.labels]):
-            logger.warning(
-                f"Skipping MR #{mr.no} ({mr.url}) due to label(s): {excluded}"
-            )
-            continue
-        resp.append(mr)
-
-    return resp
+    return mr
 
 
-def handle_issues(vcs_config: VCSConfig) -> None:
-    vcs_connector = get_connector(vcs_config)
-
+def solve_issues(issues: list[BaseIssue], vcs_config: VCSConfig) -> None:
+    """Solves issues dedicated for DeepNext for given project."""
+    logger.info("Preparing repository locally...")
     local_repo: GitRepository = setup_local_git_repo(
         repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
-    for issue in vcs_connector.list_issues(label=DeepNextLabel.PENDING_E2E):
-        create_mr_and_comment(
+    for idx, issue in enumerate(issues, start=1):
+        logger.info(f"({idx}/{len(issues)}) Solving issue #{issue.no}: '{issue.title}'")
+
+        run_type_label = (
+            Label.HUMAN_IN_THE_LOOP
+            if issue.has_label(Label.HUMAN_IN_THE_LOOP)
+            else Label.AUTONOMOUS
+        )
+        logger.info(
+            f"Issue #{issue.no} run type: {run_type_label.name}, creating MR..."
+        )
+
+        mr = create_mr(
             vcs_config,
             issue,
             local_repo,
             ref_branch=REF_BRANCH,
-            deep_next_state=DeepNextLabel.PENDING_E2E,
+            labels=[run_type_label],
         )
 
-    for issue in vcs_connector.list_issues(label=DeepNextLabel.PENDING_HITL):
-        create_mr_and_comment(
-            vcs_config,
-            issue,
-            local_repo,
-            ref_branch=REF_BRANCH,
-            deep_next_state=DeepNextLabel.PENDING_HITL,
+        mr_handler = (
+            handle_mr_e2e
+            if run_type_label == Label.AUTONOMOUS
+            else handle_mr_human_in_the_loop
         )
-
-
-def handle_mrs(vcs_config: VCSConfig) -> None:
-    vcs_connector = get_connector(vcs_config)
-
-    local_repo: GitRepository = setup_local_git_repo(
-        repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
-        clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
-    )
-
-    for mr in find_mrs(vcs_connector, label=DeepNextLabel.PENDING_E2E):
-        handle_mr_e2e(
-            mr,
-            local_repo,
-            vcs_connector,
-        )
-
-    for mr in find_mrs(vcs_connector, label=DeepNextLabel.PENDING_HITL):
-        handle_mr_human_in_the_loop(
-            mr,
-            local_repo,
-            vcs_connector,
+        mr_handler(
+            mr=mr,
+            local_repo=local_repo,
         )
 
 
 def main() -> None:
     """Solves issues dedicated for DeepNext for given project."""
     vcs_config: VCSConfig = load_vcs_config_from_env()
+    vcs_connector = get_connector(vcs_config)
+    logger.info(f"Starting DeepNext app for '{vcs_config.repo_path}' repo")
 
-    handle_issues(vcs_config)
-    handle_mrs(vcs_config)
+    if issues_todo := vcs_connector.list_issues(label=Label.TODO):
+        logger.info(
+            f"Found {len(issues_todo)} issues with '{Label.TODO}' label "
+            f"in '{vcs_config.repo_path}'"
+        )
 
-    logger.success("DeepNext app run completed.")
+        solve_issues(issues_todo, vcs_config)
+    else:
+        logger.info(
+            f"No issues found with '{Label.TODO}' label " f"in '{vcs_config.repo_path}'"
+        )
+
+    logger.success(f"DeepNext app run completed for '{vcs_config.repo_path}' repo")
 
 
 if __name__ == "__main__":

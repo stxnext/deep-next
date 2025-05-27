@@ -2,7 +2,7 @@ from enum import Enum
 
 import gitlab
 from deep_next.app.common import format_comment_with_header
-from deep_next.app.config import DeepNextLabel
+from deep_next.app.config import Label
 from deep_next.connectors.version_control_provider.base import (
     BaseComment,
     BaseConnector,
@@ -183,23 +183,20 @@ class GitLabMR(BaseMR):
         """Returns the labels of the MR."""
         return self._mr.labels
 
-    def add_label(self, label: str | DeepNextLabel):
+    def add_label(self, label: str | Label):
         """Add a label to the MR."""
         label = label_to_str(label)
         # TODO: Replace with the proper implementation.
         self._mr.add_to_labels(label)
 
-    def remove_label(self, label: str | DeepNextLabel):
+    def remove_label(self, label: str | Label):
         """Remove a label from the MR."""
         label = label_to_str(label)
         # TODO: Replace with the proper implementation.
         self._mr.remove_from_labels(label)
 
     def add_comment(
-        self,
-        comment: str,
-        info_header: bool = False,
-        log: int | str | None = None
+        self, comment: str, info_header: bool = False, log: int | str | None = None
     ) -> None:
         """Adds a comment to the MR."""
         if info_header:

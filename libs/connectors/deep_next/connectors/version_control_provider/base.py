@@ -2,8 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
 
-from deep_next.app.common import extract_issue_number_from_mr
-from deep_next.app.config import DeepNextLabel
+from deep_next.app.config import Label
 from deep_next.connectors.version_control_provider.utils import label_to_str
 
 
@@ -93,12 +92,10 @@ class BaseIssue(ABC):
 
 
 class BaseMR(ABC):
-    def issue(self, connector: "BaseConnector") -> BaseIssue | None:
-        """Returns the issue associated with the MR."""
-        issue_no = extract_issue_number_from_mr(self)
-        if issue_no is None:
-            return None
-        return connector.get_issue(issue_no)
+    @property
+    @abstractmethod
+    def related_issue(self) -> BaseIssue | None:
+        """Returns the issue related to the MR, if any."""
 
     @property
     @abstractmethod
@@ -146,11 +143,11 @@ class BaseMR(ABC):
         """Returns the labels of the MR."""
 
     @abstractmethod
-    def add_label(self, label: str | DeepNextLabel):
+    def add_label(self, label: str | Label):
         """Add a label to the MR."""
 
     @abstractmethod
-    def remove_label(self, label: str | DeepNextLabel):
+    def remove_label(self, label: str | Label):
         """Remove a label from the MR."""
 
     @abstractmethod

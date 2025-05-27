@@ -1,9 +1,5 @@
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from deep_next.connectors.version_control_provider import BaseMR
 
 DEEP_NEXT_PR_DESCRIPTION = "DeepNext's attempt to solve the issue #{issue_no}."
 
@@ -17,20 +13,6 @@ def create_feature_branch_name(issue_no: int) -> str:
         issue_no=issue_no,
         note=datetime.now().strftime("%Y_%m_%d_%H_%M_%S"),
     )
-
-
-def extract_issue_number_from_mr(mr: "BaseMR"):
-
-    to_replace = r"{issue_no}"
-    replace_with = r"(\d+)"
-    pattern = DEEP_NEXT_PR_DESCRIPTION.replace(to_replace, replace_with)
-
-    match = re.search(pattern, mr.description)
-
-    if match:
-        return int(match.group(1))
-
-    return None
 
 
 def is_snake_case(txt: str) -> bool:

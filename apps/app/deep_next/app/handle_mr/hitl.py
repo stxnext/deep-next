@@ -5,7 +5,7 @@ from json import JSONDecodeError
 from typing import Any
 
 from deep_next.app.common import trim_comment_header
-from deep_next.app.config import DeepNextLabel
+from deep_next.app.config import Label
 from deep_next.app.git import GitRepository
 from deep_next.app.handle_mr.messages import (
     _MSG_ACTION_PLAN_INVALID_FORMAT,
@@ -19,7 +19,7 @@ from deep_next.app.handle_mr.messages import (
     trim_msg_to_deep_next_prefix,
 )
 from deep_next.app.utils import convert_paths_to_str, convert_str_to_paths
-from deep_next.connectors.version_control_provider import BaseConnector, BaseMR
+from deep_next.connectors.version_control_provider import BaseMR
 from deep_next.connectors.version_control_provider.base import BaseComment
 from deep_next.core.graph_hitl import (
     deep_next_action_plan_graph,
@@ -119,7 +119,7 @@ def _determine_state(mr: BaseMR) -> tuple[_State, Any]:
 
 def _comment_action_plan(
     mr: BaseMR,
-    action_plan: Any,
+    action_plan: ActionPlan,
     execution_time: float | None = None,
     log: int | str | None = None,
 ) -> None:
@@ -137,19 +137,18 @@ def _comment_action_plan(
 def _propose_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
-    vcs_connector: BaseConnector,
 ) -> tuple[ActionPlan, float]:
     """Propose an action plan."""
     start_time = time.time()
-    issue = mr.issue(vcs_connector)
+    issue = mr.related_issue
     action_plan = deep_next_action_plan_graph(
         root_path=local_repo.repo_dir,
         issue_title=issue.title,
         issue_description=issue.description,
         issue_comments=[comment.body for comment in issue.comments],
     )
-    execution_time = time.time() - start_time
-    return action_plan, execution_time
+
+    return action_plan, time.time() - start_time
 
 
 def _fix_action_plan_prompt(
@@ -182,12 +181,11 @@ def _fix_action_plan_prompt(
 def _fix_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
-    vcs_connector: BaseConnector,
     old_action_plan: ActionPlan,
     edit_instructions: list[str],
 ) -> tuple[ActionPlan, float]:
     """Fix the action plan."""
-    issue = mr.issue(vcs_connector)
+    issue = mr.related_issue
 
     if old_action_plan and edit_instructions:
         issue_comment = _fix_action_plan_prompt(old_action_plan, edit_instructions)
@@ -208,13 +206,12 @@ def _fix_action_plan(
 def _implement_action_plan(
     mr: BaseMR,
     local_repo: GitRepository,
-    vcs_connector: BaseConnector,
     action_plan_comment: str,
 ) -> float:
     """Implement an action plan."""
     action_plan = _extract_action_plan_from_comment(action_plan_comment)
 
-    issue = mr.issue(vcs_connector)
+    issue = mr.related_issue
 
     start_time = time.time()
     _ = deep_next_implement_graph(
@@ -236,12 +233,11 @@ def _implement_action_plan(
 def handle_mr_human_in_the_loop(
     mr: BaseMR,
     local_repo: GitRepository,
-    vcs_connector: BaseConnector,
 ) -> bool:
     """Handle MRs/PRs for the given issue."""
     state, data = _determine_state(mr)
 
-    issue_no = mr.issue(vcs_connector).no
+    issue_no = mr.related_issue.no
 
     if state == _State.AWAITING_HUMAN_FEEDBACK:
         logger.info(f"🟡 Waiting for human feedback on issue #{issue_no}...")
@@ -251,15 +247,13 @@ def handle_mr_human_in_the_loop(
         logger.info(f"🟡 Waiting for last action plan fix or removal #{issue_no}...")
         return True
 
-    mr.add_label(DeepNextLabel.IN_PROGRESS)
+    mr.add_label(Label.IN_PROGRESS)
 
     try:
         if state == _State.ACTION_PLAN_PROPOSITION_REQUEST:
             mr.add_comment(msg_deepnext_started(), info_header=True)
 
-            action_plan, execution_time = _propose_action_plan(
-                mr, local_repo, vcs_connector
-            )
+            action_plan, execution_time = _propose_action_plan(mr, local_repo)
             _comment_action_plan(
                 mr, action_plan, execution_time=execution_time, log="SUCCESS"
             )
@@ -284,7 +278,6 @@ def handle_mr_human_in_the_loop(
             action_plan, execution_time = _fix_action_plan(
                 mr,
                 local_repo,
-                vcs_connector,
                 old_action_plan,
                 [trim_msg_to_deep_next_prefix(c) for c in comments],
             )
@@ -295,15 +288,13 @@ def handle_mr_human_in_the_loop(
 
         if state == _State.ACTION_PLAN_IMPLEMENTATION_REQUEST:
             try:
-                execution_time = _implement_action_plan(
-                    mr, local_repo, vcs_connector, data
-                )
+                execution_time = _implement_action_plan(mr, local_repo, data)
                 mr.add_comment(
                     msg_action_plan_implemented(execution_time),
                     info_header=True,
                     log="SUCCESS",
                 )
-                mr.add_label(DeepNextLabel.SOLVED)
+                mr.add_label(Label.SOLVED)
                 return True
             except ActionPlanParserError as e:
                 mr.add_comment(
@@ -317,9 +308,9 @@ def handle_mr_human_in_the_loop(
         err_msg = f"🔴 DeepNext app failed for MR #{mr.no}: {str(e)}"
         logger.error(err_msg)
 
-        mr.add_label(DeepNextLabel.FAILED)
+        mr.add_label(Label.FAILED)
         mr.add_comment(comment=err_msg, info_header=True)
 
         return False
     finally:
-        mr.remove_label(DeepNextLabel.IN_PROGRESS)
+        mr.remove_label(Label.IN_PROGRESS)

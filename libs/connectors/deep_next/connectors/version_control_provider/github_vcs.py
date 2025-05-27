@@ -1,9 +1,8 @@
-import re
 from enum import Enum
 from typing import List
 
 from deep_next.app.common import format_comment_with_header
-from deep_next.app.config import DeepNextLabel
+from deep_next.app.config import Label
 from deep_next.connectors.version_control_provider.base import (
     BaseComment,
     BaseConnector,
@@ -98,8 +97,14 @@ class GitHubIssue(BaseIssue):
 
 
 class GitHubMR(BaseMR):
-    def __init__(self, pr: PullRequest):
+    def __init__(self, pr: PullRequest, related_issue: GitHubIssue | None = None):
         self._pr = pr
+        self._related_issue = related_issue
+
+    @property
+    def related_issue(self) -> BaseIssue | None:
+        """Returns the related issue if exists."""
+        return self._related_issue
 
     @property
     def source_branch_name(self) -> str:
@@ -156,21 +161,18 @@ class GitHubMR(BaseMR):
         """Returns the labels of the MR."""
         return [label.name for label in self._pr.get_labels()]
 
-    def add_label(self, label: str | DeepNextLabel):
+    def add_label(self, label: str | Label):
         """Add a label to the MR."""
         label = label_to_str(label)
         self._pr.add_to_labels(label)
 
-    def remove_label(self, label: str | DeepNextLabel):
+    def remove_label(self, label: str | Label):
         """Remove a label from the MR."""
         label = label_to_str(label)
         self._pr.remove_from_labels(label)
 
     def add_comment(
-        self,
-        comment: str,
-        info_header: bool = False,
-        log: int | str | None = None
+        self, comment: str, info_header: bool = False, log: int | str | None = None
     ) -> None:
         """Adds a comment to the MR."""
         if info_header:
@@ -202,17 +204,14 @@ class GitHubConnector(BaseConnector):
                     )
                 )
             except UnknownObjectException:
-                # This means a 404 was returned, which means the label does not exist.
+                logger.warning(
+                    f"Label '{label}' not found in repository '{self.repo.full_name}'."
+                )
                 return []
         else:
             issues = list(self.repo.get_issues(state="open"))
 
-        # GitHub returns both issues and pull requests in the same list.
-        issues = [
-            issue for issue in issues if not re.search(r"pull/\d+$", issue.html_url)
-        ]
-
-        return [GitHubIssue(i) for i in issues]
+        return [GitHubIssue(i) for i in issues if not i.pull_request]
 
     def get_issue(self, issue_no: int) -> GitHubIssue:
         issue = self.repo.get_issue(number=issue_no)
@@ -251,4 +250,5 @@ class GitHubConnector(BaseConnector):
             base=into_branch,
             body=description,
         )
-        return GitHubMR(pr)
+
+        return GitHubMR(pr, related_issue=issue)
