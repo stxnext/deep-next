@@ -4,6 +4,7 @@ import textwrap
 from pathlib import Path
 from typing import Annotated, Literal, TypedDict
 
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import SRFConfig
 from deep_next.core.steps.action_plan.srf.common import (
@@ -174,16 +175,15 @@ def _invoke_fixable_llm_analysis_chain(
     1. Attempting to fix the current invalid output.
     2. Rerunning the chain with a different seed if the fix attempt fails.
     """
-    _e: OutputParserException | None = None
-    for i in range(ANALYZE_CHAIN_RETRY):
-        chain = prompt | _create_llm_analyze(seed=i) | analysis_parser
-        try:
-            return chain.invoke(prompt_arguments)
-        except OutputParserException as e:
-            _e = e
-            if result := _fix_invalid_analysis(e):
-                return result
-    raise _e
+    return invoke_retriable_llm_chain(
+        n_retry=ANALYZE_CHAIN_RETRY,
+        llm_chain_builder=lambda seed: prompt
+        | _create_llm_analyze(seed=seed)
+        | analysis_parser,
+        prompt_arguments=prompt_arguments,
+        on_exception=_fix_invalid_analysis,
+        exception_type=OutputParserException,
+    )
 
 
 def _call_analyze_llm(state: State) -> Analysis:

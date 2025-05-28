@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.steps.action_plan import example
 from deep_next.core.steps.action_plan.common import _create_llm
 from deep_next.core.steps.action_plan.data_model import ActionPlan, ExistingCodeContext
@@ -8,7 +9,6 @@ from deep_next.core.steps.action_plan.path_tools import try_to_resolve_path
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import OutputParserException
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 
 class ActionPlanValidationError(Exception):
@@ -113,7 +113,8 @@ def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
     for step in action_plan.ordered_steps:
         try:
             step.target_files = [
-                try_to_resolve_path(target_file, root_path) for target_file in step.target_files
+                try_to_resolve_path(target_file, root_path)
+                for target_file in step.target_files
             ]
         except FileNotFoundError as e:
             raise ActionPlanValidationError(str(e))
@@ -133,11 +134,6 @@ def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
     return action_plan
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    retry=retry_if_exception_type((OutputParserException, ActionPlanValidationError)),
-    reraise=True,
-)
 def create_action_plan(
     root_path: Path,
     issue_statement: str,
@@ -162,12 +158,18 @@ def create_action_plan(
         example_action_plan=example.action_plan,
     )
 
-    action_plan = (prompt | _create_llm() | parser).invoke(
-        {
-            "issue_statement": issue_statement,
-            "project_knowledge": project_knowledge,
-            "existing_code_snippets": existing_code_context.dump(),
-        }
+    prompt_arguments = {
+        "issue_statement": issue_statement,
+        "project_knowledge": project_knowledge,
+        "existing_code_snippets": existing_code_context.dump(),
+    }
+
+    action_plan = invoke_retriable_llm_chain(
+        n_retry=3,
+        llm_chain_builder=lambda seed: prompt | _create_llm(seed=seed) | parser,
+        prompt_arguments=prompt_arguments,
+        on_exception=lambda e: None,  # No specific handling needed
+        exception_type=(OutputParserException, ActionPlanValidationError),
     )
 
     return _validate_paths(action_plan, root_path)

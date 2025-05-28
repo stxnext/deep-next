@@ -366,7 +366,10 @@ action_plan = ActionPlan(
                 - Provide reusable logging setup functions to keep entry points clean.
                 """
             ),
-            target_files=[Path("libs/core/deep_next/core/log.py"), Path("libs/core/deep_next/core/config.py")],
+            target_files=[
+                Path("libs/core/deep_next/core/log.py"),
+                Path("libs/core/deep_next/core/config.py"),
+            ],
         ),
         Step(
             title="Integrate logging into entrypoint.py",
@@ -380,7 +383,10 @@ action_plan = ActionPlan(
                 - Existing log statements are migrated to use the new structured logging approach with Loguru.
                 """
             ),
-            target_files=[Path("libs/core/deep_next/core/entrypoint.py"), Path("libs/core/deep_next/core/log.py")],
+            target_files=[
+                Path("libs/core/deep_next/core/entrypoint.py"),
+                Path("libs/core/deep_next/core/log.py"),
+            ],
         ),
     ],
 )

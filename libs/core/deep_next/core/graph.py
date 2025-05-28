@@ -182,8 +182,12 @@ class DeepNextGraph(BaseGraph):
 
         for idx, step in enumerate(steps, start=1):
 
-            target_files = [target_file.relative_to(root_path) for target_file in step.target_files]
-            target_files_str = "\n".join([f"- {target_file}" for target_file in target_files])
+            target_files = [
+                target_file.relative_to(root_path) for target_file in step.target_files
+            ]
+            target_files_str = "\n".join(
+                [f"- {target_file}" for target_file in target_files]
+            )
 
             ordered_steps_strs.append(
                 f"{idx}. {step.title}\n\n"
@@ -208,8 +212,7 @@ class DeepNextGraph(BaseGraph):
             git_diff=state.git_diff,
             reasoning=state.action_plan.reasoning,
             action_plan=self.steps_to_str(
-                state.root_path,
-                state.action_plan.ordered_steps
+                state.root_path, state.action_plan.ordered_steps
             ),
         )
 

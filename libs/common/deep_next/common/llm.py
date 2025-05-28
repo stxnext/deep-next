@@ -199,12 +199,25 @@ def _get_aws_bedrock_llm(
 
 
 def _get_openai_llm(
-    config: LLMConfig, seed: int | None = None, temperature: float | None = None
+    config: LLMConfig,
+    seed: int | None = None,
+    temperature: float | None = None,
 ) -> ChatOpenAI:
+    """
+    Creates an OpenAI LLM instance based on the provided configuration.
 
+    Args:
+        config (LLMConfig): The configuration for the LLM.
+        seed (int | None): Optional seed for reproducibility. If provided, it will be
+            added to the base seed from the config (as long as the config seed is not
+            None. If the config seed is not provided, this value will be used as seed
+            itself).
+        temperature (float | None): Optional temperature setting for the model.
+    """
     metadata = {}
-    if seed := (seed or config.seed):
-        metadata["seed"] = str(seed)
+
+    if config.seed is not None or seed is not None:
+        metadata["seed"] = (config.seed or 0) + (seed or 0)
 
     return ChatOpenAI(
         model_name=config.model,
