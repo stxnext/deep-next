@@ -168,7 +168,6 @@ def create_action_plan(
         n_retry=3,
         llm_chain_builder=lambda seed: prompt | _create_llm(seed=seed) | parser,
         prompt_arguments=prompt_arguments,
-        on_exception=lambda e: None,  # No specific handling needed
         exception_type=(OutputParserException, ActionPlanValidationError),
     )
 

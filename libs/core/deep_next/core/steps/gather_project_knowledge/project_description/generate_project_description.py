@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.io import read_txt_or_none
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.common import (
@@ -62,11 +63,11 @@ class Prompt:
     )
 
 
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    retry=tenacity.retry_if_exception_type(OutputParserException),
-    reraise=True,
-)
+# @tenacity.retry(
+#     stop=tenacity.stop_after_attempt(3),
+#     retry=tenacity.retry_if_exception_type(OutputParserException),
+#     reraise=True,
+# )
 def generate_project_description(
     questions: str,
     related_files: list[Path],
@@ -74,7 +75,7 @@ def generate_project_description(
     project_info: ProjectInfo,
 ) -> ExistingProjectDescriptionContext:
     """Generate project description based on the repository tree and related files."""
-    design_solution_prompt_template = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
@@ -89,7 +90,7 @@ def generate_project_description(
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
-    llm_agent = design_solution_prompt_template | _create_llm() | parser
+    # llm_agent = prompt | _create_llm() | parser
 
     related_code_context = "\n".join(
         [
@@ -97,12 +98,27 @@ def generate_project_description(
             for path in related_files
         ]
     )
-    return llm_agent.invoke(
-        {
-            "project_name": project_info.name,
-            "repository_tree": repository_tree,
-            "related_code_context": related_code_context,
-            "questions": questions,
-            "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
-        }
+    # return llm_agent.invoke(
+    #     {
+    #         "project_name": project_info.name,
+    #         "repository_tree": repository_tree,
+    #         "related_code_context": related_code_context,
+    #         "questions": questions,
+    #         "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
+    #     }
+    # )
+
+    prompt_arguments = {
+        "project_name": project_info.name,
+        "repository_tree": repository_tree,
+        "related_code_context": related_code_context,
+        "questions": questions,
+        "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
+    }
+
+    return invoke_retriable_llm_chain(
+        n_retry=3,
+        llm_chain_builder=lambda seed: prompt | _create_llm(seed=seed) | parser,
+        prompt_arguments=prompt_arguments,
+        exception_type=OutputParserException,
     )

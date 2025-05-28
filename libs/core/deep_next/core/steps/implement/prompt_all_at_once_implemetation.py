@@ -35,13 +35,10 @@ class PromptAllAtOnceImplementation:
         1. File To Change
         The specific file assigned to you that requires modifications.
 
-        2. High-lvl description
-        High-level description of necessary changes in a given file.
-
-        3. Detailed Description
+        2. Detailed Description
         Additional requirements needed in the module to meet the expectations.
 
-        4. Issue statement
+        3. Issue statement
         Completes the context for better understanding given requirements.
         ------------------------
         """  # noqa: E501
@@ -54,10 +51,6 @@ class PromptAllAtOnceImplementation:
         ```
         {code_context}
         ```
-
-        <high_level_description>
-        {high_level_description}
-        </high_level_description>
 
         <description>
         {description}
@@ -127,7 +120,7 @@ class PromptAllAtOnceImplementation:
         ------------------------
         ## File to change
 
-        File: /home/patryk/my_project/src/hello_world.py
+        File: /home/user/my_project/src/hello_world.py
         ```python
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -146,7 +139,7 @@ class PromptAllAtOnceImplementation:
             return int(a + b)
         ```
 
-        File: /home/patryk/my_project/src/logger.py
+        File: /home/user/my_project/src/logger.py
         ```python
         # Placeholder for code content
         ```
@@ -158,7 +151,7 @@ class PromptAllAtOnceImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/patryk/my_project/src/logger.py</file>
+        <file>/home/user/my_project/src/logger.py</file>
         <original>
         # Placeholder for code content
         </original>
@@ -170,7 +163,7 @@ class PromptAllAtOnceImplementation:
             logger.info(f">>> {{msg}}")
         </patched>
         # modification 2
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -190,7 +183,7 @@ class PromptAllAtOnceImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -209,7 +202,7 @@ class PromptAllAtOnceImplementation:
         </patched>
 
         # modification 2
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"
@@ -229,7 +222,7 @@ class PromptAllAtOnceImplementation:
         </patched>
 
         # modification 3
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"

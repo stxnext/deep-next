@@ -166,7 +166,7 @@ class PromptSingleFileImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -185,7 +185,7 @@ class PromptSingleFileImplementation:
         </patched>
 
         # modification 2
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"
@@ -205,7 +205,7 @@ class PromptSingleFileImplementation:
         </patched>
 
         # modification 3
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>/home/user/my_project/src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"

@@ -10,7 +10,7 @@ def invoke_retriable_llm_chain(
     llm_chain_builder: Callable[[int], BaseChatModel],
     prompt_arguments: dict,
     *,
-    on_exception: Callable[[Exception], T | None] | None,
+    on_exception: Callable[[Exception], T | None] | None = None,
     exception_type: type[Exception] | tuple[type[Exception], ...] = Exception,
 ) -> T:
     """
