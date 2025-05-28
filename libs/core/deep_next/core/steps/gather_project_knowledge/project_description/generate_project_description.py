@@ -1,3 +1,4 @@
+import random
 import textwrap
 from pathlib import Path
 
@@ -90,7 +91,9 @@ def generate_project_description(
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
-    llm_agent = design_solution_prompt_template | _create_llm() | parser
+    llm_agent = (
+        design_solution_prompt_template | _create_llm(random.randint(0, 100)) | parser
+    )
 
     related_code_context = "\n".join(
         [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
