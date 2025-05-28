@@ -1,3 +1,4 @@
+import random
 import textwrap
 from pathlib import Path
 
@@ -159,7 +160,7 @@ def create_action_plan(
         example_action_plan=example.action_plan,
     )
 
-    action_plan = (prompt | _create_llm() | parser).invoke(
+    action_plan = (prompt | _create_llm(seed=random.randint(1, 100)) | parser).invoke(
         {
             "issue_statement": issue_statement,
             "project_knowledge": project_knowledge,

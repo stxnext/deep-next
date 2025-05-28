@@ -22,6 +22,10 @@ from loguru import logger
 PROJECT_FILES_TREE_NO_EXCLUSION_MSG = "---NO-EXCLUSION---"
 
 
+class SRFError(Exception):
+    """Raised when SRF fails to find any relevant files."""
+
+
 class _State(TypedDict):
     # Input
     root_path: Path
@@ -61,10 +65,18 @@ class _Node:
             query=state["query"],
             root_path=state["root_path"],
         )
-        result = file_selection_graph.compiled.invoke(
-            init_state,
-            config=RunnableConfig(recursion_limit=SRFConfig.CYCLE_ITERATION_LIMIT),
-        )
+        try:
+            result = file_selection_graph.compiled.invoke(
+                init_state,
+                config=RunnableConfig(recursion_limit=SRFConfig.CYCLE_ITERATION_LIMIT),
+            )
+        except Exception as e:
+            logger.error(f"Error during file selection cycle: {e}")
+            result = {
+                "relevant_files": [],
+                "invalid_files": [],
+                "_iteration_count": 0,
+            }
 
         return {
             "_cycle_results": result["relevant_files"],
@@ -77,6 +89,14 @@ class _Node:
         combined_results = set(state["_cycle_results"])
         combined_invalid_results = set(state["_cycle_invalid_results"])
 
+        if len(combined_results) == 0:
+            raise SRFError(
+                (
+                    "SRF failed to find any relevant files. This is "
+                    " very disturbing. Double check logs and query to spot the cause. "
+                    "Relevant files are required for DeepNext to proceed."
+                )
+            )
         return {
             "final_results": list(combined_results),
             "final_invalid_results": list(combined_invalid_results),
