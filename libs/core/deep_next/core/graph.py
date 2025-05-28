@@ -159,6 +159,7 @@ class DeepNextGraph(BaseGraph):
         self.add_quick_edge(START, _Node.gather_project_knowledge)
         self.add_quick_edge(_Node.gather_project_knowledge, _Node.create_action_plan)
         self.add_quick_edge(_Node.create_action_plan, _Node.implement)
+
         self.add_quick_edge(_Node.implement, _Node.review_code)
         self.add_quick_edge(
             _Node.prepare_automated_code_review_changes, _Node.gather_project_knowledge
