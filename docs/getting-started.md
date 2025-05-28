@@ -72,7 +72,7 @@ VCS_REPO_PATH=stxnext/deep-next
 poetry run python apps/app/deep_next/app/entrypoint_scheduled.py
 ```
 
-## Observability (LangSmith) and Slack notifications
+## Observability (LangSmith | Langfuse) and Slack notifications
 
 Few additional treats configured via `.env`
 
@@ -82,6 +82,12 @@ LANGSMITH_TRACING=true
 LANGSMITH_ENDPOINT="https://api.smith.langchain.com"
 LANGSMITH_API_KEY="<your api key>"
 LANGSMITH_PROJECT="DeepNext"
+```
+
+```dotenv
+# Langfuse observability (optional)
+LANGFUSE_HOST="https://cloud.langfuse.com"
+LANGFUSE_PUBLIC_KEY="<your api key>"
 ```
 
 ```dotenv

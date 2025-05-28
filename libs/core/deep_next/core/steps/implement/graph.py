@@ -4,16 +4,16 @@ from typing import Literal
 
 import tenacity
 from deep_next.core.base_graph import BaseGraph
+from deep_next.core.config import IMPLEMENTATION_MODE, ImplementationModes
 from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
-from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
 from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.develop_patch import (
     ParsePatchesError,
+    develop_all_patches,
     develop_single_file_patches,
-    parse_patches,
+    parse_and_apply_patches,
 )
 from deep_next.core.steps.implement.git_diff import generate_diff
-from deep_next.core.steps.implement.utils import CodePatch
 from langgraph.graph import END, START
 from loguru import logger
 from pydantic import BaseModel, Field, model_validator
@@ -60,7 +60,9 @@ class _Node:
     @staticmethod
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(5),
-        retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
+        retry=tenacity.retry_if_exception_type(
+            (ApplyPatchError, ParsePatchesError, ValueError)
+        ),
         reraise=True,
     )
     def code_development(
@@ -74,18 +76,31 @@ class _Node:
                 or "<Empty Git Diff, no modifications found>"
             ),
         )
-
-        patches: list[CodePatch] = parse_patches(raw_patches)
-        patches = [patch for patch in patches if patch.before != patch.after]
-
-        for patch in patches:
-            apply_patch(patch)
-
+        parse_and_apply_patches(raw_patches=raw_patches)
         return state
 
     @staticmethod
     def generate_git_diff(state: _State) -> dict:
         return {"git_diff": generate_diff(state.root_path)}
+
+    @staticmethod
+    @tenacity.retry(
+        stop=tenacity.stop_after_attempt(3),
+        retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
+        reraise=True,
+    )
+    def develop_all_at_once(
+        state: _State,
+    ) -> _State:
+        """Develop all patches for all steps at once."""
+        raw_patches = develop_all_patches(
+            steps=state.steps, issue_statement=state.issue_statement
+        )
+        parse_and_apply_patches(raw_patches=raw_patches)
+
+        # Empty the steps_remaining list since we've processed all steps at once
+        state.steps_remaining = []
+        return state
 
 
 def _select_next_or_end(
@@ -100,6 +115,15 @@ def _select_next_or_end(
     return _Node.generate_git_diff.__name__
 
 
+def _select_implementation_mode(
+    state: _State,
+) -> Literal[_Node.select_next_step.__name__, _Node.develop_all_at_once.__name__]:
+    if IMPLEMENTATION_MODE == ImplementationModes.SINGLE_FILE:
+        return _Node.select_next_step.__name__
+    else:
+        return _Node.develop_all_at_once.__name__
+
+
 class ImplementGraph(BaseGraph):
     """Implementation of "Implement" step in LangGraph."""
 
@@ -107,15 +131,23 @@ class ImplementGraph(BaseGraph):
         super().__init__(_State)
 
     def _build(self) -> None:
+        # Add nodes for both implementation modes
         self.add_quick_node(_Node.select_next_step)
         self.add_quick_node(_Node.code_development)
+        self.add_quick_node(_Node.develop_all_at_once)
         self.add_quick_node(_Node.generate_git_diff)
 
-        self.add_quick_edge(START, _Node.select_next_step)
-        self.add_quick_edge(_Node.select_next_step, _Node.code_development)
+        # Add conditional edge from START based on implementation mode
+        self.add_quick_conditional_edges(START, _select_implementation_mode)
 
+        # # SINGLE_FILE path
+        self.add_quick_edge(_Node.select_next_step, _Node.code_development)
         self.add_quick_conditional_edges(_Node.code_development, _select_next_or_end)
 
+        # ALL_AT_ONCE path
+        self.add_quick_edge(_Node.develop_all_at_once, _Node.generate_git_diff)
+
+        # Common end point
         self.add_quick_edge(_Node.generate_git_diff, END)
 
     def create_init_state(

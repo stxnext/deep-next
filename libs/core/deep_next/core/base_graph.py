@@ -4,6 +4,7 @@ from typing import Any, Awaitable, Callable, Hashable, Union
 
 from deep_next.core.config import DATA_DIR
 from langchain_core.runnables.base import Runnable, RunnableLike
+from langchain_core.runnables.graph import MermaidDrawMethod
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel
@@ -108,8 +109,14 @@ class BaseGraph(StateGraph, ABC):
             Runnable[Any, Union[Hashable, list[Hashable]]],
         ],
     ) -> Self:
+
+        if isinstance(source, str):
+            source_name = source
+        else:
+            source_name = source.__name__
+
         return self.add_conditional_edges(
-            source.__name__,
+            source_name,
             path,
         )
 
@@ -126,7 +133,8 @@ class BaseGraph(StateGraph, ABC):
             output_file_path = visualize_dir / f"graph_{self.__class__.__name__}.png"
 
         self.compiled.get_graph(xray=subgraph_depth).draw_mermaid_png(
-            output_file_path=str(output_file_path)
+            output_file_path=str(output_file_path),
+            draw_method=MermaidDrawMethod.PYPPETEER,
         )
 
         return output_file_path
