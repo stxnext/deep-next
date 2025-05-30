@@ -63,11 +63,6 @@ class Prompt:
     )
 
 
-# @tenacity.retry(
-#     stop=tenacity.stop_after_attempt(3),
-#     retry=tenacity.retry_if_exception_type(OutputParserException),
-#     reraise=True,
-# )
 def generate_project_description(
     questions: str,
     related_files: list[Path],
@@ -90,23 +85,12 @@ def generate_project_description(
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
-    # llm_agent = prompt | _create_llm() | parser
-
     related_code_context = "\n".join(
         [
             f"File: {path}\n{read_txt_or_none(path) or '<Failed to read file>'}"
             for path in related_files
         ]
     )
-    # return llm_agent.invoke(
-    #     {
-    #         "project_name": project_info.name,
-    #         "repository_tree": repository_tree,
-    #         "related_code_context": related_code_context,
-    #         "questions": questions,
-    #         "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
-    #     }
-    # )
 
     prompt_arguments = {
         "project_name": project_info.name,

@@ -186,7 +186,7 @@ class DeepNextGraph(BaseGraph):
         root: Path,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str],
+        issue_comments: list[str] = [],  # noqa
     ) -> _State:
         return _State(
             root_path=root,
@@ -195,16 +195,13 @@ class DeepNextGraph(BaseGraph):
             issue_comments=issue_comments,
         )
 
-    def steps_to_str(self, root_path: Path, steps: list[Step]):
+    def steps_to_str(self, steps: list[Step]):
         ordered_steps_strs = []
 
         for idx, step in enumerate(steps, start=1):
 
-            target_files = [
-                target_file.relative_to(root_path) for target_file in step.target_files
-            ]
             target_files_str = "\n".join(
-                [f"- {target_file}" for target_file in target_files]
+                [f"- {target_file}" for target_file in step.target_files]
             )
 
             ordered_steps_strs.append(
@@ -237,9 +234,7 @@ class DeepNextGraph(BaseGraph):
         return DeepNextResult(
             git_diff=state.git_diff,
             reasoning=state.action_plan.reasoning,
-            action_plan=self.steps_to_str(
-                state.root_path, state.action_plan.ordered_steps
-            ),
+            action_plan=self.steps_to_str(state.action_plan.ordered_steps),
         )
 
 

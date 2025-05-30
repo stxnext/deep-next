@@ -48,7 +48,7 @@ class _Node:
         code_context = [
             FileCodeContext(
                 path=relevant_file.path,
-                code_snippet=read_txt(relevant_file.path),
+                code_snippet=read_txt(state.root_path / relevant_file.path),
                 explanation=relevant_file.explanation,
             )
             for relevant_file in final_state["final_results"]

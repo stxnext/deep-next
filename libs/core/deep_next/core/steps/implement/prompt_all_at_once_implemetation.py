@@ -69,7 +69,7 @@ class PromptAllAtOnceImplementation:
         ------------------------
         Write a patch for the issue, based on the retrieved context.
 
-        Within `<file>...</file>`, replace `...` with actual absolute file path.
+        Within `<file>...</file>`, replace `...` with actual file path.
 
         Within `<original>...</original>`, replace `...` with the only and exactly the \
         same fragment of code without losing any details, mind spaces gaps and \
@@ -120,7 +120,7 @@ class PromptAllAtOnceImplementation:
         ------------------------
         ## File to change
 
-        File: /home/user/my_project/src/hello_world.py
+        File: src/hello_world.py
         ```python
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -139,7 +139,7 @@ class PromptAllAtOnceImplementation:
             return int(a + b)
         ```
 
-        File: /home/user/my_project/src/logger.py
+        File: src/logger.py
         ```python
         # Placeholder for code content
         ```
@@ -151,7 +151,7 @@ class PromptAllAtOnceImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/user/my_project/src/logger.py</file>
+        <file>src/logger.py</file>
         <original>
         # Placeholder for code content
         </original>
@@ -163,7 +163,7 @@ class PromptAllAtOnceImplementation:
             logger.info(f">>> {{msg}}")
         </patched>
         # modification 2
-        <file>/home/user/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -183,7 +183,7 @@ class PromptAllAtOnceImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/user/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -202,7 +202,7 @@ class PromptAllAtOnceImplementation:
         </patched>
 
         # modification 2
-        <file>/home/user/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"
@@ -222,7 +222,7 @@ class PromptAllAtOnceImplementation:
         </patched>
 
         # modification 3
-        <file>/home/user/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"

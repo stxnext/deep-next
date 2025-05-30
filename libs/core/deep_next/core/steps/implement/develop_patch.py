@@ -46,17 +46,17 @@ class ParsePatchesError(Exception):
     """Raised for issues encountered during parse patches process."""
 
 
-def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str) -> str:
+def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str, root_path: Path) -> str:
     for target_file in step.target_files:
-        if not target_file.exists():
-            logger.warning(f"Creating new file: '{target_file}'")
+        if not (root_path / target_file).exists():
+            logger.warning(f"Creating new file: '{root_path / target_file}'")
 
-            with open(target_file, "w") as f:
+            with open(root_path / target_file, "w") as f:
                 f.write("# Comment added at creation time to indicate empty file.\n")
 
     code_context = "\n\n\n---\n\n\n".join(
         [
-            f"{str(target_file)}:\n\n```{read_txt(target_file)}```"
+            f"{str(target_file)}:\n\n```{read_txt(root_path / target_file)}```"
             for target_file in step.target_files
         ]
     )
@@ -74,12 +74,13 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str)
     return raw_edits
 
 
-def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
+def develop_all_patches(steps: List[Step], issue_statement: str, root_path: Path) -> str:
     """Develop patches for all steps in a single run.
 
     Args:
         steps: List of steps to implement
         issue_statement: The issue statement
+        root_path: The root path of the project
 
     Returns:
         The combined raw patches text for all files
@@ -88,9 +89,9 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
 
     for step in steps:
         for target_file in step.target_files:
-            if not target_file.exists():
-                logger.warning(f"Creating new file: '{target_file}'")
-                with open(target_file, "w") as f:
+            if not (root_path / target_file).exists():
+                logger.warning(f"Creating new file: '{root_path / target_file}'")
+                with open(root_path / target_file, "w") as f:
                     f.write(
                         "# Comment added at creation time to indicate empty file.\n"
                     )
@@ -112,7 +113,7 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
     for target_file in target_files:
         markdown_style = "python" if target_file.suffix == ".py" else "txt"
         try:
-            file_content = read_txt(target_file)
+            file_content = read_txt(root_path / target_file)
         except Exception as e:
             logger.warning(f"Failed to read file {target_file}: {e}")
             file_content = ""
@@ -190,10 +191,10 @@ def parse_patches(txt: str) -> list[CodePatch]:
     ]
 
 
-def parse_and_apply_patches(raw_patches: str) -> None:
+def parse_and_apply_patches(raw_patches: str, root_path: Path) -> None:
     """Parse and apply patches to the codebase."""
     patches: list[CodePatch] = parse_patches(raw_patches)
     patches = [patch for patch in patches if patch.before != patch.after]
 
     for patch in patches:
-        apply_patch(patch)
+        apply_patch(patch, root_path)
