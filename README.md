@@ -21,8 +21,9 @@ Running as a service to automatically process issues:
 DeepNext supports multiple LLM providers:
 - OpenAI
 - AWS Bedrock (Claude, Mistral, and others)
+- Ollama (for local LLM usage)
 
-Create an `llm-config.yaml` file based on the example provided to configure model preferences for each pipeline stage.
+Create an `llm-config.yaml` file based on the example provided to configure model preferences for each pipeline stage. See [Ollama integration](docs/ollama-integration.md) for details on using local models.
 
 For tracking and metrics, DeepNext integrates with LangSmith. Set up your credentials in the `.env` file.
 

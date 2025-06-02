@@ -4,12 +4,12 @@ import difflib
 from pathlib import Path
 from typing import List
 
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.io import read_txt
 from deep_next.core.parser import has_tag_block, parse_tag_block
 from deep_next.core.steps.action_plan.data_model import Step
 from deep_next.core.steps.implement import acr
 from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
-from deep_next.core.steps.implement.common import _create_llm
 from deep_next.core.steps.implement.prompt_all_at_once_implemetation import (
     PromptAllAtOnceImplementation,
 )
@@ -39,7 +39,9 @@ def _create_llm_agent(
 
     parser = StrOutputParser()
 
-    return develop_changes_prompt_template | _create_llm() | parser
+    return (
+        develop_changes_prompt_template | create_llm(LLMConfigType.IMPLEMENT) | parser
+    )
 
 
 class ParsePatchesError(Exception):

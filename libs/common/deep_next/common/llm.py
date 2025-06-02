@@ -8,6 +8,7 @@ import yaml
 from boto3 import Session
 from deep_next.common.common import load_monorepo_dotenv
 from deep_next.common.config import MONOREPO_ROOT_PATH
+from deep_next.core.common import RemoveThinkingBlocksParser
 from langchain_aws import ChatBedrock
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
 from langchain_core.messages import (
@@ -19,6 +20,7 @@ from langchain_core.messages import (
 )
 from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.runnables import RunnableConfig
+from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langfuse.callback import CallbackHandler
 from loguru import logger
@@ -66,6 +68,16 @@ class Model(str, Enum):
     @property
     def provider(self) -> Provider:
         return _provider[self]
+
+
+models_with_thinking_blocks = [
+    Model.QWEN3,
+    Model.AWS_DEEPSEEK_R1_v1_0,
+    Model.DEEPCODER,
+    Model.DEEPSEEK_R1,
+    Model.DEEPSEEK_CODER_V2,
+    Model.DEEPSEEK_V3,
+]
 
 
 _provider = {
@@ -211,8 +223,10 @@ def _get_aws_bedrock_llm(
     boto3_session = Session(region_name=config.config["region"])
 
     model_kwargs = {}
-    if temperature := (temperature or config.temperature):
+    if temperature is not None:
         model_kwargs["temperature"] = temperature
+    elif config.temperature is not None:
+        model_kwargs["temperature"] = config.temperature
 
     return _ChatBedrock(
         beta_use_converse_api=True,
@@ -229,14 +243,39 @@ def _get_openai_llm(
 ) -> ChatOpenAI:
 
     metadata = {}
-    if seed := (seed or config.seed):
+    if seed is not None:
         metadata["seed"] = str(seed)
+    elif config.seed is not None:
+        metadata["seed"] = str(config.seed)
 
     return ChatOpenAI(
         model_name=config.model,
         temperature=temperature or config.temperature,
         metadata=metadata,
         callbacks=_get_handler(),
+    )
+
+
+def _get_ollama_llm(config: LLMConfig, temperature: float | None = None) -> ChatOllama:
+    """Create a new Ollama LLM client.
+
+    Args:
+        config: LLM configuration instance
+        temperature: Optional temperature override
+
+    Returns:
+        ChatOllama instance
+    """
+    model_kwargs = {"num_ctx": 8192}
+
+    if temperature is not None:
+        model_kwargs["temperature"] = temperature
+    elif config.temperature is not None:
+        model_kwargs["temperature"] = config.temperature
+
+    return ChatOllama(
+        model=config.model,
+        model_kwargs=model_kwargs,
     )
 
 
@@ -254,8 +293,7 @@ def llm_from_config(
     temperature: float | None = None,
 ) -> BaseChatModel:
     config = LLMConfig.load(config_type=config_type)
-
-    logger.debug(f"'{config_type.value}' LLM config: {config}")
+    logger.info(f"LLM config: {config}")
 
     if config.model.provider == Provider.BEDROCK:
         return _get_aws_bedrock_llm(
@@ -268,8 +306,31 @@ def llm_from_config(
             seed=seed,
             temperature=temperature,
         )
+    elif config.model.provider == Provider.OLLAMA:
+        return _get_ollama_llm(
+            config=config,
+            temperature=temperature,
+        )
     else:
         raise ValueError(f"Unknown LLM provider: {config.model.provider}")
+
+
+def create_llm(
+    config_type: LLMConfigType,
+    seed: int | None = None,
+    tools: list | None = None,
+    temperature: float | None = None,
+) -> BaseChatModel:
+    """Create a new LLM client"""
+    llm = llm_from_config(config_type, seed=seed, temperature=temperature)
+
+    llm = llm.bind_tools(tools) if tools else llm
+
+    config = LLMConfig.load(config_type=config_type)
+    if config.model in models_with_thinking_blocks:
+        return llm | RemoveThinkingBlocksParser()
+    else:
+        return llm
 
 
 if __name__ == "__main__":

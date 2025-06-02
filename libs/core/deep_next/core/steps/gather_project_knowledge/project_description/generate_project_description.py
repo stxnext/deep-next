@@ -3,11 +3,9 @@ import textwrap
 from pathlib import Path
 
 import tenacity
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.io import read_txt
 from deep_next.core.project_info import ProjectInfo
-from deep_next.core.steps.gather_project_knowledge.project_description.common import (
-    _create_llm,
-)
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
     ExistingProjectDescriptionContext,
     example_output_existing_project_description_context,
@@ -92,7 +90,9 @@ def generate_project_description(
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
     llm_agent = (
-        design_solution_prompt_template | _create_llm(random.randint(0, 100)) | parser
+        design_solution_prompt_template
+        | create_llm(LLMConfigType.ACTION_PLAN, random.randint(0, 100))
+        | parser
     )
 
     related_code_context = "\n".join(
