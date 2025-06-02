@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from enum import Enum
 from typing import Any, Callable, Iterable, Optional
 
@@ -21,6 +22,7 @@ from langchain_core.prompt_values import ChatPromptValue
 from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
+from langfuse.callback import CallbackHandler
 from loguru import logger
 from pydantic import BaseModel
 
@@ -43,21 +45,25 @@ class Provider(str, Enum):
 
 
 class Model(str, Enum):
-    AWS_MISTRAL_7B_INSTRUCT_V0_2 = "mistral.mistral-7b-instruct-v0:2"
-    AWS_CLAUDE_V2_1 = "anthropic.claude-v2:1"
     AWS_CLAUDE_3_5_SONNET_20240620_V1_0 = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    AWS_CLAUDE_3_7_SONNET_20240620_V1_0 = "anthropic.claude-3-7-sonnet-20250219-v1:0"
     AWS_DEEPSEEK_R1_v1_0 = "us.deepseek.r1-v1:0"
+    AWS_MISTRAL_7B_INSTRUCT_V0_2 = "mistral.mistral-7b-instruct-v0:2"
 
-    GPT_4O_MINI_2024_07_18 = "gpt-4o-mini-2024-07-18"
     GPT_4O_2024_08_06 = "gpt-4o-2024-08-06"
     GPT_4_1_2025_04_14 = "gpt-4.1-2025-04-14"
+    GPT_4O_MINI_2024_07_18 = "gpt-4o-mini-2024-07-18"
 
-    OLLAMA_GEMMA = "gemma3:4b"
-    OLLAMA_GEMMA_12B_QAT = "gemma3:12b-it-qat"
-    OLLAMA_GEMMA_27B_QAT = "gemma3:27b-it-qat"
-    OLLAMA_CODELLAMA_PYTHON = "codellama:python"
-    OLLAMA_DEEPCODER = "deepcoder"
-    OLLAMA_QWEN_14B = "qwen3:14b"
+    CODELLAMA = "codellama"
+    DEEPCODER = "deepcoder"
+    DEEPSEEK_CODER_V2 = "deepseek-coder-v2"
+    DEEPSEEK_V3 = "deepseek-v3"
+    DEEPSEEK_R1 = "deepseek-r1"
+    GEMMA3 = "gemma3"
+    MISTRAL = "mistral"
+    LLAMA4 = "llama4"
+    LLAMA3_3 = "llama3.3"
+    QWEN3 = "qwen3"
 
     @property
     def provider(self) -> Provider:
@@ -65,26 +71,33 @@ class Model(str, Enum):
 
 
 models_with_thinking_blocks = [
-    Model.OLLAMA_QWEN_14B,
+    Model.QWEN3,
     Model.AWS_DEEPSEEK_R1_v1_0,
-    Model.OLLAMA_DEEPCODER,
+    Model.DEEPCODER,
+    Model.DEEPSEEK_R1,
+    Model.DEEPSEEK_CODER_V2,
+    Model.DEEPSEEK_V3,
 ]
 
 
 _provider = {
-    Model.AWS_MISTRAL_7B_INSTRUCT_V0_2: Provider.BEDROCK,
-    Model.AWS_CLAUDE_V2_1: Provider.BEDROCK,
     Model.AWS_CLAUDE_3_5_SONNET_20240620_V1_0: Provider.BEDROCK,
+    Model.AWS_CLAUDE_3_7_SONNET_20240620_V1_0: Provider.BEDROCK,
     Model.AWS_DEEPSEEK_R1_v1_0: Provider.BEDROCK,
+    Model.AWS_MISTRAL_7B_INSTRUCT_V0_2: Provider.BEDROCK,
     Model.GPT_4O_MINI_2024_07_18: Provider.OPENAI,
     Model.GPT_4O_2024_08_06: Provider.OPENAI,
     Model.GPT_4_1_2025_04_14: Provider.OPENAI,
-    Model.OLLAMA_GEMMA: Provider.OLLAMA,
-    Model.OLLAMA_GEMMA_12B_QAT: Provider.OLLAMA,
-    Model.OLLAMA_GEMMA_27B_QAT: Provider.OLLAMA,
-    Model.OLLAMA_CODELLAMA_PYTHON: Provider.OLLAMA,
-    Model.OLLAMA_DEEPCODER: Provider.OLLAMA,
-    Model.OLLAMA_QWEN_14B: Provider.OLLAMA,
+    Model.CODELLAMA: Provider.OLLAMA,
+    Model.DEEPCODER: Provider.OLLAMA,
+    Model.DEEPSEEK_CODER_V2: Provider.OLLAMA,
+    Model.DEEPSEEK_V3: Provider.OLLAMA,
+    Model.DEEPSEEK_R1: Provider.OLLAMA,
+    Model.GEMMA3: Provider.OLLAMA,
+    Model.MISTRAL: Provider.OLLAMA,
+    Model.LLAMA4: Provider.OLLAMA,
+    Model.LLAMA3_3: Provider.OLLAMA,
+    Model.QWEN3: Provider.OLLAMA,
 }
 
 
@@ -221,6 +234,7 @@ def _get_aws_bedrock_llm(
         client=boto3_session.client("bedrock-runtime"),
         model_kwargs=model_kwargs,
         max_tokens=8 * 1024,
+        callbacks=_get_handler(),
     )
 
 
@@ -238,6 +252,7 @@ def _get_openai_llm(
         model_name=config.model,
         temperature=temperature or config.temperature,
         metadata=metadata,
+        callbacks=_get_handler(),
     )
 
 
@@ -262,6 +277,14 @@ def _get_ollama_llm(config: LLMConfig, temperature: float | None = None) -> Chat
         model=config.model,
         model_kwargs=model_kwargs,
     )
+
+
+def _get_handler() -> list[CallbackHandler]:
+    if os.getenv("LANGFUSE_SECRET_KEY") is not None:
+        langfuse_handler = CallbackHandler()
+        return [langfuse_handler]
+    else:
+        return []
 
 
 def llm_from_config(

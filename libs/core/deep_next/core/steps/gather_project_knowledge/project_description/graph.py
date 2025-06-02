@@ -49,7 +49,7 @@ class _Node:
     def get_srf_context(
         state: _State,
     ) -> dict:
-        srf_graph = SelectRelatedFilesGraph(n_cycles=1)
+        srf_graph = SelectRelatedFilesGraph(n_cycles=3)
         initial_state = srf_graph.create_init_state(
             root_path=state.root_path,
             query=state.questions,

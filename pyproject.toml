@@ -18,6 +18,8 @@ loguru = "^0.7.2"
 python-dotenv = "^1.0.1"
 pydantic = "^2.10.3"
 langchain-ollama = "^0.3.2"
+pyppeteer = "^2.0.0"
+langfuse = "^2.60.5"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
@@ -35,7 +37,7 @@ deep_next_core = { path = "libs/core", develop = true  }
 deep_next_common = { path = "libs/common", develop = true  }
 langchain = "^0.3.21"
 levenshtein = "^0.26.1"
-langgraph = "^0.3.20"
+langgraph = ">=0.3.20,!=0.3.22,!=0.3.23,!=0.3.24"
 langchain-aws = "^0.2.9"
 langchain-openai = "^0.3.10"
 langchain-community = "^0.3.20"

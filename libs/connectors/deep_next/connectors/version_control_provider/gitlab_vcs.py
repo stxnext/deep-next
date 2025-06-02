@@ -1,9 +1,15 @@
+from enum import Enum
+
 import gitlab
+from deep_next.app.common import format_comment_with_header
+from deep_next.app.config import Label
 from deep_next.connectors.version_control_provider.base import (
+    BaseComment,
     BaseConnector,
     BaseIssue,
     BaseMR,
 )
+from deep_next.connectors.version_control_provider.utils import label_to_str
 from gitlab.v4.objects.discussions import ProjectIssueDiscussion
 from gitlab.v4.objects.issues import ProjectIssue
 from gitlab.v4.objects.merge_requests import ProjectMergeRequest
@@ -18,9 +24,25 @@ class ResourceNotFoundError(GitLabConnectorError):
     """Resource not found error."""
 
 
-def filter_issues_by_label(issues, label):
-    """Filter issues by label."""
-    return [issue for issue in issues if label in issue.labels]
+def filter_by_label(issues_or_mrs: list, label: str) -> list:
+    """Filter issues or labels by label."""
+    return [issue_or_mr for issue_or_mr in issues_or_mrs if label in issue_or_mr.labels]
+
+
+class GitLabComment(BaseComment):
+    def __init__(self, comment: ProjectIssueDiscussion):
+        self._comment = comment
+
+    @property
+    def body(self) -> str:
+        return self._comment.body.replace("\r\n", "\n")
+
+    def edit(self, body: str) -> None:
+        self._comment.update(body=body)
+
+    @property
+    def author(self) -> str:
+        return self._comment.author["name"]
 
 
 class GitLabIssue(BaseIssue):
@@ -49,13 +71,20 @@ class GitLabIssue(BaseIssue):
         return self._issue.description
 
     @property
-    def comments(self) -> str:
+    def comments(self) -> list:
         """Get all issue comments except the ones added by DeepNext."""
-        return "<No comments>"
+        return ["<No comments>"]
 
     def add_comment(
-        self, comment: str, file_content: str | None = None, file_name="content.txt"
+        self,
+        comment: str,
+        file_content: str | None = None,
+        info_header: bool = False,
+        file_name="content.txt",
     ) -> None:
+        if info_header:
+            comment = format_comment_with_header(comment)
+
         if self._discussion is None:
             self._discussion = self._issue.discussions.create(
                 {"body": self.comment_thread_header}
@@ -80,11 +109,12 @@ class GitLabIssue(BaseIssue):
 
         return uploaded_file["markdown"]
 
-    def add_label(self, label: str) -> None:
-        self._issue.labels.append(label)
+    def add_label(self, label: str | Enum) -> None:
+        self._issue.labels.append(label_to_str(label))
         self._issue.save()
 
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
+        label = label_to_str(label)
         if label not in self._issue.labels:
             logger.warning(f"Label '{label}' not found in issue #{self.no}")
             return
@@ -96,6 +126,14 @@ class GitLabIssue(BaseIssue):
 class GitLabMR(BaseMR):
     def __init__(self, mr: ProjectMergeRequest):
         self._mr = mr
+
+    @property
+    def source_branch_name(self) -> str:
+        return self._mr.source_branch
+
+    @property
+    def target_branch_name(self) -> str:
+        return self._mr.target_branch
 
     @property
     def url(self) -> str:
@@ -140,6 +178,41 @@ class GitLabMR(BaseMR):
 
         return "\n".join(diff_output)
 
+    @property
+    def labels(self) -> list[str]:
+        """Returns the labels of the MR."""
+        return self._mr.labels
+
+    def add_label(self, label: str | Label):
+        """Add a label to the MR."""
+        label = label_to_str(label)
+        # TODO: Replace with the proper implementation.
+        self._mr.add_to_labels(label)
+
+    def remove_label(self, label: str | Label):
+        """Remove a label from the MR."""
+        label = label_to_str(label)
+        # TODO: Replace with the proper implementation.
+        self._mr.remove_from_labels(label)
+
+    def add_comment(
+        self, comment: str, info_header: bool = False, log: int | str | None = None
+    ) -> None:
+        """Adds a comment to the MR."""
+        if info_header:
+            comment = format_comment_with_header(comment)
+
+        if log is not None:
+            logger.log(log, comment)
+
+        self._mr.notes.create({"body": comment})
+
+    @property
+    def comments(self) -> list[BaseComment]:
+        """Returns the comments of the MR."""
+        # TODO: Replace with the proper implementation.
+        return [GitLabComment(comment) for comment in self._mr.notes.list()]
+
 
 class GitLabConnector(BaseConnector):
     def __init__(self, *_, access_token: str, repo_name: str, base_url: str):
@@ -151,10 +224,11 @@ class GitLabConnector(BaseConnector):
 
         self.project_id = self.project.id
 
-    def list_issues(self, label=None) -> list[GitLabIssue]:
+    def list_issues(self, label: str | Enum | None = None) -> list[GitLabIssue]:
         """Fetches all issues"""
+        label = label_to_str(label)
         all_issues = self.project.issues.list(all=True)
-        issues = filter_issues_by_label(all_issues, label) if label else all_issues
+        issues = filter_by_label(all_issues, label) if label else all_issues
 
         return [GitLabIssue(issue) for issue in issues]
 
@@ -172,17 +246,24 @@ class GitLabConnector(BaseConnector):
 
         return GitLabIssue(issue)
 
+    def list_mrs(self, label: str | None = None) -> list[GitLabMR]:
+        """Fetches all MRs"""
+        all_mrs = self.project.mergerequests.list(all=True)
+        mrs = filter_by_label(all_mrs, label) if label else all_mrs
+
+        return [GitLabMR(mr) for mr in mrs]
+
     def get_mr(self, mr_no: int) -> GitLabMR:
         """Fetches a single merge request."""
         try:
             mr: ProjectMergeRequest = self.project.mergerequests.get(mr_no)
         except gitlab.exceptions.GitlabGetError as e:
             if e.response_code == 404:
-                raise ResourceNotFoundError(f"MR #{mr_no} not found.") from None
+                raise ResourceNotFoundError(f"MR #{mr_no} not found.") from e
             else:
                 raise GitLabConnectorError(
                     f"Error while fetching MR #{mr_no}: {e}"
-                ) from None
+                ) from e
 
         return GitLabMR(mr)
 
@@ -191,15 +272,23 @@ class GitLabConnector(BaseConnector):
         merge_branch: str,
         into_branch: str,
         title: str,
-    ):
+        description: str | None = None,
+        issue: GitLabIssue | None = None,
+    ) -> GitLabMR:
         """Create merge request."""
         logger.info(f"Creating MR from '{merge_branch}' to '{into_branch}'")
 
-        return self.project.mergerequests.create(
-            {
-                "source_branch": merge_branch,
-                "target_branch": into_branch,
-                "title": title,
-                "labels": [],
-            }
-        )
+        try:
+            mr: ProjectMergeRequest = self.project.mergerequests.create(
+                {
+                    "source_branch": merge_branch,
+                    "target_branch": into_branch,
+                    "title": title,
+                    "description": description,
+                    "labels": [],
+                }
+            )
+        except gitlab.exceptions.GitlabGetError as e:
+            raise GitLabConnectorError(f"Error while creating MR: {e}") from e
+
+        return GitLabMR(mr)

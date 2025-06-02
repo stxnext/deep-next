@@ -1,6 +1,24 @@
-import textwrap
 from abc import ABC, abstractmethod
 from datetime import datetime
+from enum import Enum
+
+from deep_next.app.config import Label
+from deep_next.connectors.version_control_provider.utils import label_to_str
+
+
+class BaseComment(ABC):
+    @property
+    @abstractmethod
+    def body(self) -> str:
+        """Returns the body of the comment."""
+
+    @abstractmethod
+    def edit(self, body: str) -> None:
+        """Edit the comment."""
+
+    @abstractmethod
+    def author(self) -> str:
+        """Returns the author of the comment."""
 
 
 class BaseIssue(ABC):
@@ -30,22 +48,30 @@ class BaseIssue(ABC):
         """"""
 
     @property
+    def issue_statement(self) -> str:
+        return self.title + "\n\n" + self.description
+
+    @property
     @abstractmethod
-    def comments(self) -> str:
+    def comments(self) -> list[BaseComment]:
         """"""
 
     @abstractmethod
     def add_comment(
-        self, comment: str, file_content: str | None = None, file_name="content.txt"
+        self,
+        comment: str,
+        file_content: str | None = None,
+        info_header: bool = False,
+        file_name="content.txt",
     ) -> None:
         """"""
 
     @abstractmethod
-    def add_label(self, label: str) -> None:
+    def add_label(self, label: str | Enum) -> None:
         """"""
 
     @abstractmethod
-    def remove_label(self, label: str) -> None:
+    def remove_label(self, label: str | Enum) -> None:
         """"""
 
     @property
@@ -56,28 +82,31 @@ class BaseIssue(ABC):
     def comment_thread_header(self):
         return f"## 🚧 DeepNext WIP ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})"
 
-    def has_label(self, label: str) -> bool:
-        """"""
-        return label in self.labels
+    def has_label(self, label: str | Enum) -> bool:
+        return label_to_str(label) in self.labels
 
     @staticmethod
     def prettify_comment(txt: str) -> str:
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        wrapped = "\n".join(
-            textwrap.fill(line, width=88, replace_whitespace=False)
-            for line in txt.splitlines()
-        )
-
-        return (
-            f"**Status update ({timestamp}):**\n\n"
-            f"---\n"
-            f"```text\n{wrapped}\n```\n"
-            f"---\n"
-        )
+        return f"**Status update ({timestamp}):**\n\n{txt}"
 
 
 class BaseMR(ABC):
+    @property
+    @abstractmethod
+    def related_issue(self) -> BaseIssue | None:
+        """Returns the issue related to the MR, if any."""
+
+    @property
+    @abstractmethod
+    def source_branch_name(self) -> str:
+        """Returns the source branch of the MR."""
+
+    @property
+    @abstractmethod
+    def target_branch_name(self) -> str:
+        """Returns the target branch of the MR."""
+
     @property
     @abstractmethod
     def url(self) -> str:
@@ -108,10 +137,34 @@ class BaseMR(ABC):
     def git_diff(self) -> str:
         """Retrieve the full git diff for a given merge request."""
 
+    @property
+    @abstractmethod
+    def labels(self) -> list[str]:
+        """Returns the labels of the MR."""
+
+    @abstractmethod
+    def add_label(self, label: str | Label):
+        """Add a label to the MR."""
+
+    @abstractmethod
+    def remove_label(self, label: str | Label):
+        """Remove a label from the MR."""
+
+    @abstractmethod
+    def add_comment(
+        self, comment: str, info_header: bool = False, log: int | str | None = None
+    ) -> None:
+        """Adds a comment to the MR."""
+
+    @property
+    @abstractmethod
+    def comments(self) -> list[BaseComment]:
+        """Returns the comments of the MR."""
+
 
 class BaseConnector(ABC):
     @abstractmethod
-    def list_issues(self, label=None) -> list[BaseIssue]:
+    def list_issues(self, label: str | Enum | None = None) -> list[BaseIssue]:
         """Fetches all issues"""
 
     @abstractmethod
@@ -119,9 +172,15 @@ class BaseConnector(ABC):
         """Fetches a single issue."""
 
     @abstractmethod
+    def list_mrs(self, label: str | None = None) -> list[BaseIssue]:
+        """Fetches all MRs"""
+
+    @abstractmethod
     def get_mr(self, mr_no: int) -> BaseMR:
         """Fetches a single merge request."""
 
     @abstractmethod
-    def create_mr(self, merge_branch: str, into_branch: str, title: str) -> BaseMR:
+    def create_mr(
+        self, merge_branch: str, into_branch: str, title: str, issue: BaseIssue
+    ) -> BaseMR:
         """Creates new merge request."""
