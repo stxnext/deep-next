@@ -16,7 +16,7 @@ Before using Ollama models, make sure the Ollama service is running:
 ollama serve
 
 # In another terminal, pull the models you need
-ollama pull gemma3:27b-it-qat
+ollama pull gemma3
 ollama pull deepcoder
 ```
 
@@ -26,7 +26,7 @@ Add an Ollama configuration section to your `llm-config.yaml` file:
 
 ```yaml
 ollama-example:
-  model: codellama
+  model: gemma3
   seed: 42  # Optional
   temperature: 0.7
 ```
@@ -35,13 +35,16 @@ ollama-example:
 
 The following Ollama models are added to deepnext:
 
-- `gemma:4b`
-- `gemma3:12b`
-- `gemma3:27b-it-qat`
-- `gemma3:12b-it-qat`
-- `codellama:python`
+- `gemma3`
 - `deepcoder`
-- `qwen3:8b`
+- `deepseek-coder-v2`
+- `deepseek-v3`
+- `deepseek-r1`
+- `gemma3`
+- `mistral`
+- `llama4`
+- `llama3.3`
+- `qwen3`
 
 You can add more models by extending the class `Model` in the `libs/common/deep_next/common/llm.py` module.
 
