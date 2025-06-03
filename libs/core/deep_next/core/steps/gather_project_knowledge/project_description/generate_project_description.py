@@ -1,8 +1,8 @@
 import textwrap
 from pathlib import Path
 
-from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.common.llm import LLMConfigType, create_llm
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.io import read_txt_or_none
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
@@ -100,7 +100,9 @@ def generate_project_description(
 
     return invoke_retriable_llm_chain(
         n_retry=3,
-        llm_chain_builder=lambda seed: prompt | create_llm(LLMConfigType.ACTION_PLAN, seed=seed) | parser,
+        llm_chain_builder=lambda seed: prompt
+        | create_llm(LLMConfigType.ACTION_PLAN, seed=seed)
+        | parser,
         prompt_arguments=prompt_arguments,
         exception_type=OutputParserException,
     )

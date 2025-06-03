@@ -35,7 +35,9 @@ def _get_exact_match(text: str, match: str) -> CodeMatch | None:
     return CodeMatch(start=start, end=start + n_match_lines - 1, distance=0)
 
 
-def _apply_patch_exact_match(file_text: str, patch: CodePatch, root_path: Path) -> bool:
+def _apply_patch_exact_match(
+    file_text: str, patch: CodePatch, root_path: Path, dry_run: bool = False
+) -> bool:
     """
     Apply a code patch to a code file by finding an exact match.
 
@@ -48,7 +50,8 @@ def _apply_patch_exact_match(file_text: str, patch: CodePatch, root_path: Path) 
 
     file_lines = file_text.split("\n")
     new_file_text = lint_and_merge(file_lines, best_match, patch)
-    (root_path / patch.file_path).write_text(new_file_text)
+    if not dry_run:
+        (root_path / patch.file_path).write_text(new_file_text)
 
     return True
 
@@ -141,7 +144,9 @@ def _select_matching_frames(
     return best_frames
 
 
-def _apply_patch_by_frame(file_text: str, patch: CodePatch, root_path: Path) -> None:
+def _apply_patch_by_frame(
+    file_text: str, patch: CodePatch, root_path: Path, dry_run: bool = False
+) -> None:
     """
     Apply a code patch to a code file by selecting the best matching code frame.
 
@@ -169,14 +174,15 @@ def _apply_patch_by_frame(file_text: str, patch: CodePatch, root_path: Path) -> 
 
     file_lines = file_text.split("\n")
     new_file_text = lint_and_merge(file_lines, best_match, patch)
-    (root_path / patch.file_path).write_text(new_file_text)
+    if not dry_run:
+        (root_path / patch.file_path).write_text(new_file_text)
 
 
-def apply_patch(patch: CodePatch, root_path: Path) -> None:
+def apply_patch(patch: CodePatch, root_path: Path, dry_run: bool = False) -> None:
     """Apply a code patch to a code file."""
     file_text = (root_path / patch.file_path).read_text()
 
-    if _apply_patch_exact_match(file_text, patch, root_path):
-        return
+    if _apply_patch_exact_match(file_text, patch, root_path, dry_run):
+        return None
 
-    return _apply_patch_by_frame(file_text, patch, root_path)
+    return _apply_patch_by_frame(file_text, patch, root_path, dry_run)

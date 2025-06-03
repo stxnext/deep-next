@@ -1,8 +1,8 @@
 import functools
 import inspect
 
-from tenacity import retry as _retry
 from tenacity import RetryCallState
+from tenacity import retry as _retry
 
 
 def retry(*dargs, **dkwargs):
@@ -15,7 +15,9 @@ def retry(*dargs, **dkwargs):
             frame = inspect.currentframe()
             while frame:
                 local_vars = frame.f_locals
-                if "retry_state" in local_vars and isinstance(local_vars["retry_state"], RetryCallState):
+                if "retry_state" in local_vars and isinstance(
+                    local_vars["retry_state"], RetryCallState
+                ):
                     kwargs["__attempt"] = local_vars["retry_state"].attempt_number
                     break
                 frame = frame.f_back

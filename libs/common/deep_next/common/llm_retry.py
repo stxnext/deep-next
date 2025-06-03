@@ -1,13 +1,13 @@
 from typing import Callable, TypeVar
 
-from langchain_core.language_models import BaseChatModel
+from langchain_core.runnables import RunnableSerializable
 
 T = TypeVar("T")
 
 
 def invoke_retriable_llm_chain(
     n_retry: int,
-    llm_chain_builder: Callable[[int], BaseChatModel],
+    llm_chain_builder: Callable[[int], RunnableSerializable],
     prompt_arguments: dict,
     *,
     on_exception: Callable[[Exception], T | None] | None = None,

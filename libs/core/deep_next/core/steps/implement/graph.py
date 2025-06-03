@@ -85,11 +85,6 @@ class _Node:
         return {"git_diff": generate_diff(state.root_path)}
 
     @staticmethod
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
-        reraise=True,
-    )
     def develop_all_at_once(
         state: _State,
     ) -> _State:
@@ -98,7 +93,7 @@ class _Node:
             steps=state.steps,
             issue_statement=state.issue_statement,
             root_path=state.root_path,
-            n_retry=3
+            n_retry=3,
         )
         parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
 
