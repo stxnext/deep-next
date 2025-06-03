@@ -119,7 +119,6 @@ def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
                     f"Target file '{target_file}' is a directory, not a file"
                 )
 
-
     return action_plan
 
 

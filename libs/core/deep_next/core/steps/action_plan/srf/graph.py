@@ -93,7 +93,7 @@ class _Node:
             raise SRFError(
                 (
                     "SRF failed to find any relevant files. This is "
-                    " very disturbing. Double check logs and query to spot the cause. "
+                    "very disturbing. Double check logs and query to spot the cause. "
                     "Relevant files are required for DeepNext to proceed."
                 )
             )

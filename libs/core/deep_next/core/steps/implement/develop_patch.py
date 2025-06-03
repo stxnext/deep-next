@@ -4,6 +4,7 @@ import difflib
 from pathlib import Path
 from typing import List
 
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.io import read_txt
 from deep_next.core.parser import has_tag_block, parse_tag_block
@@ -17,13 +18,15 @@ from deep_next.core.steps.implement.prompt_single_file_implementation import (
     PromptSingleFileImplementation,
 )
 from deep_next.core.steps.implement.utils import CodePatch
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
 
-def _create_llm_agent(
+def _create_llm_chain(
     prompt: type[PromptSingleFileImplementation] | type[PromptAllAtOnceImplementation],
+    seed: int | None = None,
 ):
     """Creates LLM agent for project description task."""
     develop_changes_prompt_template = ChatPromptTemplate.from_messages(
@@ -48,7 +51,9 @@ class ParsePatchesError(Exception):
     """Raised for issues encountered during parse patches process."""
 
 
-def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str, root_path: Path) -> str:
+def develop_single_file_patches(
+    step: Step, issue_statement: str, git_diff: str, root_path: Path
+) -> str:
     for target_file in step.target_files:
         if not (root_path / target_file).exists():
             logger.warning(f"Creating new file: '{root_path / target_file}'")
@@ -63,7 +68,7 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str,
         ]
     )
 
-    raw_edits = _create_llm_agent(PromptSingleFileImplementation).invoke(
+    raw_edits = _create_llm_chain(PromptSingleFileImplementation).invoke(
         {
             "code_context": code_context,
             "high_level_description": step.title,
@@ -76,13 +81,16 @@ def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str,
     return raw_edits
 
 
-def develop_all_patches(steps: List[Step], issue_statement: str, root_path: Path) -> str:
+def develop_all_patches(
+    steps: List[Step], issue_statement: str, root_path: Path, n_retry: int = 3
+) -> str:
     """Develop patches for all steps in a single run.
 
     Args:
         steps: List of steps to implement
         issue_statement: The issue statement
         root_path: The root path of the project
+        n_retry: Number of retries for the LLM chain
 
     Returns:
         The combined raw patches text for all files
@@ -123,12 +131,19 @@ def develop_all_patches(steps: List[Step], issue_statement: str, root_path: Path
             f"\nFile: {target_file}\n" f"```{markdown_style}\n{file_content}\n```\n"
         )
 
-    raw_modifications = _create_llm_agent(PromptAllAtOnceImplementation).invoke(
-        {
-            "issue_statement": issue_statement,
-            "description": steps_description,
-            "code_context": files_content,
-        }
+    data = {
+        "issue_statement": issue_statement,
+        "description": steps_description,
+        "code_context": files_content,
+    }
+
+    raw_modifications = invoke_retriable_llm_chain(
+        n_retry=n_retry,
+        llm_chain_builder=lambda seed: _create_llm_chain(
+            PromptAllAtOnceImplementation, seed
+        ),
+        prompt_arguments=data,
+        exception_type=OutputParserException,
     )
 
     return raw_modifications

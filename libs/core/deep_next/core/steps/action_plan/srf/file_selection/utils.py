@@ -30,7 +30,9 @@ def validate_files(
         abs_path = root_path / Path(file.path)
 
         if abs_path.is_file():
-            valid.append(RelevantFile(path=str(file.path), explanation=file.explanation))
+            valid.append(
+                RelevantFile(path=str(file.path), explanation=file.explanation)
+            )
         else:
             logger.warning(f"File not found: {abs_path}")
             invalid.append(

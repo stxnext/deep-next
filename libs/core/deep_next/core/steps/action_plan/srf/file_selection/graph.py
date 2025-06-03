@@ -175,7 +175,7 @@ def _invoke_fixable_llm_analysis_chain(
     return invoke_retriable_llm_chain(
         n_retry=ANALYZE_CHAIN_RETRY,
         llm_chain_builder=lambda seed: prompt
-        | create_llm(LLMConfigType.SRF_ANALYZE, seed=i)
+        | create_llm(LLMConfigType.SRF_ANALYZE, seed=seed)
         | analysis_parser,
         prompt_arguments=prompt_arguments,
         on_exception=_fix_invalid_analysis,
@@ -243,9 +243,10 @@ class _Node:
     @staticmethod
     def call_tools(state: State) -> dict:
         next_steps = json.dumps(state["_current_analysis"].next_steps)
-        response = create_llm(
+        llm = create_llm(
             LLMConfigType.SRF_TOOLS, tools=get_llm_tools(state["root_path"])
-        ).invoke(
+        )
+        response = llm.invoke(
             [
                 SystemMessage(SelectFilesPrompt.role_description),
                 HumanMessage(f"Next steps:\n{next_steps}"),

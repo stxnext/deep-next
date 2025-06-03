@@ -75,7 +75,7 @@ class _Node:
                 generate_diff(state.root_path)
                 or "<Empty Git Diff, no modifications found>"
             ),
-            root_path=state.root_path
+            root_path=state.root_path,
         )
         parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
         return state
@@ -95,7 +95,10 @@ class _Node:
     ) -> _State:
         """Develop all patches for all steps at once."""
         raw_patches = develop_all_patches(
-            steps=state.steps, issue_statement=state.issue_statement, root_path=state.root_path
+            steps=state.steps,
+            issue_statement=state.issue_statement,
+            root_path=state.root_path,
+            n_retry=3
         )
         parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
 

@@ -1,7 +1,5 @@
 from pathlib import Path
 
-from loguru import logger
-
 
 def _resolve_path(path: Path, abs_dir_path: Path) -> Path | None:
     """Tries to resolve filepath with respect to given directory.
