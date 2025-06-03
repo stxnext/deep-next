@@ -11,6 +11,7 @@ from deep_next.core.parser import has_tag_block, parse_tag_block
 from deep_next.core.steps.action_plan.data_model import Step
 from deep_next.core.steps.implement import acr
 from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
+from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.prompt_all_at_once_implemetation import (
     PromptAllAtOnceImplementation,
 )
@@ -101,7 +102,7 @@ def develop_single_file_patches(
             root_path, PromptSingleFileImplementation, seed
         ),
         prompt_arguments=data,
-        exception_type=OutputParserException,
+        exception_type=(ApplyPatchError, ParsePatchesError),
     )
 
     return raw_patches
@@ -163,7 +164,7 @@ def develop_all_patches(
             root_path, PromptAllAtOnceImplementation, seed
         ),
         prompt_arguments=data,
-        exception_type=OutputParserException,
+        exception_type=(ApplyPatchError, ParsePatchesError),
     )
 
     return raw_patches
