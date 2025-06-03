@@ -4,9 +4,6 @@ import difflib
 from pathlib import Path
 from typing import List
 
-from langchain_core.output_parsers.base import T
-from pydantic import Field
-
 from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.io import read_txt
@@ -22,7 +19,7 @@ from deep_next.core.steps.implement.prompt_single_file_implementation import (
 )
 from deep_next.core.steps.implement.utils import CodePatch
 from langchain_core.exceptions import OutputParserException
-from langchain_core.output_parsers import StrOutputParser, BaseOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
@@ -78,13 +75,8 @@ def _create_new_files(step: Step, root_path: Path) -> None:
                 f.write("# Comment added at creation time to indicate empty file.\n")
 
 
-
 def develop_single_file_patches(
-    step: Step,
-    issue_statement: str,
-    git_diff: str,
-    root_path: Path,
-    n_retry: int = 3
+    step: Step, issue_statement: str, git_diff: str, root_path: Path, n_retry: int = 3
 ) -> str:
     _create_new_files(step, root_path)
 
