@@ -5,12 +5,9 @@ from pathlib import Path
 from typing import Annotated, Literal, TypedDict
 
 from deep_next.common.llm_retry import invoke_retriable_llm_chain
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import SRFConfig
-from deep_next.core.steps.action_plan.srf.common import (
-    _create_llm_analyze,
-    _create_llm_tools,
-)
 from deep_next.core.steps.action_plan.srf.file_selection.analysis_model import (
     Analysis,
     RelevantFile,
@@ -154,7 +151,7 @@ class State(TypedDict):
 
 def _fix_invalid_analysis(e: OutputParserException) -> Analysis | None:
     fixing_parser = OutputFixingParser.from_llm(
-        parser=analysis_parser, llm=_create_llm_analyze()
+        parser=analysis_parser, llm=create_llm(LLMConfigType.SRF_ANALYZE)
     )
     try:
         fixing_parser.parse(e.llm_output)
@@ -178,7 +175,7 @@ def _invoke_fixable_llm_analysis_chain(
     return invoke_retriable_llm_chain(
         n_retry=ANALYZE_CHAIN_RETRY,
         llm_chain_builder=lambda seed: prompt
-        | _create_llm_analyze(seed=seed)
+        | create_llm(LLMConfigType.SRF_ANALYZE, seed=i)
         | analysis_parser,
         prompt_arguments=prompt_arguments,
         on_exception=_fix_invalid_analysis,
@@ -246,7 +243,9 @@ class _Node:
     @staticmethod
     def call_tools(state: State) -> dict:
         next_steps = json.dumps(state["_current_analysis"].next_steps)
-        response = _create_llm_tools(tools=get_llm_tools(state["root_path"])).invoke(
+        response = create_llm(
+            LLMConfigType.SRF_TOOLS, tools=get_llm_tools(state["root_path"])
+        ).invoke(
             [
                 SystemMessage(SelectFilesPrompt.role_description),
                 HumanMessage(f"Next steps:\n{next_steps}"),

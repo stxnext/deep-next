@@ -1,8 +1,8 @@
 import json
 import textwrap
 
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core import parser
-from deep_next.core.steps.code_review.common import _create_llm
 from deep_next.core.steps.code_review.model.base import CodeReviewModel
 from deep_next.core.steps.code_review.model.code_style import code_style_code_reviewer
 from deep_next.core.steps.code_review.model.diff_consistency import (
@@ -94,7 +94,7 @@ def _fix_invalid_code_review(
     e: OutputParserException, code_review_parser: PydanticOutputParser
 ) -> CodeReviewModel | None:
     fixing_parser = OutputFixingParser.from_llm(
-        parser=code_review_parser, llm=_create_llm()
+        parser=code_review_parser, llm=create_llm(LLMConfigType.CODE_REVIEW)
     )
     try:
         fixing_parser.parse(e.llm_output)
@@ -119,7 +119,9 @@ def _invoke_fixable_llm_chain(
     """
     _e: OutputParserException | None = None
     for i in range(CODE_REVIEW_CHAIN_RETRY):
-        chain = prompt | _create_llm(seed=i) | code_review_parser
+        chain = (
+            prompt | create_llm(LLMConfigType.CODE_REVIEW, seed=i) | code_review_parser
+        )
         try:
             return chain.invoke(prompt_arguments)
         except OutputParserException as e:

@@ -2,8 +2,8 @@ import textwrap
 from pathlib import Path
 
 from deep_next.common.llm_retry import invoke_retriable_llm_chain
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.steps.action_plan import example
-from deep_next.core.steps.action_plan.common import _create_llm
 from deep_next.core.steps.action_plan.data_model import ActionPlan, ExistingCodeContext
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
@@ -155,7 +155,7 @@ def create_action_plan(
 
     action_plan = invoke_retriable_llm_chain(
         n_retry=3,
-        llm_chain_builder=lambda seed: prompt | _create_llm(seed=seed) | parser,
+        llm_chain_builder=lambda seed: prompt | create_llm(LLMConfigType.ACTION_PLAN, seed=seed) | parser,
         prompt_arguments=prompt_arguments,
         exception_type=(OutputParserException, ActionPlanValidationError),
     )
