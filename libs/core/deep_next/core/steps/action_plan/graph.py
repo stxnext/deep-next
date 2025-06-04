@@ -23,8 +23,8 @@ class _State(BaseModel):
     project_knowledge: str = Field(description="Relevant project knowledge.")
 
     # 🔸 Internal (Hidden)
-    code_context: ExistingCodeContext = Field(
-        default_factory=list, description="Files related to the issue."
+    code_context: ExistingCodeContext | None = Field(
+        description="Files related to the issue."
     )
 
     # 🔹 Output
@@ -75,10 +75,8 @@ class ActionPlanGraph(BaseGraph):
     def __call__(
         self, root_path: Path, issue_statement: str, project_knowledge: str
     ) -> ActionPlan:
-        initial_state = _State(
-            root_path=root_path,
-            issue_statement=issue_statement,
-            project_knowledge=project_knowledge,
+        initial_state = self.create_init_state(
+            root_path, issue_statement, project_knowledge
         )
         final_state = self.compiled.invoke(initial_state)
 
@@ -101,6 +99,8 @@ class ActionPlanGraph(BaseGraph):
             root_path=root_path,
             issue_statement=issue_statement,
             project_knowledge=project_knowledge,
+            code_context=None,
+            action_plan=None,
         )
 
 

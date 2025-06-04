@@ -8,6 +8,43 @@ from deep_next.core.steps.action_plan.data_model import ActionPlan, ExistingCode
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import OutputParserException
+from langchain_core.output_parsers import BaseOutputParser
+
+
+class ActionPlanValidator(BaseOutputParser):
+    root_path: Path
+
+    def __init__(self, root_path: Path, **kwargs):
+        super().__init__(root_path=root_path, **kwargs)
+        self.root_path = root_path
+
+    def _validate_paths(self, action_plan: ActionPlan, root_path: Path) -> ActionPlan:
+        """Validates the action plan.
+
+        Raises:
+            ActionPlanValidationError: If the action plan is invalid.
+        """
+        if not action_plan.ordered_steps:
+            raise ActionPlanValidationError("Action has no steps.")
+
+        for step in action_plan.ordered_steps:
+            for target_file in step.target_files:
+                abs_path = root_path / target_file
+                if not abs_path.exists():
+                    raise ActionPlanValidationError(
+                        f"Target file '{target_file}' does not exist."
+                    )
+
+                if abs_path.is_dir():
+                    raise ActionPlanValidationError(
+                        f"Target file '{target_file}' is a directory, not a file."
+                    )
+
+        return action_plan
+
+    def parse(self, action_plan: ActionPlan) -> ActionPlan:
+        self._validate_paths(action_plan, self.root_path)
+        return action_plan
 
 
 class ActionPlanValidationError(Exception):
@@ -100,28 +137,6 @@ class _Prompt:
     )
 
 
-def _validate_paths(action_plan: ActionPlan, root_path: Path) -> ActionPlan:
-    """Validates the action plan.
-
-    Raises:
-        ActionPlanValidationError: If the action plan is invalid.
-    """
-    if not action_plan.ordered_steps:
-        raise ActionPlanValidationError("Action has no steps.")
-
-    for step in action_plan.ordered_steps:
-        for target_file in step.target_files:
-            if not (root_path / target_file).exists():
-                raise ActionPlanValidationError(str(root_path / target_file))
-
-            if target_file.is_dir():
-                raise ActionPlanValidationError(
-                    f"Target file '{target_file}' is a directory, not a file"
-                )
-
-    return action_plan
-
-
 def create_action_plan(
     root_path: Path,
     issue_statement: str,
@@ -156,9 +171,10 @@ def create_action_plan(
         n_retry=3,
         llm_chain_builder=lambda seed: prompt
         | create_llm(LLMConfigType.ACTION_PLAN, seed=seed)
-        | parser,
+        | parser
+        | ActionPlanValidator(root_path),
         prompt_arguments=prompt_arguments,
         exception_type=(OutputParserException, ActionPlanValidationError),
     )
 
-    return _validate_paths(action_plan, root_path)
+    return action_plan

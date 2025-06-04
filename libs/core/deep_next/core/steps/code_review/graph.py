@@ -40,8 +40,7 @@ class _State(BaseModel):
     )
 
     # Output
-    result: CodeReviewResult = Field(
-        default_factory=list,
+    result: CodeReviewResult | None = Field(
         description=(
             "Code review issues found during the code review process "
             "and potential errors."
@@ -64,7 +63,9 @@ class _Node:
             modified_files_paths.append(modified_file_path)
 
         return {
-            "code_fragments": {str(path): [read_txt(path)] for path in modified_files_paths}
+            "code_fragments": {
+                str(path): [read_txt(path)] for path in modified_files_paths
+            }
         }
 
     @staticmethod
@@ -113,6 +114,7 @@ class CodeReviewGraph(BaseGraph):
             project_knowledge=project_knowledge,
             git_diff=git_diff,
             include_code_fragments=include_code_fragments,
+            result=None,
         )
 
     def __call__(

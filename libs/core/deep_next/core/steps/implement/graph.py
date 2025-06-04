@@ -66,7 +66,7 @@ class _Node:
                 or "<Empty Git Diff, no modifications found>"
             ),
             root_path=state.root_path,
-            n_retry=5
+            n_retry=5,
         )
         parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
         return state
