@@ -101,7 +101,7 @@ def develop_single_file_patches(
             root_path, PromptSingleFileImplementation, seed
         ),
         prompt_arguments=data,
-        exception_type=(ApplyPatchError, ParsePatchesError),
+        exception_type=(ApplyPatchError, ParsePatchesError, ValueError),
     )
 
     return raw_patches
