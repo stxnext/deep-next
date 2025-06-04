@@ -1,6 +1,7 @@
 import textwrap
 from pathlib import Path
 
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.steps.action_plan.srs._agentless import (
     extract_locs_for_files,
     get_repo_files,
@@ -9,7 +10,6 @@ from deep_next.core.steps.action_plan.srs._agentless import (
 from deep_next.core.steps.action_plan.srs.common import (
     ExistingCodeContext,
     FileCodeContext,
-    _create_llm,
 )
 from langchain.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -75,7 +75,9 @@ def _create_llm_agent() -> RunnableSerializable:
 
     parser = PydanticOutputParser(pydantic_object=ExistingCodeContext)
 
-    return design_solution_prompt_template | _create_llm() | parser
+    return (
+        design_solution_prompt_template | create_llm(LLMConfigType.SRS_ANALYZE) | parser
+    )
 
 
 def localize_function_from_compressed_files(

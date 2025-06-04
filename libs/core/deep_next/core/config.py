@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 
 from deep_next.common.config import MONOREPO_DATA_PATH
@@ -9,6 +10,17 @@ DATA_DIR = MONOREPO_DATA_PATH / "core"
 DATA_DIR.mkdir(exist_ok=True, parents=True)
 
 AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS = 1
+
+
+class ImplementationModes(str, Enum):
+    SINGLE_FILE = "single_file"
+    ALL_AT_ONCE = "all_at_once"
+
+
+# The mode of implementation for the project.
+# SINGLE_FILE: one file at a time
+# ALL_AT_ONCE: all files at the same time
+IMPLEMENTATION_MODE = ImplementationModes.ALL_AT_ONCE
 
 
 class SRFConfig:
