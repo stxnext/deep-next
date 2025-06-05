@@ -5,17 +5,10 @@ import click
 from deep_next.app.config import SCHEDULE_INTERVAL_ENV_VAR
 from deep_next.app.entrypoint import main
 from deep_next.connectors.slack import slack_notifications
+from deep_next.core.common import setup_logger
 from loguru import logger
 
-# Configure Loguru log level from LOG_LEVEL env variable (default: INFO)
-logger.remove()
-logger.add(
-    sink=lambda msg: print(msg, end=""),
-    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
-    colorize=True,
-    backtrace=True,
-    diagnose=True,
-)
+setup_logger()
 
 
 def log(msg: str) -> None:

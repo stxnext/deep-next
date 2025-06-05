@@ -5,16 +5,9 @@ import click
 from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
 from loguru import logger
+from deep_next.core.common import setup_logger
 
-# Configure Loguru log level from LOG_LEVEL env variable (default: INFO)
-logger.remove()
-logger.add(
-    sink=lambda msg: print(msg, end=""),
-    level=os.environ.get("LOG_LEVEL", "INFO").upper(),
-    colorize=True,
-    backtrace=True,
-    diagnose=True,
-)
+setup_logger()
 
 
 def main(

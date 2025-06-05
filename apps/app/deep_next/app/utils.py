@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -62,3 +63,6 @@ def get_connector(config: "VCSConfig") -> BaseConnector:
         raise ValueError(
             f"Unsupported VCS, can't find related connector: '{config.vcs}'"
         )
+
+
+
