@@ -27,8 +27,9 @@ class Step(BaseModel):
     title: str = Field(description="High level step overview.")
     description: str = Field(description="Detailed step description.")
     target_files: list[Path] = Field(
-        description="Absolute paths to the files to be modified or taken into "
-        "consideration."
+        description="Paths to files that should be modified or taken into "
+                    "consideration during development (files only, directories are not "
+                    "allowed!)."
     )
 
 

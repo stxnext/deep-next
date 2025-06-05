@@ -107,8 +107,8 @@ class _Prompt:
         2. Mind the order of steps. It is important from the dependencies perspective.
         3. If steps are independent, their order does not matter.
         4. Do not overcomplicate the solution. Keep it simple, clear and professional.
-        5. It's ok to provide only one step if it's simple enough for developer to understand.
-        6. For each step, provide a list of target files that are required or useful for the step. Do not provide directories. Only files.
+        5. It's OK to provide only one step if it's simple enough for developer to understand.
+        6. For each step, provide a list of target files that are required or useful for the step. Do not provide directory paths. Only file paths.
 
         --------------------
         Adhere to following format instructions.
@@ -168,7 +168,7 @@ def create_action_plan(
     }
 
     action_plan = invoke_retriable_llm_chain(
-        n_retry=3,
+        n_retry=5,
         llm_chain_builder=lambda seed: prompt
         | create_llm(LLMConfigType.ACTION_PLAN, seed=seed)
         | parser
