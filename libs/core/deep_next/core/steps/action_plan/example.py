@@ -88,11 +88,8 @@ as `apps/app/deep_next/app/entrypoint.py`, `apps/evaluation/deep_next/evaluation
 │           │   ├── 📄 example_tasks_165.py
 │           │   ├── 📄 example_tasks_mini.py
 │           │   ├── 📁 gt_apply_edits
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_and_after_
-│           │   │   │   patch.py
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_and_after_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_patch.py
 │           │   │   ├── 📄 fix_typehints-docstring_added.py
 │           │   │   ├── 📄 fix_typehints-docstring_removed.py
 │           │   │   ├── 📄 fix_typehints-exact_match.py

@@ -43,8 +43,8 @@ class _State(BaseModel):
     result: CodeReviewResult = Field(
         default_factory=list,
         description=(
-            "Code review issues found during the code review process"
-            " and potential errors."
+            "Code review issues found during the code review process "
+            "and potential errors."
         ),
     )
 
