@@ -2,13 +2,10 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Literal
 
-import tenacity
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import IMPLEMENTATION_MODE, ImplementationModes
 from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
-from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.develop_patch import (
-    ParsePatchesError,
     develop_all_patches,
     develop_single_file_patches,
     parse_and_apply_patches,
@@ -58,13 +55,6 @@ class _Node:
         return {"selected_step": step, "steps_remaining": state.steps_remaining}
 
     @staticmethod
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
-        retry=tenacity.retry_if_exception_type(
-            (ApplyPatchError, ParsePatchesError, ValueError)
-        ),
-        reraise=True,
-    )
     def code_development(
         state: _State,
     ) -> _State:
@@ -75,8 +65,10 @@ class _Node:
                 generate_diff(state.root_path)
                 or "<Empty Git Diff, no modifications found>"
             ),
+            root_path=state.root_path,
+            n_retry=5,
         )
-        parse_and_apply_patches(raw_patches=raw_patches)
+        parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
         return state
 
     @staticmethod
@@ -84,19 +76,17 @@ class _Node:
         return {"git_diff": generate_diff(state.root_path)}
 
     @staticmethod
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(3),
-        retry=tenacity.retry_if_exception_type((ApplyPatchError, ParsePatchesError)),
-        reraise=True,
-    )
     def develop_all_at_once(
         state: _State,
     ) -> _State:
         """Develop all patches for all steps at once."""
         raw_patches = develop_all_patches(
-            steps=state.steps, issue_statement=state.issue_statement
+            steps=state.steps,
+            issue_statement=state.issue_statement,
+            root_path=state.root_path,
+            n_retry=3,
         )
-        parse_and_apply_patches(raw_patches=raw_patches)
+        parse_and_apply_patches(raw_patches=raw_patches, root_path=state.root_path)
 
         # Empty the steps_remaining list since we've processed all steps at once
         state.steps_remaining = []

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from deep_next.core.steps.implement.apply_patch.common import (
     ApplyPatchError,
     CodeMatch,
@@ -21,6 +23,9 @@ def _get_exact_match(text: str, match: str) -> CodeMatch | None:
         text: Text to search in.
         match: Text to search for.
     """
+    if text == match:
+        return CodeMatch(start=1, end=len(text.splitlines()), distance=0)
+
     result = text.split(match)
     if len(result) == 1:
         return None
@@ -30,7 +35,9 @@ def _get_exact_match(text: str, match: str) -> CodeMatch | None:
     return CodeMatch(start=start, end=start + n_match_lines - 1, distance=0)
 
 
-def _apply_patch_exact_match(file_text: str, patch: CodePatch) -> bool:
+def _apply_patch_exact_match(
+    file_text: str, patch: CodePatch, root_path: Path, dry_run: bool = False
+) -> bool:
     """
     Apply a code patch to a code file by finding an exact match.
 
@@ -43,7 +50,8 @@ def _apply_patch_exact_match(file_text: str, patch: CodePatch) -> bool:
 
     file_lines = file_text.split("\n")
     new_file_text = lint_and_merge(file_lines, best_match, patch)
-    patch.file_path.write_text(new_file_text)
+    if not dry_run:
+        (root_path / patch.file_path).write_text(new_file_text)
 
     return True
 
@@ -136,7 +144,9 @@ def _select_matching_frames(
     return best_frames
 
 
-def _apply_patch_by_frame(file_text: str, patch: CodePatch) -> None:
+def _apply_patch_by_frame(
+    file_text: str, patch: CodePatch, root_path: Path, dry_run: bool = False
+) -> None:
     """
     Apply a code patch to a code file by selecting the best matching code frame.
 
@@ -164,14 +174,15 @@ def _apply_patch_by_frame(file_text: str, patch: CodePatch) -> None:
 
     file_lines = file_text.split("\n")
     new_file_text = lint_and_merge(file_lines, best_match, patch)
-    patch.file_path.write_text(new_file_text)
+    if not dry_run:
+        (root_path / patch.file_path).write_text(new_file_text)
 
 
-def apply_patch(patch: CodePatch) -> None:
+def apply_patch(patch: CodePatch, root_path: Path, dry_run: bool = False) -> None:
     """Apply a code patch to a code file."""
-    file_text = patch.file_path.read_text()
+    file_text = (root_path / patch.file_path).read_text()
 
-    if _apply_patch_exact_match(file_text, patch):
+    if _apply_patch_exact_match(file_text, patch, root_path, dry_run):
         return None
 
-    return _apply_patch_by_frame(file_text, patch)
+    return _apply_patch_by_frame(file_text, patch, root_path, dry_run)

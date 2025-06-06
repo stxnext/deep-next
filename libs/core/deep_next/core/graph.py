@@ -6,7 +6,7 @@ from deep_next.common.common import prepare_issue_statement
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS
 from deep_next.core.steps.action_plan import action_plan_graph
-from deep_next.core.steps.action_plan.data_model import ActionPlan
+from deep_next.core.steps.action_plan.data_model import ActionPlan, Step
 from deep_next.core.steps.code_review.graph import code_review_graph
 from deep_next.core.steps.gather_project_knowledge.graph import (
     gather_project_knowledge_graph,
@@ -186,7 +186,7 @@ class DeepNextGraph(BaseGraph):
         root: Path,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str] = [],  # noqa,
+        issue_comments: list[str] = [],  # noqa
     ) -> _State:
         return _State(
             root_path=root,
@@ -195,12 +195,30 @@ class DeepNextGraph(BaseGraph):
             issue_comments=issue_comments,
         )
 
+    def steps_to_str(self, steps: list[Step]):
+        ordered_steps_strs = []
+
+        for idx, step in enumerate(steps, start=1):
+
+            target_files_str = "\n".join(
+                [f"- {target_file}" for target_file in step.target_files]
+            )
+
+            ordered_steps_strs.append(
+                f"{idx}. {step.title}\n\n"
+                f"{step.description}\n\n"
+                f"Target files:\n"
+                f"{target_files_str}"
+            )
+
+        return "\n\n".join(ordered_steps_strs)
+
     def __call__(
         self,
         *_,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str] = [],  # noqa,
+        issue_comments: list[str] = [],  # noqa
         root: Path,
     ) -> DeepNextResult:
         initial_state = self.create_init_state(
@@ -213,21 +231,10 @@ class DeepNextGraph(BaseGraph):
 
         state = _State.model_validate(final_state)
 
-        ordered_steps_str = "\n".join(
-            [
-                (
-                    f"{idx}. {step.title}\n\n"
-                    f"{step.description}\n\n"
-                    f"Target file: `{step.target_file.relative_to(state.root_path)}`\n"
-                )
-                for idx, step in enumerate(state.action_plan.ordered_steps, start=1)
-            ]
-        )
-
         return DeepNextResult(
             git_diff=state.git_diff,
             reasoning=state.action_plan.reasoning,
-            action_plan=ordered_steps_str,
+            action_plan=self.steps_to_str(state.action_plan.ordered_steps),
         )
 
 
