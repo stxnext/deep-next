@@ -88,11 +88,8 @@ as `apps/app/deep_next/app/entrypoint.py`, `apps/evaluation/deep_next/evaluation
 │           │   ├── 📄 example_tasks_165.py
 │           │   ├── 📄 example_tasks_mini.py
 │           │   ├── 📁 gt_apply_edits
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_and_after_
-│           │   │   │   patch.py
-│           │   │   ├── 📄
-│           │   │   │   fix_typehints-added_indentation_in_before_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_and_after_patch.py
+│           │   │   ├── 📄 fix_typehints-added_indentation_in_before_patch.py
 │           │   │   ├── 📄 fix_typehints-docstring_added.py
 │           │   │   ├── 📄 fix_typehints-docstring_removed.py
 │           │   │   ├── 📄 fix_typehints-exact_match.py
@@ -114,7 +111,7 @@ as `apps/app/deep_next/app/entrypoint.py`, `apps/evaluation/deep_next/evaluation
 │           │   └── 📁 project_knowledge
 │           ├── 📄 entrypoint.py
 │           ├── 📄 generate_gt_select_related_files_results.py
-│           ├── 📄 generate_gt_solution_desing_templates.py
+│           ├── 📄 generate_gt_solution_design_templates.py
 │           ├── 📄 generate_project_knowledge.py
 │           ├── 📄 results_evaluation.py
 │           ├── 📄 run_swe_prediction.py

@@ -35,13 +35,10 @@ class PromptAllAtOnceImplementation:
         1. File To Change
         The specific file assigned to you that requires modifications.
 
-        2. High-lvl description
-        High-level description of necessary changes in a given file.
-
-        3. Detailed Description
+        2. Detailed Description
         Additional requirements needed in the module to meet the expectations.
 
-        4. Issue statement
+        3. Issue statement
         Completes the context for better understanding given requirements.
         ------------------------
         """  # noqa: E501
@@ -54,10 +51,6 @@ class PromptAllAtOnceImplementation:
         ```
         {code_context}
         ```
-
-        <high_level_description>
-        {high_level_description}
-        </high_level_description>
 
         <description>
         {description}

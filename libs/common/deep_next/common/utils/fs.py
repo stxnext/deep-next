@@ -9,7 +9,7 @@ from deep_next.core.steps.implement.git_diff import is_git_repo
 
 
 @contextmanager
-def create_temp_dir() -> Path:
+def create_tmp_dir() -> Path:
     """Context manager to create a temporary directory.
 
     The directory is automatically removed after exiting the context.
@@ -38,7 +38,7 @@ def tmp_git_dir(dir_path: Path | str = "."):
             f"The directory '{dir_path}' is already a Git repository."
         )
 
-    with create_temp_dir() as tmp_dir:
+    with create_tmp_dir() as tmp_dir:
         git_dir = tmp_dir / dir_path.name
         shutil.copytree(dir_path, git_dir)
         try:

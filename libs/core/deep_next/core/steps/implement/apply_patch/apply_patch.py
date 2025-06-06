@@ -172,6 +172,6 @@ def apply_patch(patch: CodePatch) -> None:
     file_text = patch.file_path.read_text()
 
     if _apply_patch_exact_match(file_text, patch):
-        return
+        return None
 
     return _apply_patch_by_frame(file_text, patch)

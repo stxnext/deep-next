@@ -243,9 +243,10 @@ class _Node:
     @staticmethod
     def call_tools(state: State) -> dict:
         next_steps = json.dumps(state["_current_analysis"].next_steps)
-        response = create_llm(
+        llm = create_llm(
             LLMConfigType.SRF_TOOLS, tools=get_llm_tools(state["root_path"])
-        ).invoke(
+        )
+        response = llm.invoke(
             [
                 SystemMessage(SelectFilesPrompt.role_description),
                 HumanMessage(f"Next steps:\n{next_steps}"),

@@ -11,9 +11,9 @@ overview_desc = (
 
 relevant_files_so_far_desc = (
     "List files that are likely related to the issue based on the current knowledge. "
-    "Use their full path and a brief explanation of why they are relevant. Always keep "
-    "the files previously identified as relevant, that have not been disproven to be "
-    "related to the issue."
+    "Use their full path and a brief, but precise explanation of why they are "
+    "relevant. Always keep the files previously identified as relevant, that have not "
+    "been disproven to be related to the issue."
     ""
     "When listing files, always use their full path starting from one of the roots: "
     "{root_path_ls}"
