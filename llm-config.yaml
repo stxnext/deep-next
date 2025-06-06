@@ -29,7 +29,7 @@ implement:
   temperature: 0.0
 
 code-review:
-  model: gpt-4o-mini-2024-07-18 # gpt-4o-2024-08-06
+  model: gpt-4.1-2025-04-14
   seed: 42
   temperature: 0.0
 
