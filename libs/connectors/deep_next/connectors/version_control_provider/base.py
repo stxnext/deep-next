@@ -4,6 +4,14 @@ from enum import Enum
 
 from deep_next.app.config import Label
 from deep_next.connectors.version_control_provider.utils import label_to_str
+from pydantic import BaseModel
+
+
+class CodeReviewCommentThread(BaseModel):
+    thread_id: int
+    file_path: str
+    code_lines: str
+    comments: list[str]
 
 
 class BaseComment(ABC):
@@ -161,6 +169,14 @@ class BaseMR(ABC):
     def comments(self) -> list[BaseComment]:
         """Returns the comments of the MR."""
 
+    def extract_comment_threads(self) -> list[CodeReviewCommentThread]:
+        """Extracts code review comment threads from the MR comments."""
+
+    def reply_to_comment_thread(
+        self, thread: CodeReviewCommentThread, body: str
+    ) -> None:
+        """Replies to a comment thread with the given body."""
+
 
 class BaseConnector(ABC):
     @abstractmethod
@@ -172,7 +188,7 @@ class BaseConnector(ABC):
         """Fetches a single issue."""
 
     @abstractmethod
-    def list_mrs(self, label: str | None = None) -> list[BaseIssue]:
+    def list_mrs(self, label: str | Label | None = None) -> list[BaseMR]:
         """Fetches all MRs"""
 
     @abstractmethod

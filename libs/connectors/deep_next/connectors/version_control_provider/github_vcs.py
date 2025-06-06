@@ -1,3 +1,5 @@
+import re
+from collections import defaultdict
 from enum import Enum
 from typing import List
 
@@ -8,6 +10,7 @@ from deep_next.connectors.version_control_provider.base import (
     BaseConnector,
     BaseIssue,
     BaseMR,
+    CodeReviewCommentThread,
 )
 from deep_next.connectors.version_control_provider.utils import label_to_str
 from github import Github
@@ -97,12 +100,12 @@ class GitHubIssue(BaseIssue):
 
 
 class GitHubMR(BaseMR):
-    def __init__(self, pr: PullRequest, related_issue: GitHubIssue | None = None):
+    def __init__(self, pr: PullRequest, related_issue: GitHubIssue):
         self._pr = pr
         self._related_issue = related_issue
 
     @property
-    def related_issue(self) -> BaseIssue | None:
+    def related_issue(self) -> GitHubIssue:
         """Returns the related issue if exists."""
         return self._related_issue
 
@@ -135,6 +138,16 @@ class GitHubMR(BaseMR):
         """Base commit for PR (the one on which changes are applied)."""
         return self._pr.base.sha
 
+    @property
+    def labels(self) -> list[str]:
+        """Returns the labels of the MR."""
+        return [label.name for label in self._pr.get_labels()]
+
+    @property
+    def comments(self) -> list[GitHubComment]:
+        """Returns the comments of the MR."""
+        return [GitHubComment(comment) for comment in self._pr.get_issue_comments()]
+
     def git_diff(self) -> str:
         """Construct a full git diff from the files in the pull request."""
         diffs = []
@@ -155,11 +168,6 @@ class GitHubMR(BaseMR):
             diffs.append(file.patch or "")
 
         return "\n".join(diffs)
-
-    @property
-    def labels(self) -> list[str]:
-        """Returns the labels of the MR."""
-        return [label.name for label in self._pr.get_labels()]
 
     def add_label(self, label: str | Label):
         """Add a label to the MR."""
@@ -183,10 +191,40 @@ class GitHubMR(BaseMR):
 
         self._pr.create_issue_comment(comment)
 
-    @property
-    def comments(self) -> list[GitHubComment]:
-        """Returns the comments of the MR."""
-        return [GitHubComment(comment) for comment in self._pr.get_issue_comments()]
+    def reply_to_comment_thread(
+        self, thread: CodeReviewCommentThread, body: str
+    ) -> None:
+        """Reply to a comment thread in the pull request."""
+        self._pr.create_review_comment_reply(body=body, comment_id=thread.thread_id)
+
+    def extract_comment_threads(self) -> List[CodeReviewCommentThread]:
+        """Extracts comment threads from a GitHub pull request."""
+        threads = defaultdict(list)
+        for comment in self._pr.get_review_comments():
+            thread_id = comment.in_reply_to_id or comment.id
+            threads[thread_id].append(comment)
+
+        result: List[CodeReviewCommentThread] = []
+        for comments in threads.values():
+            comments.sort(key=lambda c: c.created_at)
+            root = comments[0]
+
+            code_lines = [
+                line[1:].rstrip()
+                for line in root.diff_hunk.splitlines()
+                if line.startswith("+") and not line.startswith("+++")
+            ]
+
+            result.append(
+                CodeReviewCommentThread(
+                    thread_id=root.id,
+                    file_path=root.path,
+                    code_lines="\n".join(code_lines),
+                    comments=[c.body for c in comments],
+                )
+            )
+
+        return result
 
 
 class GitHubConnector(BaseConnector):
@@ -222,14 +260,24 @@ class GitHubConnector(BaseConnector):
         labels = [label.name for label in raw_mr.labels]
         return label in labels
 
-    def list_mrs(self, label: str | None = None) -> list[GitHubMR]:
+    def list_mrs(self, label: str | Label | None = None) -> list[GitHubMR]:
         """Fetches all MRs"""
         prs = list(self.repo.get_pulls(state="open"))
 
         if label:
+            if isinstance(label, Enum):
+                label = label.value
             prs = [pr for pr in prs if self._has_label(pr, label)]
 
-        return [GitHubMR(pr) for pr in prs]
+        return [
+            GitHubMR(
+                pr,
+                related_issue=self.get_issue(
+                    issue_no=self._extract_issue_number(pr.title)
+                ),
+            )
+            for pr in prs
+        ]
 
     def get_mr(self, mr_no: int) -> GitHubMR:
         pr = self.repo.get_pull(number=mr_no)
@@ -243,12 +291,25 @@ class GitHubConnector(BaseConnector):
         title: str,
         description: str | None = None,
         issue: GitHubIssue | None = None,
+        draft=False,
     ) -> GitHubMR:
         pr = self.repo.create_pull(
             title=title,
             head=merge_branch,
             base=into_branch,
             body=description,
+            draft=draft,
         )
 
         return GitHubMR(pr, related_issue=issue)
+
+    # TODO: Connect with tile creator
+    @staticmethod
+    def _extract_issue_number(text: str) -> int:
+        """Extracts the issue number from a given text."""
+        match = re.search(r"issue\s+#(\d+)", text, re.IGNORECASE)
+
+        if match:
+            return int(match.group(1))
+
+        raise ValueError(f"Could not extract issue number from text: '{text}'")
