@@ -65,11 +65,11 @@ class PromptSingleFileImplementation:
         <high_level_description>
         {high_level_description}
         </high_level_description>
-        
+
         <description>
         {description}
         </description>
-        
+
         <issue_statement>
         {issue_statement}
         </issue_statement>
