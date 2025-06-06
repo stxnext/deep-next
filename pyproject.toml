@@ -36,7 +36,6 @@ deep_next_common = { path = "libs/common", develop = true  }
 deep_next_core = { path = "libs/core", develop = true  }
 deep_next_common = { path = "libs/common", develop = true  }
 langchain = "^0.3.21"
-levenshtein = "^0.26.1"
 langgraph = ">=0.3.20,!=0.3.22,!=0.3.23,!=0.3.24"
 langchain-aws = "^0.2.9"
 langchain-openai = "^0.3.10"
@@ -48,6 +47,7 @@ sortedcontainers = "^2.4.0"
 scipy = "^1.15.2"
 libcst = "^1.6.0"
 unidiff = "^0.7.5"
+rapidfuzz = "^3.13.0"
 
 [tool.poetry.group.connectors.dependencies]
 deep_next_connectors = { path = "libs/connectors", develop = true  }
