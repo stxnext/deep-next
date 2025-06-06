@@ -38,7 +38,7 @@ class PromptSingleFileImplementation:
 
         2. High-lvl description
         High-level description of necessary changes in a given file.
-        
+
         3. Detailed Description
         Additional requirements needed in the module to meet the expectations.
 
