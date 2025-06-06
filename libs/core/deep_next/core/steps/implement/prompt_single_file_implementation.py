@@ -62,13 +62,13 @@ class PromptSingleFileImplementation:
         {code_context}
         ```
 
-        <description>
-        {description}
-        </description>
-
         <high_level_description>
         {high_level_description}
         </high_level_description>
+        
+        <description>
+        {description}
+        </description>
         
         <issue_statement>
         {issue_statement}
