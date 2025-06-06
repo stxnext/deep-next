@@ -186,7 +186,7 @@ class DeepNextGraph(BaseGraph):
         root: Path,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str] = [], # noqa,
+        issue_comments: list[str] = [],  # noqa,
     ) -> _State:
         return _State(
             root_path=root,
@@ -200,7 +200,7 @@ class DeepNextGraph(BaseGraph):
         *_,
         issue_title: str,
         issue_description: str,
-        issue_comments: list[str] = [], # noqa,
+        issue_comments: list[str] = [],  # noqa,
         root: Path,
     ) -> DeepNextResult:
         initial_state = self.create_init_state(

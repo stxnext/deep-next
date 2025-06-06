@@ -64,7 +64,9 @@ class _Node:
             modified_files_paths.append(modified_file_path)
 
         return {
-            "code_fragments": {str(path): [read_txt(path)] for path in modified_files_paths}
+            "code_fragments": {
+                str(path): [read_txt(path)] for path in modified_files_paths
+            }
         }
 
     @staticmethod
