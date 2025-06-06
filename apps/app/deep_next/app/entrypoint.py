@@ -1,8 +1,11 @@
 from deep_next.app.common import create_feature_branch_name
 from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, Label
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
-from deep_next.app.handle_mr.e2e import handle_mr_e2e
-from deep_next.app.handle_mr.hitl import handle_mr_human_in_the_loop
+from deep_next.app.handle_mr.autonomous import propose_solution_autonomously
+from deep_next.app.handle_mr.code_review import apply_code_review
+from deep_next.app.handle_mr.hitl import (
+    handle_mr_human_in_the_loop as work_on_action_plan,
+)
 from deep_next.app.utils import get_connector
 from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
 from deep_next.common.cmd import run_command
@@ -46,10 +49,12 @@ def create_mr(
         mr = vcs_connector.create_mr(
             merge_branch=feature_branch.name,
             into_branch=ref_branch,
-            title=f"[DeepNext] Resolve issue #{issue.no}: {issue.title}",
-            description="This is description for the MR created by DeepNext.\n\n",
+            title=f"[DeepNext] Resolve issue #{issue.no}: {issue.title}",  # TODO
+            description="This is description for the MR created by DeepNext.",
             issue=issue,
         )
+
+        issue.remove_label(Label.TODO)
 
         for label in labels:
             mr.add_label(label)
@@ -71,16 +76,17 @@ def create_mr(
     return mr
 
 
-def solve_issues(issues: list[BaseIssue], vcs_config: VCSConfig) -> None:
+def prepare_mr(issues: list[BaseIssue], vcs_config: VCSConfig) -> None:
     """Solves issues dedicated for DeepNext for given project."""
-    logger.info("Preparing repository locally...")
     local_repo: GitRepository = setup_local_git_repo(
         repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
         clone_url=vcs_config.clone_url,  # TODO: Security: logs url with access token
     )
 
     for idx, issue in enumerate(issues, start=1):
-        logger.info(f"({idx}/{len(issues)}) Solving issue #{issue.no}: '{issue.title}'")
+        logger.info(
+            f"({idx}/{len(issues)}) Preparing mr for issue #{issue.no}: '{issue.title}'"
+        )
 
         run_type_label = (
             Label.HUMAN_IN_THE_LOOP
@@ -96,15 +102,13 @@ def solve_issues(issues: list[BaseIssue], vcs_config: VCSConfig) -> None:
             issue,
             local_repo,
             ref_branch=REF_BRANCH,
-            labels=[run_type_label],
+            labels=[run_type_label, Label.IN_PROGRESS],
         )
 
-        mr_handler = (
-            handle_mr_e2e
-            if run_type_label == Label.AUTONOMOUS
-            else handle_mr_human_in_the_loop
-        )
-        mr_handler(
+        if not run_type_label == Label.AUTONOMOUS:
+            return
+
+        propose_solution_autonomously(
             mr=mr,
             local_repo=local_repo,
         )
@@ -114,19 +118,38 @@ def main() -> None:
     """Solves issues dedicated for DeepNext for given project."""
     vcs_config: VCSConfig = load_vcs_config_from_env()
     vcs_connector = get_connector(vcs_config)
+
     logger.info(f"Starting DeepNext app for '{vcs_config.repo_path}' repo")
+
+    # TODO: Making it class based, we can have common variables behind self.
+    local_repo: GitRepository = setup_local_git_repo(
+        repo_dir=REPOSITORIES_DIR / vcs_config.repo_path.replace("/", "_"),
+        clone_url=vcs_config.clone_url,
+    )
 
     if issues_todo := vcs_connector.list_issues(label=Label.TODO):
         logger.info(
             f"Found {len(issues_todo)} issues with '{Label.TODO}' label "
             f"in '{vcs_config.repo_path}'"
         )
+        prepare_mr(issues_todo, vcs_config)
 
-        solve_issues(issues_todo, vcs_config)
-    else:
+    if mrs_in_progress := vcs_connector.list_mrs(label=Label.IN_PROGRESS):
         logger.info(
-            f"No issues found with '{Label.TODO}' label " f"in '{vcs_config.repo_path}'"
+            f"Found {len(mrs_in_progress)} MRs with '{Label.IN_PROGRESS}' label "
+            f"in '{vcs_config.repo_path}'"
         )
+        for mr in mrs_in_progress:
+            work_on_action_plan(mr=mr, local_repo=local_repo)
+
+    if mrs_code_review := vcs_connector.list_mrs(
+        label=Label.SOLVED
+    ):  # TODO: Ready for code review
+        for mr in mrs_code_review:
+            apply_code_review(
+                mr=mr,
+                local_repo=local_repo,
+            )
 
     logger.success(f"DeepNext app run completed for '{vcs_config.repo_path}' repo")
 

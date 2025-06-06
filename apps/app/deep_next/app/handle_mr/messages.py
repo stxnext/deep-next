@@ -49,7 +49,7 @@ def is_msg_to_deep_next_ok(msg: str | BaseComment) -> bool:
     """Checks if the message is a response to DeepNext and if it is OK."""
     msg = msg.body if isinstance(msg, BaseComment) else msg
     trimmed_msg = trim_msg_to_deep_next_prefix(msg)
-    return trimmed_msg.lower() == MSG_TO_DEEP_NEXT_CONTENT_OK
+    return trimmed_msg.lower() == MSG_TO_DEEP_NEXT_CONTENT_OK.lower()
 
 
 MSG_ACTION_PLAN_RESPONSE_INSTRUCTIONS = (

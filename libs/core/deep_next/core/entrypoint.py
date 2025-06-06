@@ -14,6 +14,7 @@ def main(
     """Deep NEXT data pipeline."""
     logger.info(f"\n{problem_statement=}\n{hints=}\n{root_dir=}")
 
+    # TODO: CLI will fail due to invalid interface
     result: DeepNextResult = deep_next_graph(
         problem_statement=problem_statement, hints=hints, root=root_dir
     )

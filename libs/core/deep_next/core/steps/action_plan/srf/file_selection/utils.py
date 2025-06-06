@@ -34,7 +34,7 @@ def validate_files(
                 RelevantFile(path=str(file.path), explanation=file.explanation)
             )
         else:
-            logger.warning(f"File not found: {abs_path}")
+            logger.warning(f"File not found, adding to invalid paths: {abs_path}")
             invalid.append(
                 RelevantFile(
                     path=str(file.path),

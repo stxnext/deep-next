@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from Levenshtein import distance as levenshtein_distance
+from rapidfuzz.distance import Levenshtein as levenshtein_distance
 from scipy.stats import pearsonr
 from sortedcontainers import SortedList
 

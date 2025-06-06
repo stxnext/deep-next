@@ -109,7 +109,7 @@ def _determine_state(mr: BaseMR) -> tuple[_State, Any]:
         return _State.ACTION_PLAN_INVALID_FORMAT, None
 
     if is_msg_to_deep_next_ok(succeeding_msgs_to_deep_next[-1]):
-        return _State.ACTION_PLAN_IMPLEMENTATION_REQUEST, last_action_plan_comment
+        return _State.ACTION_PLAN_IMPLEMENTATION_REQUEST, last_action_plan_comment.body
 
     return _State.ACTION_PLAN_FIX_REQUEST, (
         last_action_plan_comment,
@@ -233,7 +233,7 @@ def _implement_action_plan(
 def handle_mr_human_in_the_loop(
     mr: BaseMR,
     local_repo: GitRepository,
-) -> bool:
+) -> None:
     """Handle MRs/PRs for the given issue."""
     state, data = _determine_state(mr)
 
@@ -241,25 +241,23 @@ def handle_mr_human_in_the_loop(
 
     if state == _State.AWAITING_HUMAN_FEEDBACK:
         logger.info(f"🟡 Waiting for human feedback on issue #{issue_no}...")
-        return True
+        return
 
     if state == _State.ACTION_PLAN_INVALID_FORMAT:
         logger.info(f"🟡 Waiting for last action plan fix or removal #{issue_no}...")
-        return True
-
-    mr.add_label(Label.IN_PROGRESS)
+        return
 
     try:
         if state == _State.ACTION_PLAN_PROPOSITION_REQUEST:
-            mr.add_comment(msg_deepnext_started(), info_header=True)
+            mr.add_comment(
+                msg_deepnext_started(), info_header=True
+            )  # TODO: Deepnext ios about to propose action plan
 
             action_plan, execution_time = _propose_action_plan(mr, local_repo)
             _comment_action_plan(
                 mr, action_plan, execution_time=execution_time, log="SUCCESS"
             )
-            return True
-
-        if state == _State.ACTION_PLAN_FIX_REQUEST:
+        elif state == _State.ACTION_PLAN_FIX_REQUEST:
             old_action_plan_comment: BaseComment = data[0]
             comments: list[BaseComment] = data[1]
 
@@ -273,7 +271,7 @@ def handle_mr_human_in_the_loop(
                     info_header=True,
                     log="WARNING",
                 )
-                return False
+                raise e
 
             action_plan, execution_time = _fix_action_plan(
                 mr,
@@ -284,9 +282,7 @@ def handle_mr_human_in_the_loop(
             _comment_action_plan(
                 mr, action_plan, execution_time=execution_time, log="SUCCESS"
             )
-            return True
-
-        if state == _State.ACTION_PLAN_IMPLEMENTATION_REQUEST:
+        elif state == _State.ACTION_PLAN_IMPLEMENTATION_REQUEST:
             try:
                 execution_time = _implement_action_plan(mr, local_repo, data)
                 mr.add_comment(
@@ -294,15 +290,15 @@ def handle_mr_human_in_the_loop(
                     info_header=True,
                     log="SUCCESS",
                 )
+                mr.remove_label(Label.IN_PROGRESS)
                 mr.add_label(Label.SOLVED)
-                return True
             except ActionPlanParserError as e:
                 mr.add_comment(
                     msg_action_plan_invalid_format(str(e)),
                     info_header=True,
                     log="WARNING",
                 )
-                return False
+                raise e
 
     except Exception as e:
         err_msg = f"🔴 DeepNext app failed for MR #{mr.no}: {str(e)}"
@@ -310,7 +306,3 @@ def handle_mr_human_in_the_loop(
 
         mr.add_label(Label.FAILED)
         mr.add_comment(comment=err_msg, info_header=True)
-
-        return False
-    finally:
-        mr.remove_label(Label.IN_PROGRESS)
