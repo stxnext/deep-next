@@ -36,14 +36,17 @@ class PromptSingleFileImplementation:
         The specific file assigned to you that requires modifications.
         This is part a larger task and you are responsible for only this file.
 
-        2. Detailed Description
+        2. High-lvl description
+        High-level description of necessary changes in a given file.
+        
+        3. Detailed Description
         Additional requirements needed in the module to meet the expectations.
 
-        3. Issue statement
+        4. Issue statement
         Original issue that defines the full task, from which this file-specific step was derived.
         Gives broader context to better understand why the change is needed.
 
-        4. Related Changes (Git Diff)
+        5. Related Changes (Git Diff)
         A summary of changes from earlier steps in this task, shown as a Git diff.
         Helps identify reusable code or utilities already implemented in other files, so you can avoid duplication and improve consistency.
         ------------------------
@@ -63,6 +66,10 @@ class PromptSingleFileImplementation:
         {description}
         </description>
 
+        <high_level_description>
+        {high_level_description}
+        </high_level_description>
+        
         <issue_statement>
         {issue_statement}
         </issue_statement>
