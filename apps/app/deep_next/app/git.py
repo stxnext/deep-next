@@ -1,4 +1,5 @@
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 
 from deep_next.common.cmd import RunCmdError, run_command
@@ -46,6 +47,20 @@ class FeatureBranch:
 
         logger.success(f"Pushed changes to remote: '{self.name}'")
 
+    @contextmanager
+    def create_changes(self, commit_msg: str):
+        """Context manager to create changes in the feature branch."""
+        try:
+            self._git_repo.checkout_branch(self.name)
+
+            yield self
+
+            self.commit_all(commit_msg)
+            self.push_to_remote()
+        except Exception as e:
+            logger.error(f"Failed to create changes in '{self.name}': {e}")
+            raise
+
 
 # TODO: In evaluation similar git handler is used. It's refactor suggestion.
 class GitRepository:
@@ -63,6 +78,8 @@ class GitRepository:
             raise BranchCheckoutError(
                 f"Branch '{feature_branch}' does not exist in '{self.repo_dir}'"
             )
+
+        self.checkout_branch(feature_branch)
 
         return FeatureBranch(
             name=feature_branch,
