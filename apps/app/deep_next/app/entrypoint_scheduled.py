@@ -1,10 +1,14 @@
+import os
 import time
 
 import click
 from deep_next.app.config import SCHEDULE_INTERVAL_ENV_VAR
 from deep_next.app.entrypoint import main
 from deep_next.connectors.slack import slack_notifications
+from deep_next.core.common import setup_logger
 from loguru import logger
+
+setup_logger()
 
 
 def log(msg: str) -> None:

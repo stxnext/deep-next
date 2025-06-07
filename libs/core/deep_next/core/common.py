@@ -1,9 +1,23 @@
 import re
 import textwrap
+import os
 from pathlib import Path
 
 from deep_next.core.io import read_txt
 from langchain_core.output_parsers import BaseOutputParser
+
+
+def setup_logger() -> None:
+    """Configures the Loguru logger with env-based log level and standard options."""
+    from loguru import logger
+    logger.remove()
+    logger.add(
+        sink=lambda msg: print(msg, end=""),
+        level=os.environ.get("LOG_LEVEL", "INFO").upper(),
+        colorize=True,
+        backtrace=True,
+        diagnose=True,
+    )
 
 
 # TODO: Remove. It's moved to common lib.

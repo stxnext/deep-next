@@ -1,9 +1,13 @@
+import os
 from pathlib import Path
 
 import click
 from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
 from loguru import logger
+from deep_next.core.common import setup_logger
+
+setup_logger()
 
 
 def main(

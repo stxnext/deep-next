@@ -1,3 +1,4 @@
+import os
 from deep_next.app.common import create_feature_branch_name
 from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, Label
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
@@ -11,6 +12,9 @@ from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
 from deep_next.common.cmd import run_command
 from deep_next.connectors.version_control_provider import BaseIssue, BaseMR
 from loguru import logger
+from deep_next.core.common import setup_logger
+
+setup_logger()
 
 
 def _create_empty_commit(feature_branch: FeatureBranch) -> None:
