@@ -28,8 +28,8 @@ class Step(BaseModel):
     description: str = Field(description="Detailed step description.")
     target_files: list[Path] = Field(
         description="Paths to files that should be modified or taken into "
-                    "consideration during development (files only, directories are not "
-                    "allowed!)."
+        "consideration during development (files only, directories are not "
+        "allowed!)."
     )
 
 
