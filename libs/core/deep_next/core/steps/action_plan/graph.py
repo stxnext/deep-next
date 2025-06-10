@@ -9,6 +9,7 @@ from deep_next.core.steps.action_plan.data_model import (
     ExistingCodeContext,
     FileCodeContext,
 )
+from deep_next.core.steps.action_plan.path_tools import try_to_resolve_path
 from deep_next.core.steps.action_plan.srf import srf_graph
 from langchain_core.runnables import RunnableConfig
 from langgraph.constants import START
@@ -48,7 +49,11 @@ class _Node:
         code_context = [
             FileCodeContext(
                 path=relevant_file.path,
-                code_snippet=read_txt(state.root_path / relevant_file.path),
+                code_snippet=read_txt(
+                    try_to_resolve_path(
+                        state.root_path / relevant_file.path, state.root_path
+                    )
+                ),
                 explanation=relevant_file.explanation,
             )
             for relevant_file in final_state["final_results"]

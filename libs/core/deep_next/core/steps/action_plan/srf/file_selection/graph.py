@@ -174,8 +174,8 @@ def _invoke_fixable_llm_analysis_chain(
     """
     return invoke_retriable_llm_chain(
         n_retry=ANALYZE_CHAIN_RETRY,
-        llm_chain_builder=lambda seed: prompt
-        | create_llm(LLMConfigType.SRF_ANALYZE, seed=seed)
+        llm_chain_builder=lambda iter_idx: prompt
+        | create_llm(LLMConfigType.SRF_ANALYZE, seed_increment=iter_idx)
         | analysis_parser,
         prompt_arguments=prompt_arguments,
         on_exception=_fix_invalid_analysis,

@@ -195,7 +195,7 @@ class DeepNextGraph(BaseGraph):
             issue_comments=issue_comments,
         )
 
-    def steps_to_str(self, steps: list[Step]):
+    def _steps_to_str(self, steps: list[Step]):
         ordered_steps_strs = []
 
         for idx, step in enumerate(steps, start=1):
@@ -234,7 +234,7 @@ class DeepNextGraph(BaseGraph):
         return DeepNextResult(
             git_diff=state.git_diff,
             reasoning=state.action_plan.reasoning,
-            action_plan=self.steps_to_str(state.action_plan.ordered_steps),
+            action_plan=self._steps_to_str(state.action_plan.ordered_steps),
         )
 
 

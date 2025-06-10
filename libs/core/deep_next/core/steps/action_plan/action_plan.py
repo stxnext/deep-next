@@ -5,6 +5,7 @@ from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.steps.action_plan import example
 from deep_next.core.steps.action_plan.data_model import ActionPlan, ExistingCodeContext
+from deep_next.core.steps.action_plan.path_tools import try_to_resolve_path
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import OutputParserException
@@ -29,7 +30,7 @@ class ActionPlanValidator(BaseOutputParser):
 
         for step in action_plan.ordered_steps:
             for target_file in step.target_files:
-                abs_path = root_path / target_file
+                abs_path = try_to_resolve_path(root_path / target_file, root_path)
                 if not abs_path.exists():
                     raise ActionPlanValidationError(
                         f"Target file '{target_file}' does not exist."
@@ -169,8 +170,8 @@ def create_action_plan(
 
     action_plan = invoke_retriable_llm_chain(
         n_retry=5,
-        llm_chain_builder=lambda seed: prompt
-        | create_llm(LLMConfigType.ACTION_PLAN, seed=seed)
+        llm_chain_builder=lambda iter_idx: prompt
+        | create_llm(LLMConfigType.ACTION_PLAN, seed_increment=iter_idx)
         | parser
         | ActionPlanValidator(root_path),
         prompt_arguments=prompt_arguments,

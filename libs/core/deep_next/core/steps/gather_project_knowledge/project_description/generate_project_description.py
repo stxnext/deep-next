@@ -100,8 +100,8 @@ def generate_project_description(
 
     return invoke_retriable_llm_chain(
         n_retry=3,
-        llm_chain_builder=lambda seed: prompt
-        | create_llm(LLMConfigType.ACTION_PLAN, seed=seed)
+        llm_chain_builder=lambda iter_idx: prompt
+        | create_llm(LLMConfigType.ACTION_PLAN, seed_increment=iter_idx)
         | parser,
         prompt_arguments=prompt_arguments,
         exception_type=OutputParserException,

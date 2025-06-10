@@ -20,7 +20,7 @@ def test_invoke_retriable_llm_chain_single_exception():
 
     result = invoke_retriable_llm_chain(
         n_retry=3,
-        llm_chain_builder=lambda seed: llm,
+        llm_chain_builder=lambda iter_idx: llm,
         prompt_arguments={"input": "value1"},
         exception_type=ValueError,
     )
@@ -33,7 +33,7 @@ def test_invoke_retriable_llm_chain_multiple_exceptions():
 
     result = invoke_retriable_llm_chain(
         n_retry=3,
-        llm_chain_builder=lambda seed: llm,
+        llm_chain_builder=lambda iter_idx: llm,
         prompt_arguments={"input": "value1"},
         exception_type=(ValueError, BrokenPipeError),
     )

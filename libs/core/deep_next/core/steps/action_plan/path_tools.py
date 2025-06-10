@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from loguru import logger
+
 
 def _resolve_path(path: Path, abs_dir_path: Path) -> Path | None:
     """Tries to resolve filepath with respect to given directory.
@@ -27,3 +29,29 @@ def _resolve_path(path: Path, abs_dir_path: Path) -> Path | None:
             return sub_path.resolve()
 
     return None
+
+
+def try_to_resolve_path(path: Path, abs_dir_path: Path) -> Path:
+    """If it's a mistake or is it a new file? Try to resolve the path.
+
+    Raises:
+        FileNotFoundError: If the path is invalid and cannot be resolved
+    """
+    resolved = _resolve_path(Path(path), abs_dir_path)
+
+    if resolved:
+        return resolved
+
+    logger.info(f"File {path} could not be resolved. Checking if it a new file.")
+
+    file_name = Path(path).name
+    parent_dir = Path(path).parent
+
+    if resolved := _resolve_path(parent_dir, abs_dir_path):
+        logger.info(f"It's a new file. Resolved to '{str(resolved)}'")
+        return resolved / file_name
+
+    raise FileNotFoundError(
+        f"Invalid path. Failed to resolve '{str(path)}' with respect to "
+        f"'{str(abs_dir_path)}' automatically"
+    )

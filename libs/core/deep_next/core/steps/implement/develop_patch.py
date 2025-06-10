@@ -40,7 +40,7 @@ class ApplyPatchValidator(BaseOutputParser):
 def _create_llm_chain(
     root_path: Path,
     prompt: type[PromptSingleFileImplementation] | type[PromptAllAtOnceImplementation],
-    seed: int | None = None,
+    seed_increment: int | None = None,
 ):
     """Creates LLM agent for project description task."""
     develop_changes_prompt_template = ChatPromptTemplate.from_messages(
@@ -56,7 +56,7 @@ def _create_llm_chain(
 
     return (
         develop_changes_prompt_template
-        | create_llm(LLMConfigType.IMPLEMENT, seed)
+        | create_llm(LLMConfigType.IMPLEMENT, seed_increment=seed_increment)
         | StrOutputParser()
         | ApplyPatchValidator(root_path)
     )
@@ -97,7 +97,7 @@ def develop_single_file_patches(
 
     raw_patches = invoke_retriable_llm_chain(
         n_retry=n_retry,
-        llm_chain_builder=lambda seed: _create_llm_chain(
+        llm_chain_builder=lambda iter_idx: _create_llm_chain(
             root_path, PromptSingleFileImplementation, seed
         ),
         prompt_arguments=data,
@@ -159,7 +159,7 @@ def develop_all_patches(
 
     raw_patches = invoke_retriable_llm_chain(
         n_retry=n_retry,
-        llm_chain_builder=lambda seed: _create_llm_chain(
+        llm_chain_builder=lambda iter_idx: _create_llm_chain(
             root_path, PromptAllAtOnceImplementation, seed
         ),
         prompt_arguments=data,
