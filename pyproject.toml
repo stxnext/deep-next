@@ -21,6 +21,7 @@ pydantic = "^2.10.3"
 langchain-ollama = "^0.3.2"
 pyppeteer = "^2.0.0"
 langfuse = "^2.60.5"
+langgraph-cli = {extras = ["inmem"], version = "^0.2.10"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"

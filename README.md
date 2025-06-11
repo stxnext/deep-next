@@ -29,6 +29,13 @@ For tracking and metrics, DeepNext integrates with LangSmith. Set up your creden
 
 [See configuration details](https://stxnext.github.io/deep-next/configuration.html)
 
+## LangGraph Studio
+You can view Deep Next workflow graph in LangGraph Studio, to do this invoke in a console:
+```
+langgraph dev
+```
+It will redirect you to [LangSmith UI](https://smith.langchain.com/), log in and you can see the graph.
+
 ## Roadmap
 
 - **May 2025**: First public release (for registered STX Next employees)
