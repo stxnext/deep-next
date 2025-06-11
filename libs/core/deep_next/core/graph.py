@@ -2,6 +2,7 @@ import textwrap
 from pathlib import Path
 from typing import Literal, TypedDict
 
+from deep_next.common.common import prepare_issue_statement
 from deep_next.core.base_graph import BaseGraph
 from deep_next.core.config import AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS
 from deep_next.core.steps.action_plan import action_plan_graph
@@ -36,8 +37,11 @@ class DeepNextResult(BaseModel):
 class _State(BaseModel):
 
     root_path: Path = Field(description="Path to the root project directory.")
-    problem_statement: str = Field(description="The issue title and body.")
-    hints: str = Field(description="Comments made on the issue.")
+    issue_title: str = Field(description="The issue title.")
+    issue_description: str = Field(description="The issue description.")
+    issue_comments: list[str] = Field(
+        default_factory=list, description="Comments made on the issue."
+    )
 
     project_knowledge: str | None = Field(default=None)
     action_plan: ActionPlan | None = Field(default=None)
@@ -55,6 +59,14 @@ class _State(BaseModel):
         default=0, description="Number of code review retry attempts."
     )
 
+    @property
+    def issue_statement(self) -> str:
+        return prepare_issue_statement(
+            issue_title=self.issue_title,
+            issue_description=self.issue_description,
+            issue_comments=self.issue_comments,
+        )
+
 
 class _Node:
     @staticmethod
@@ -69,7 +81,7 @@ class _Node:
     def create_action_plan(state: _State) -> dict:
         init_state = action_plan_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             project_knowledge=state.project_knowledge,
         )
         final_state = action_plan_graph.compiled.invoke(init_state)
@@ -80,7 +92,7 @@ class _Node:
     def implement(state: _State) -> dict:
         init_state = implement_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             action_plan=state.action_plan,
         )
         final_state = implement_graph.compiled.invoke(init_state)
@@ -91,7 +103,7 @@ class _Node:
     def review_code(state: _State) -> dict:
         initial_state = code_review_graph.create_init_state(
             root_path=state.root_path,
-            issue_statement=state.problem_statement,
+            issue_statement=state.issue_statement,
             project_knowledge=state.project_knowledge,
             git_diff=state.git_diff,
         )
@@ -166,6 +178,7 @@ class DeepNextGraph(BaseGraph):
         self.add_quick_edge(START, _Node.gather_project_knowledge)
         self.add_quick_edge(_Node.gather_project_knowledge, _Node.create_action_plan)
         self.add_quick_edge(_Node.create_action_plan, _Node.implement)
+
         self.add_quick_edge(_Node.implement, _Node.review_code)
         self.add_quick_edge(
             _Node.prepare_automated_code_review_changes, _Node.gather_project_knowledge
@@ -176,19 +189,32 @@ class DeepNextGraph(BaseGraph):
         )
 
     def create_init_state(
-        self, root: Path, problem_statement: str, hints: str
+        self,
+        root: Path,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str] = [],  # noqa,
     ) -> _State:
         return _State(
             root_path=root,
-            problem_statement=problem_statement,
-            hints=hints,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments,
         )
 
     def __call__(
-        self, *_, problem_statement: str, hints: str, root: Path
+        self,
+        *_,
+        issue_title: str,
+        issue_description: str,
+        issue_comments: list[str] = [],  # noqa,
+        root: Path,
     ) -> DeepNextResult:
         initial_state = self.create_init_state(
-            root=root, problem_statement=problem_statement, hints=hints
+            root=root,
+            issue_title=issue_title,
+            issue_description=issue_description,
+            issue_comments=issue_comments,
         )
         final_state = self.compiled.invoke(initial_state)
 

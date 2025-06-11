@@ -1,6 +1,6 @@
 import shutil
 
-from deep_next.common.utils.fs import create_temp_dir, tmp_git_dir
+from deep_next.common.utils.fs import create_tmp_dir, tmp_git_dir
 from deep_next.core import config
 from deep_next.core.steps.implement.git_diff import apply_diff, generate_diff
 from tests.utils import clean
@@ -15,7 +15,7 @@ def test_git_diff_components() -> None:
 
     expected_git_diff = git_diff_file.read_text(encoding="utf-8")
 
-    with create_temp_dir() as tmp_dir:
+    with create_tmp_dir() as tmp_dir:
         src_dir = tmp_dir / "src"
         src_dir.mkdir(parents=True, exist_ok=True)
 

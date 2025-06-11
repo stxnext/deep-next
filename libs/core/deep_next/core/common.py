@@ -1,7 +1,9 @@
+import re
 import textwrap
 from pathlib import Path
 
 from deep_next.core.io import read_txt
+from langchain_core.output_parsers import BaseOutputParser
 
 
 # TODO: Remove. It's moved to common lib.
@@ -28,3 +30,22 @@ def dump_filepaths(file_paths: list[Path | str]) -> str:
     ]
 
     return "\n".join(dump)
+
+
+class RemoveThinkingBlocksParser(BaseOutputParser):
+    """Parser that removes <think>...</think> blocks from LLM output."""
+
+    def parse(self, text: str) -> str:
+        """Remove <think>...</think> blocks from text.
+
+        Args:
+            text: The input string with potential <think>...</think> blocks
+
+        Returns:
+            The text with <think>...</think> blocks removed
+        """
+        # Pattern to match <think>...</think> blocks (handling multiline content)
+        pattern = r"<think>.*?</think>"
+        # Remove the blocks using regex with DOTALL flag to match across newlines
+        cleaned_text = re.sub(pattern, "", text, flags=re.DOTALL)
+        return cleaned_text.strip()

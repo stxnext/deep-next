@@ -9,6 +9,7 @@ authors = [
     "Filip Szmid <filip.szmid@stxnext.pl>",
     "Daniel Iwanicki <daniel.iwanicki@stxnext.pl>",
 ]
+license = "LGPL-3.0-or-later"
 package-mode = false
 
 [tool.poetry.dependencies]
@@ -17,6 +18,9 @@ click = "^8.1.7"
 loguru = "^0.7.2"
 python-dotenv = "^1.0.1"
 pydantic = "^2.10.3"
+langchain-ollama = "^0.3.2"
+pyppeteer = "^2.0.0"
+langfuse = "^2.60.5"
 langgraph-cli = {extras = ["inmem"], version = "^0.2.10"}
 
 [tool.poetry.group.dev.dependencies]
@@ -34,8 +38,7 @@ deep_next_common = { path = "libs/common", develop = true  }
 deep_next_core = { path = "libs/core", develop = true  }
 deep_next_common = { path = "libs/common", develop = true  }
 langchain = "^0.3.21"
-levenshtein = "^0.26.1"
-langgraph = "^0.3.20"
+langgraph = ">=0.3.20,!=0.3.22,!=0.3.23,!=0.3.24"
 langchain-aws = "^0.2.9"
 langchain-openai = "^0.3.10"
 langchain-community = "^0.3.20"
@@ -46,6 +49,7 @@ sortedcontainers = "^2.4.0"
 scipy = "^1.15.2"
 libcst = "^1.6.0"
 unidiff = "^0.7.5"
+rapidfuzz = "^3.13.0"
 
 [tool.poetry.group.connectors.dependencies]
 deep_next_connectors = { path = "libs/connectors", develop = true  }

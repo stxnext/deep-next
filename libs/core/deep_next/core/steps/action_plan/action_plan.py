@@ -1,8 +1,9 @@
+import random
 import textwrap
 from pathlib import Path
 
+from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.core.steps.action_plan import example
-from deep_next.core.steps.action_plan.common import _create_llm
 from deep_next.core.steps.action_plan.data_model import ActionPlan, ExistingCodeContext
 from deep_next.core.steps.action_plan.path_tools import try_to_resolve_path
 from langchain.output_parsers import PydanticOutputParser
@@ -21,7 +22,7 @@ class _Prompt:
         You are an expert software engineer tasked with breaking down a software issue \
         into an ordered action plan with explicit dependencies.
 
-        Following steps should be ordered list of high level actionable goals for the developer \
+        The following steps should be an ordered list of high-level, actionable goals for the developer \
         allowing him to solve the issue and keep the dependencies intact.
 
         It is required to include reasoning behind the action plan. Focus on input data, \
@@ -41,7 +42,7 @@ class _Prompt:
     )
     project_knowledge = textwrap.dedent(
         """
-        This is additional project knowledge that will help You to see the broader context of repo itself.
+        This is additional some project knowledge that will help you to see the broader context of repo itself.
         It describes project structure, dependencies, conventions and other important overview information.
 
         <project_knowledge>
@@ -51,10 +52,10 @@ class _Prompt:
     )
     existing_code_snippet = textwrap.dedent(
         """
-        Related EXISTING code context provides You all necessary information about the codebase. \
-        This consist of only currently existing code snippets that are related to the issue.
+        EXISTING code context provides necessary information about the codebase. \
+        It is currently existing code snippets that are related to the issue.
 
-        Analyze carefully following code snippets and consider them in the final action plan.
+        Analyze carefully the code snippets and consider them in the final action plan.
 
         <existing_code_snippets>
         {existing_code_snippets}
@@ -69,7 +70,7 @@ class _Prompt:
 
         Acceptance criteria:
         1. List high-level steps needed to solve the issue.
-        2. Mind steps order. It is important from dependencies perspective.
+        2. Mind the order of steps. It is important from the dependencies perspective.
         3. If steps are independent, their order does not matter.
         4. Do not overcomplicate the solution. Keep it simple, clear and professional.
         5. It's ok to provide only one step if it's simple enough for developer to understand.
@@ -159,7 +160,11 @@ def create_action_plan(
         example_action_plan=example.action_plan,
     )
 
-    action_plan = (prompt | _create_llm() | parser).invoke(
+    action_plan = (
+        prompt
+        | create_llm(LLMConfigType.ACTION_PLAN, seed=random.randint(1, 100))
+        | parser
+    ).invoke(
         {
             "issue_statement": issue_statement,
             "project_knowledge": project_knowledge,

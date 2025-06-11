@@ -7,7 +7,7 @@ from deep_next.core.steps.implement.apply_patch.common import (
 )
 from deep_next.core.steps.implement.apply_patch.lint_merge import lint_and_merge
 from deep_next.core.steps.implement.utils import CodePatch
-from Levenshtein import distance as levenshtein_distance
+from rapidfuzz.distance import Levenshtein as levenshtein_distance
 
 
 def _get_exact_match(text: str, match: str) -> CodeMatch | None:
@@ -172,6 +172,6 @@ def apply_patch(patch: CodePatch) -> None:
     file_text = patch.file_path.read_text()
 
     if _apply_patch_exact_match(file_text, patch):
-        return
+        return None
 
     return _apply_patch_by_frame(file_text, patch)

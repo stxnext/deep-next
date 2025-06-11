@@ -1,4 +1,5 @@
 import subprocess
+from contextlib import contextmanager
 from pathlib import Path
 
 from deep_next.common.cmd import RunCmdError, run_command
@@ -27,11 +28,11 @@ def setup_local_git_repo(repo_dir: Path, clone_url: str) -> "GitRepository":
 
 
 class FeatureBranch:
-    def __init__(self, ref_branch: str, name: str, git_repo: "GitRepository"):
-        self.ref_branch = ref_branch
+    def __init__(self, name: str, git_repo: "GitRepository"):
         self.name = name
 
         self._git_repo = git_repo
+        self.repo_dir = git_repo.repo_dir
 
     def commit_all(self, commit_msg: str) -> None:
         logger.info(f"Committing all changes from '{self.name}'...")
@@ -46,6 +47,20 @@ class FeatureBranch:
 
         logger.success(f"Pushed changes to remote: '{self.name}'")
 
+    @contextmanager
+    def create_changes(self, commit_msg: str):
+        """Context manager to create changes in the feature branch."""
+        try:
+            self._git_repo.checkout_branch(self.name)
+
+            yield self
+
+            self.commit_all(commit_msg)
+            self.push_to_remote()
+        except Exception as e:
+            logger.error(f"Failed to create changes in '{self.name}': {e}")
+            raise
+
 
 # TODO: In evaluation similar git handler is used. It's refactor suggestion.
 class GitRepository:
@@ -56,6 +71,20 @@ class GitRepository:
             raise ValueError(
                 f"Provided invalid git repo dir ('.git' not found): {repo_dir}"
             )
+
+    def get_feature_branch(self, feature_branch: str) -> FeatureBranch:
+        """Get feature branch."""
+        if not self.branch_exists(feature_branch):
+            raise BranchCheckoutError(
+                f"Branch '{feature_branch}' does not exist in '{self.repo_dir}'"
+            )
+
+        self.checkout_branch(feature_branch)
+
+        return FeatureBranch(
+            name=feature_branch,
+            git_repo=self,
+        )
 
     def new_feature_branch(self, ref_branch: str, feature_branch: str) -> FeatureBranch:
         logger.info(
@@ -82,7 +111,6 @@ class GitRepository:
         self._reset_and_clean_working_directory()
 
         return FeatureBranch(
-            ref_branch=ref_branch,
             name=feature_branch,
             git_repo=self,
         )
