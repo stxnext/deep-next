@@ -127,8 +127,9 @@ class _Node:
 
         new_state = _State(
             root_path=state.root_path,
-            problem_statement=f"[Auto Code Review Suggestions]:\n{suggestions}",
-            hints=hints,
+            issue_title=state.issue_title,
+            issue_description=f"[Auto Code Review Suggestions]:\n{suggestions}",
+            issue_comments=[hints],
             code_review_attempts=state.code_review_attempts,
         )
 

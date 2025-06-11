@@ -30,8 +30,9 @@ class ActionPlanValidator(BaseOutputParser):
 
         for step in action_plan.ordered_steps:
             for target_file in step.target_files:
-                abs_path = try_to_resolve_path(root_path / target_file, root_path)
-                if not abs_path.exists():
+                try:
+                    abs_path = try_to_resolve_path(root_path / target_file, root_path)
+                except FileNotFoundError:
                     raise ActionPlanValidationError(
                         f"Target file '{target_file}' does not exist."
                     )

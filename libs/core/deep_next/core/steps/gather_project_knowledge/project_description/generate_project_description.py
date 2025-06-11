@@ -3,7 +3,7 @@ from pathlib import Path
 
 from deep_next.common.llm import LLMConfigType, create_llm
 from deep_next.common.llm_retry import invoke_retriable_llm_chain
-from deep_next.core.io import read_txt_or_none
+from deep_next.core.io import read_txt
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
     ExistingProjectDescriptionContext,
@@ -12,6 +12,7 @@ from deep_next.core.steps.gather_project_knowledge.project_description.data_mode
 from langchain.output_parsers import PydanticOutputParser
 from langchain.schema.output_parser import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
+from loguru import logger
 
 
 class Prompt:
@@ -83,11 +84,18 @@ def generate_project_description(
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
+    file_txts = {}
+    for path in related_files:
+        try:
+            file_txts[path] = read_txt(path) or "<Failed to read file>"
+        except Exception as e:
+            logger.warning(
+                f"Failed to read file: {e} during project description generation"
+            )
+            file_txts[path] = f"<Failed to read file: {e}>"
+
     related_code_context = "\n".join(
-        [
-            f"File: {path}\n{read_txt_or_none(path) or '<Failed to read file>'}"
-            for path in related_files
-        ]
+        [f"File: {path}\n```\n{file_txt}\n```" for path, file_txt in file_txts.items()]
     )
 
     prompt_arguments = {

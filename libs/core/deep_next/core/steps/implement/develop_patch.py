@@ -98,7 +98,7 @@ def develop_single_file_patches(
     raw_patches = invoke_retriable_llm_chain(
         n_retry=n_retry,
         llm_chain_builder=lambda iter_idx: _create_llm_chain(
-            root_path, PromptSingleFileImplementation, seed
+            root_path, PromptSingleFileImplementation, iter_idx
         ),
         prompt_arguments=data,
         exception_type=(ApplyPatchError, ParsePatchesError, ValueError),
@@ -160,7 +160,7 @@ def develop_all_patches(
     raw_patches = invoke_retriable_llm_chain(
         n_retry=n_retry,
         llm_chain_builder=lambda iter_idx: _create_llm_chain(
-            root_path, PromptAllAtOnceImplementation, seed
+            root_path, PromptAllAtOnceImplementation, iter_idx
         ),
         prompt_arguments=data,
         exception_type=(ApplyPatchError, ParsePatchesError),

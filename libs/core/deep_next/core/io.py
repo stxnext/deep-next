@@ -31,13 +31,6 @@ def read_txt(path: Path | str) -> str:
         return f.read()
 
 
-def read_txt_or_none(path: Path | str) -> str | None:
-    try:
-        return read_txt(path)
-    except Exception:
-        return None
-
-
 def write_json(data: Any, path: Path) -> Path:
     """Saves the given data as a JSON file."""
     try:
