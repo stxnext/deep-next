@@ -335,8 +335,11 @@ def create_llm(
     """Create a new LLM client"""
     config = LLMConfig.load(config_type=config_type)
 
-    if (seed := config.seed) is None:
+    seed = config.seed
+    if seed is not None and seed != -1:
         seed += seed_increment
+    else:
+        seed = None
 
     llm = llm_from_config(config_type, seed=seed, temperature=temperature)
 
