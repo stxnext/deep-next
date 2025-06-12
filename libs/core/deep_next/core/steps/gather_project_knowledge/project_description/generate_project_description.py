@@ -1,9 +1,8 @@
-import random
 import textwrap
 from pathlib import Path
 
-import tenacity
 from deep_next.common.llm import LLMConfigType, create_llm
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.io import read_txt
 from deep_next.core.project_info import ProjectInfo
 from deep_next.core.steps.gather_project_knowledge.project_description.data_model import (  # noqa: E501
@@ -13,6 +12,7 @@ from deep_next.core.steps.gather_project_knowledge.project_description.data_mode
 from langchain.output_parsers import PydanticOutputParser
 from langchain.schema.output_parser import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
+from loguru import logger
 
 
 class Prompt:
@@ -62,11 +62,6 @@ class Prompt:
     )
 
 
-@tenacity.retry(
-    stop=tenacity.stop_after_attempt(3),
-    retry=tenacity.retry_if_exception_type(OutputParserException),
-    reraise=True,
-)
 def generate_project_description(
     questions: str,
     related_files: list[Path],
@@ -74,7 +69,7 @@ def generate_project_description(
     project_info: ProjectInfo,
 ) -> ExistingProjectDescriptionContext:
     """Generate project description based on the repository tree and related files."""
-    design_solution_prompt_template = ChatPromptTemplate.from_messages(
+    prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
@@ -89,21 +84,33 @@ def generate_project_description(
 
     parser = PydanticOutputParser(pydantic_object=ExistingProjectDescriptionContext)
 
-    llm_agent = (
-        design_solution_prompt_template
-        | create_llm(LLMConfigType.ACTION_PLAN, random.randint(0, 100))
-        | parser
-    )
+    file_txts = {}
+    for path in related_files:
+        try:
+            file_txts[path] = read_txt(path) or "<Failed to read file>"
+        except Exception as e:
+            logger.warning(
+                f"Failed to read file: {e} during project description generation"
+            )
+            file_txts[path] = f"<Failed to read file: {e}>"
 
     related_code_context = "\n".join(
-        [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
+        [f"File: {path}\n```\n{file_txt}\n```" for path, file_txt in file_txts.items()]
     )
-    return llm_agent.invoke(
-        {
-            "project_name": project_info.name,
-            "repository_tree": repository_tree,
-            "related_code_context": related_code_context,
-            "questions": questions,
-            "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
-        }
+
+    prompt_arguments = {
+        "project_name": project_info.name,
+        "repository_tree": repository_tree,
+        "related_code_context": related_code_context,
+        "questions": questions,
+        "example_project_description": example_output_existing_project_description_context.model_dump_json(),  # noqa: E501
+    }
+
+    return invoke_retriable_llm_chain(
+        n_retry=3,
+        llm_chain_builder=lambda iter_idx: prompt
+        | create_llm(LLMConfigType.ACTION_PLAN, seed_increment=iter_idx)
+        | parser,
+        prompt_arguments=prompt_arguments,
+        exception_type=OutputParserException,
     )

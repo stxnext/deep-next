@@ -2,6 +2,7 @@ import json
 import textwrap
 
 from deep_next.common.llm import LLMConfigType, create_llm
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core import parser
 from deep_next.core.steps.code_review.model.base import CodeReviewModel
 from deep_next.core.steps.code_review.model.code_style import code_style_code_reviewer
@@ -9,7 +10,6 @@ from deep_next.core.steps.code_review.model.diff_consistency import (
     diff_consistency_code_reviewer,
 )
 from langchain.output_parsers import OutputFixingParser, PydanticOutputParser
-from langchain_core.exceptions import OutputParserException
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
@@ -90,47 +90,6 @@ class Prompt:
     )
 
 
-def _fix_invalid_code_review(
-    e: OutputParserException, code_review_parser: PydanticOutputParser
-) -> CodeReviewModel | None:
-    fixing_parser = OutputFixingParser.from_llm(
-        parser=code_review_parser, llm=create_llm(LLMConfigType.CODE_REVIEW)
-    )
-    try:
-        fixing_parser.parse(e.llm_output)
-    except OutputParserException:
-        return None
-
-
-CODE_REVIEW_CHAIN_RETRY = 3
-
-
-def _invoke_fixable_llm_chain(
-    prompt: ChatPromptTemplate,
-    prompt_arguments: dict,
-    code_review_parser: PydanticOutputParser,
-) -> CodeReviewModel:
-    """
-    Invoke the LLM chain and try {CODE_REVIEW_CHAIN_RETRY} times if it fails.
-
-    The retry mechanism includes two steps:
-    1. Attempting to fix the current invalid output.
-    2. Rerunning the chain with a different seed if the fix attempt fails.
-    """
-    _e: OutputParserException | None = None
-    for i in range(CODE_REVIEW_CHAIN_RETRY):
-        chain = (
-            prompt | create_llm(LLMConfigType.CODE_REVIEW, seed=i) | code_review_parser
-        )
-        try:
-            return chain.invoke(prompt_arguments)
-        except OutputParserException as e:
-            _e = e
-            if result := _fix_invalid_code_review(e, code_review_parser):
-                return result
-    raise _e
-
-
 def _call_code_review_llm(
     issue_statement: str,
     project_knowledge: str,
@@ -167,7 +126,15 @@ def _call_code_review_llm(
         "empty_output_code_review": json.dumps({"issues": []}),
     }
 
-    return _invoke_fixable_llm_chain(prompt, data, code_review_parser)
+    return invoke_retriable_llm_chain(
+        n_retry=3,
+        llm_chain_builder=lambda iter_idx: prompt
+        | create_llm(LLMConfigType.CODE_REVIEW, seed_increment=iter_idx)
+        | OutputFixingParser.from_llm(
+            parser=code_review_parser, llm=create_llm(LLMConfigType.CODE_REVIEW)
+        ),
+        prompt_arguments=data,
+    )
 
 
 def _parse(message: str) -> tuple[str, bool]:
@@ -191,7 +158,7 @@ def review_code(
     project_knowledge: str,
     git_diff: str,
     code_fragments: dict[str, list[str]],
-) -> tuple[list[(str, str)], dict[str, bool]]:
+) -> tuple[list[tuple[str, str]], dict[str, bool]]:
     issues = []
 
     all_code_reviewers = [diff_consistency_code_reviewer, code_style_code_reviewer]

@@ -5,11 +5,13 @@ from pathlib import Path
 from typing import List
 
 from deep_next.common.llm import LLMConfigType, create_llm
+from deep_next.common.llm_retry import invoke_retriable_llm_chain
 from deep_next.core.io import read_txt
 from deep_next.core.parser import has_tag_block, parse_tag_block
 from deep_next.core.steps.action_plan.data_model import Step
 from deep_next.core.steps.implement import acr
 from deep_next.core.steps.implement.apply_patch.apply_patch import apply_patch
+from deep_next.core.steps.implement.apply_patch.common import ApplyPatchError
 from deep_next.core.steps.implement.prompt_all_at_once_implemetation import (
     PromptAllAtOnceImplementation,
 )
@@ -17,13 +19,28 @@ from deep_next.core.steps.implement.prompt_single_file_implementation import (
     PromptSingleFileImplementation,
 )
 from deep_next.core.steps.implement.utils import CodePatch
-from langchain_core.output_parsers import StrOutputParser
+from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
 
-def _create_llm_agent(
-    prompt: PromptSingleFileImplementation | PromptAllAtOnceImplementation,
+class ApplyPatchValidator(BaseOutputParser):
+
+    root_path: Path
+
+    def __init__(self, root_path: Path, **kwargs):
+        super().__init__(root_path=root_path, **kwargs)
+        self.root_path = root_path
+
+    def parse(self, text: str) -> str:
+        parse_and_apply_patches(text, self.root_path, dry_run=True)
+        return text
+
+
+def _create_llm_chain(
+    root_path: Path,
+    prompt: type[PromptSingleFileImplementation] | type[PromptAllAtOnceImplementation],
+    seed_increment: int | None = None,
 ):
     """Creates LLM agent for project description task."""
     develop_changes_prompt_template = ChatPromptTemplate.from_messages(
@@ -37,10 +54,11 @@ def _create_llm_agent(
         ]
     )
 
-    parser = StrOutputParser()
-
     return (
-        develop_changes_prompt_template | create_llm(LLMConfigType.IMPLEMENT) | parser
+        develop_changes_prompt_template
+        | create_llm(LLMConfigType.IMPLEMENT, seed_increment=seed_increment)
+        | StrOutputParser()
+        | ApplyPatchValidator(root_path)
     )
 
 
@@ -48,33 +66,57 @@ class ParsePatchesError(Exception):
     """Raised for issues encountered during parse patches process."""
 
 
-def develop_single_file_patches(step: Step, issue_statement: str, git_diff: str) -> str:
-    if not step.target_file.exists():
-        logger.warning(f"Creating new file: '{step.target_file}'")
+def _create_new_files(step: Step, root_path: Path) -> None:
+    for target_file in step.target_files:
+        if not (root_path / target_file).exists():
+            logger.warning(f"Creating new file: '{root_path / target_file}'")
 
-        with open(step.target_file, "w") as f:
-            f.write("# Comment added at creation time to indicate empty file.\n")
+            with open(root_path / target_file, "w") as f:
+                f.write("# Comment added at creation time to indicate empty file.\n")
 
-    raw_edits = _create_llm_agent(PromptSingleFileImplementation).invoke(
-        {
-            "path": step.target_file,
-            "code_context": read_txt(step.target_file),
-            "high_level_description": step.title,
-            "description": step.description,
-            "issue_statement": issue_statement,
-            "git_diff": git_diff,
-        }
+
+def develop_single_file_patches(
+    step: Step, issue_statement: str, git_diff: str, root_path: Path, n_retry: int = 3
+) -> str:
+    _create_new_files(step, root_path)
+
+    code_context = "\n\n\n---\n\n\n".join(
+        [
+            f"{str(target_file)}:\n\n```{read_txt(root_path / target_file)}```"
+            for target_file in step.target_files
+        ]
     )
 
-    return raw_edits
+    data = {
+        "code_context": code_context,
+        "high_level_description": step.title,
+        "description": step.description,
+        "issue_statement": issue_statement,
+        "git_diff": git_diff,
+    }
+
+    raw_patches = invoke_retriable_llm_chain(
+        n_retry=n_retry,
+        llm_chain_builder=lambda iter_idx: _create_llm_chain(
+            root_path, PromptSingleFileImplementation, iter_idx
+        ),
+        prompt_arguments=data,
+        exception_type=(ApplyPatchError, ParsePatchesError, ValueError),
+    )
+
+    return raw_patches
 
 
-def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
+def develop_all_patches(
+    steps: List[Step], issue_statement: str, root_path: Path, n_retry: int = 3
+) -> str:
     """Develop patches for all steps in a single run.
 
     Args:
         steps: List of steps to implement
         issue_statement: The issue statement
+        root_path: The root path of the project
+        n_retry: Number of retries for the LLM chain
 
     Returns:
         The combined raw patches text for all files
@@ -82,43 +124,49 @@ def develop_all_patches(steps: List[Step], issue_statement: str) -> str:
     logger.info(f"Developing patches for {len(steps)} steps at once")
 
     for step in steps:
-        if not step.target_file.exists():
-            logger.warning(f"Creating new file: '{step.target_file}'")
-            with open(step.target_file, "w") as f:
-                f.write("# Comment added at creation time to indicate empty file.\n")
+        _create_new_files(step, root_path)
 
     steps_description = "\n".join(
         [
-            f"Step {i}: {step.title}\n"
-            f"File: {step.target_file}\n"
-            f"Description: {step.description}\n"
+            f"# Step {i}: {step.title}\n"
+            f"# Files:\n{', '.join([str(file) for file in step.target_files])}\n"
+            f"# Description:\n{step.description}\n"
             for i, step in enumerate(steps, start=1)
         ]
     )
 
-    files_content = ""
+    target_files = []
     for step in steps:
-        markdown_style = "python" if step.target_file.suffix == ".py" else "txt"
+        target_files.extend(step.target_files)
+
+    files_content = ""
+    for target_file in target_files:
+        markdown_style = "python" if target_file.suffix == ".py" else "txt"
         try:
-            file_content = read_txt(step.target_file)
+            file_content = read_txt(root_path / target_file)
         except Exception as e:
-            logger.warning(f"Failed to read file {step.target_file}: {e}")
+            logger.warning(f"Failed to read file {target_file}: {e}")
             file_content = ""
         files_content += (
-            f"\nFile: {step.target_file}\n"
-            f"```{markdown_style}\n{file_content}\n```\n"
+            f"\nFile: {target_file}\n" f"```{markdown_style}\n{file_content}\n```\n"
         )
 
-    raw_modifications = _create_llm_agent(PromptAllAtOnceImplementation).invoke(
-        {
-            "issue_statement": issue_statement,
-            "description": steps_description,
-            "code_context": files_content,
-            "high_level_description": step.title,
-        }
+    data = {
+        "issue_statement": issue_statement,
+        "description": steps_description,
+        "code_context": files_content,
+    }
+
+    raw_patches = invoke_retriable_llm_chain(
+        n_retry=n_retry,
+        llm_chain_builder=lambda iter_idx: _create_llm_chain(
+            root_path, PromptAllAtOnceImplementation, iter_idx
+        ),
+        prompt_arguments=data,
+        exception_type=(ApplyPatchError, ParsePatchesError),
     )
 
-    return raw_modifications
+    return raw_patches
 
 
 def _git_diff(before: str, after: str, path: str) -> str:
@@ -180,10 +228,12 @@ def parse_patches(txt: str) -> list[CodePatch]:
     ]
 
 
-def parse_and_apply_patches(raw_patches: str) -> None:
+def parse_and_apply_patches(
+    raw_patches: str, root_path: Path, dry_run: bool = False
+) -> None:
     """Parse and apply patches to the codebase."""
     patches: list[CodePatch] = parse_patches(raw_patches)
     patches = [patch for patch in patches if patch.before != patch.after]
 
     for patch in patches:
-        apply_patch(patch)
+        apply_patch(patch, root_path, dry_run)

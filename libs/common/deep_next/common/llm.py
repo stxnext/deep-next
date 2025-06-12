@@ -19,7 +19,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.prompt_values import ChatPromptValue
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, RunnableSerializable
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
 from langfuse.callback import CallbackHandler
@@ -239,10 +239,21 @@ def _get_aws_bedrock_llm(
 
 
 def _get_openai_llm(
-    config: LLMConfig, seed: int | None = None, temperature: float | None = None
+    config: LLMConfig,
+    seed: int | None = None,
+    temperature: float | None = None,
 ) -> ChatOpenAI:
+    """
+    Creates an OpenAI LLM instance based on the provided configuration.
 
+    Args:
+        config (LLMConfig): The configuration for the LLM.
+        seed (int | None): Optional seed for reproducibility. If provided, it will
+            override the seed in the config.
+        temperature (float | None): Optional temperature setting for the model.
+    """
     metadata = {}
+
     if seed is not None:
         metadata["seed"] = str(seed)
     elif config.seed is not None:
@@ -317,16 +328,23 @@ def llm_from_config(
 
 def create_llm(
     config_type: LLMConfigType,
-    seed: int | None = None,
+    seed_increment: int = 0,
     tools: list | None = None,
     temperature: float | None = None,
-) -> BaseChatModel:
+) -> RunnableSerializable:
     """Create a new LLM client"""
+    config = LLMConfig.load(config_type=config_type)
+
+    seed = config.seed
+    if seed is not None and seed != -1:
+        seed += seed_increment
+    else:
+        seed = None
+
     llm = llm_from_config(config_type, seed=seed, temperature=temperature)
 
     llm = llm.bind_tools(tools) if tools else llm
 
-    config = LLMConfig.load(config_type=config_type)
     if config.model in models_with_thinking_blocks:
         return llm | RemoveThinkingBlocksParser()
     else:

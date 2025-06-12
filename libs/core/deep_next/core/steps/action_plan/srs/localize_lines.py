@@ -115,7 +115,7 @@ example_output_loc_lines = ExistingCodeContext(
     ),
     code_context=[
         FileCodeContext(
-            path=Path("full_path1/file1.py"),
+            path=Path("path/to/file1.py"),
             reasoning=(
                 "The bug appears to be in the 'MyClass1' class and their full "
                 "context is needed to understand the issue in the next implementation "
@@ -125,7 +125,7 @@ example_output_loc_lines = ExistingCodeContext(
             localization_code_snippet=("line: 10\n" "class: MyClass1\n" "line: 51"),
         ),
         FileCodeContext(
-            path=Path("full_path2/file2.py"),
+            path=Path("path/to/file2.py"),
             reasoning=(
                 "The 'my_method' method in 'MyClass2' class appears to be "
                 "related to the issue."
@@ -137,7 +137,7 @@ example_output_loc_lines = ExistingCodeContext(
             localization_code_snippet=("function: MyClass2.my_method\n" "line: 12"),
         ),
         FileCodeContext(
-            path=Path("full_path3/file3.py"),
+            path=Path("path/to/file3.py"),
             reasoning=(
                 "MyClass1 inherits MyClass3, so the MyClass3 context is "
                 "needed to understand the issue in the next implementation step."
