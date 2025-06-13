@@ -1,11 +1,8 @@
+import ast
 import re
 from dataclasses import dataclass
 from pprint import pformat
-from tempfile import NamedTemporaryFile
 from typing import TextIO
-
-from pylint.lint import Run
-from pylint.reporters.text import TextReporter
 
 LINTER_ERROR = "LINTER_ERROR"
 FAILED_TO_MATCH = "FAILED_TO_MATCH"
@@ -46,23 +43,20 @@ class Writable(TextIO):
 
 
 def lint_python_content(content: str) -> bool:
-    """Check if python content lints OK.
+    """Check if Python content has valid syntax.
 
     Args:
-        content: python file content
+        content: Python source code as string
 
-    Returns: True if the contents passes linting, False otherwise.
-
+    Returns:
+        True if syntax is valid, False otherwise.
     """
-    pylint_out = Writable()
-    reporter = TextReporter(pylint_out)
-
-    with NamedTemporaryFile(buffering=0) as f:
-        f.write(content.encode())
-
-        _ = Run(["--errors-only", f.name], reporter=reporter, exit=False)
-
-    return not any(error.endswith("(syntax-error)") for error in pylint_out.content)
+    try:
+        ast.parse(content)
+        compile(content, "<string>", "exec")
+        return True
+    except (SyntaxError, IndentationError):
+        return False
 
 
 def parse_edits(chat_string: str) -> list[Edit]:
