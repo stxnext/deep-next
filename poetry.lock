@@ -207,17 +207,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.38.35"
+version = "1.38.36"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "boto3-1.38.35-py3-none-any.whl", hash = "sha256:97606fe56e33b2548c4110dd7cdc49487266d503ba09eaff9abf98b028baee9e"},
-    {file = "boto3-1.38.35.tar.gz", hash = "sha256:38a407e467b24914ce24e5816f53305288ea44072778f88d2b4b6a2cffbcb220"},
+    {file = "boto3-1.38.36-py3-none-any.whl", hash = "sha256:34c27d7317cadb62c0e9856e5d5aa0271ef47202d340584831048bc7ac904136"},
+    {file = "boto3-1.38.36.tar.gz", hash = "sha256:efe0aaa060f8fedd76e5c942055f051aee0432fc722d79d8830a9fd9db83593e"},
 ]
 
 [package.dependencies]
-botocore = ">=1.38.35,<1.39.0"
+botocore = ">=1.38.36,<1.39.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.13.0,<0.14.0"
 
@@ -226,13 +226,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.38.35"
+version = "1.38.36"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "botocore-1.38.35-py3-none-any.whl", hash = "sha256:bbfae3f13a5d75ad73bf71b5ba5ff3ccd055d947d63593e8a0e84acc95a8bfa4"},
-    {file = "botocore-1.38.35.tar.gz", hash = "sha256:3c7032948e066eed5f91d64cd51ee9664d1db9beaf3279ac27da608176bb3d54"},
+    {file = "botocore-1.38.36-py3-none-any.whl", hash = "sha256:b6a50b853f6d23af9edfed89a59800c6bc1687a947cdd3492879f7d64e002d30"},
+    {file = "botocore-1.38.36.tar.gz", hash = "sha256:4a1ced1a4218bdff0ed5b46abb54570d473154ddefafa5d121a8d96e4b76ebc1"},
 ]
 
 [package.dependencies]
@@ -2021,13 +2021,13 @@ files = [
 
 [[package]]
 name = "pydantic"
-version = "2.11.5"
+version = "2.11.6"
 description = "Data validation using Python type hints"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pydantic-2.11.5-py3-none-any.whl", hash = "sha256:f9c26ba06f9747749ca1e5c94d6a85cb84254577553c8785576fd38fa64dc0f7"},
-    {file = "pydantic-2.11.5.tar.gz", hash = "sha256:7f853db3d0ce78ce8bbb148c401c2cdd6431b3473c0cdff2755c7690952a7b7a"},
+    {file = "pydantic-2.11.6-py3-none-any.whl", hash = "sha256:a24478d2be1b91b6d3bc9597439f69ed5e87f68ebd285d86f7c7932a084b72e7"},
+    {file = "pydantic-2.11.6.tar.gz", hash = "sha256:12b45cfb4af17e555d3c6283d0b55271865fb0b43cc16dd0d52749dc7abf70e7"},
 ]
 
 [package.dependencies]

@@ -41,4 +41,22 @@ For tracking and metrics, DeepNext integrates with LangSmith. Set up your creden
 - **Flexible Integration**: Compatible with GitHub, GitLab and AWS
 - **Customizable**: Configure different models for different pipeline stages
 - **Modular**: Easy to modify, test, and improve by swapping small pieces of code
-- **Open Source**: MIT-licensed and community-driven
+
+## License
+
+This project is licensed under the **Apache License 2.0**.
+See the [LICENSE](./LICENSE) file in this repository for full terms.
+
+---
+
+### Third-Party Licenses
+
+This project depends on open-source libraries released under the following licenses:
+
+- [MIT License](./third_party_licenses/MIT.txt)
+- [Apache License 2.0](./third_party_licenses/Apache-2.0.txt)
+- [BSD License (BSD-3-Clause)](./third_party_licenses/BSD-3-Clause.txt)
+- [Python Software Foundation License](./third_party_licenses/PSF.txt)
+- [Mozilla Public License 2.0 (MPL 2.0)](./third_party_licenses/MPL-2.0.txt)
+- [GNU Lesser General Public License v2.1 (LGPL-2.1)](./third_party_licenses/LGPL-2.1.txt)
+- [GNU Lesser General Public License v3.0 (LGPL-3.0)](./third_party_licenses/LGPL-3.0.txt)
