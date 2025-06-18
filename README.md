@@ -53,10 +53,46 @@ See the [LICENSE](./LICENSE) file in this repository for full terms.
 
 This project depends on open-source libraries released under the following licenses:
 
-- [MIT License](./third_party_licenses/MIT.txt)
-- [Apache License 2.0](./third_party_licenses/Apache-2.0.txt)
-- [BSD License (BSD-3-Clause)](./third_party_licenses/BSD-3-Clause.txt)
-- [Python Software Foundation License](./third_party_licenses/PSF.txt)
-- [Mozilla Public License 2.0 (MPL 2.0)](./third_party_licenses/MPL-2.0.txt)
-- [GNU Lesser General Public License v2.1 (LGPL-2.1)](./third_party_licenses/LGPL-2.1.txt)
-- [GNU Lesser General Public License v3.0 (LGPL-3.0)](./third_party_licenses/LGPL-3.0.txt)
+---
+
+#### [MIT License](./third_party_licenses/MIT.txt)
+
+Deprecated, PyJWT, PyYAML, SQLAlchemy, annotated-types, anyio, appdirs, attrs, backoff, cffi, cfgv, charset-normalizer, dataclasses-json, h11, httpx-sse, identify, iniconfig, jiter, jmespath, langchain, langchain-aws, langchain-community, langchain-core, langchain-ollama, langchain-openai, langchain-text-splitters, langfuse, langgraph, langgraph-checkpoint, langgraph-prebuilt, langgraph-sdk, langsmith, libcst, loguru, markdown-it-py, marshmallow, mdurl, mypy_extensions, orjson, ormsgpack, platformdirs, pluggy, pre_commit, pydantic, pydantic-settings, pydantic_core, pyee, pyppeteer, pytest, RapidFuzz, rich, six, slack_sdk, tiktoken, typing-inspect, typing-inspection, unidiff, urllib3, virtualenv
+
+---
+
+#### [Apache License 2.0](./third_party_licenses/Apache-2.0.txt)
+
+PyNaCl, aiohttp, aiosignal, boto3, botocore, cryptography, distro, frozenlist, importlib_metadata, openai, orjson, ormsgpack, packaging, propcache, requests, requests-toolbelt, s3transfer, sniffio, sortedcontainers, tenacity, yarl, regex, python-dateutil
+
+---
+
+#### [BSD License (BSD-3-Clause)](./third_party_licenses/BSD-3-Clause.txt)
+
+Pygments, click, cryptography, httpcore, httpx, idna, jsonpatch, jsonpointer, nodeenv, numpy, packaging, pycparser, python-dateutil, python-dotenv, scipy, websockets, wrapt, xxhash
+
+---
+
+#### [Python Software Foundation License](./third_party_licenses/PSF.txt)
+
+aiohappyeyeballs, distlib, greenlet, typing_extensions
+
+---
+
+#### [Mozilla Public License 2.0 (MPL 2.0)](./third_party_licenses/MPL-2.0.txt)
+
+certifi, pytest-rerunfailures, tqdm
+
+---
+
+#### [GNU Lesser General Public License v2.1 (LGPL-2.1)](./third_party_licenses/LGPL-2.1.txt)
+
+PyGithub
+
+---
+
+#### [GNU Lesser General Public License v3.0 (LGPL-3.0)](./third_party_licenses/LGPL-3.0.txt)
+
+python-gitlab
+
+---
