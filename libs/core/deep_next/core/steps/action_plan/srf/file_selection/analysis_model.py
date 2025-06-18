@@ -82,16 +82,23 @@ example_output_next_steps = Analysis(
     ),
     relevant_files_so_far=[
         RelevantFile(
-            path="src/utils.py", explanation="The 'foo' function is located here."
+            path="src/utils.py",
+            explanation="The 'foo' function is located here. It is the main focus of "
+            "the issue as it's one of the functions in which the ValueError is being "
+            "raised.",
         ),
         RelevantFile(
             path="src/models/bar.py",
-            explanation="The 'bar' class contains methods used in 'foo'.",
+            explanation="The 'bar' class contains methods used in 'foo'. "
+            "It's possible that the logic in this method is partly responsible for "
+            "the ValueError being raised. The main candidate for the faulty logic are "
+            "the default values of the '__init__' method.",
         ),
         RelevantFile(
             path="test/models/bar.py",
             explanation='Contains tests that show how methods in "src/models/bar.py" '
-            "should behave.",
+            "should behave. These are not directly related to the issue, but may be "
+            "useful for understanding the code flow.",
         ),
     ],
     reasoning=(
@@ -120,6 +127,9 @@ example_output_next_steps = Analysis(
         "Analyze the 'bar' class in the 'src/utils.py' module using the "
         "'analyze_class_in_file' tool."
         "\nRelated unknowns: #2.",
+        "List all tests containing the 'XBaseModel' class in the 'test/' directory, "
+        "as they need to be modified to align to the new logic of the 'XBaseModel' "
+        "class.",
     ],
 )
 
@@ -136,20 +146,59 @@ example_output_select_files = Analysis(
     relevant_files_so_far=[
         RelevantFile(
             path="src/utils.py",
-            explanation="The 'foo' and 'baz' functions are located here.",
+            explanation="The 'foo' and 'baz' functions are located here. They are the "
+            "main focus of the issue as in these functions the ValueError is being "
+            "raised.",
         ),
         RelevantFile(
             path="src/models/bar.py",
-            explanation="The 'bar' class contains methods used in 'foo' and 'baz'.",
+            explanation="The 'bar' class contains methods used in 'foo' and 'baz'. "
+            "It's possible that the logic in these methods is partly responsible for "
+            "the ValueError being raised. The main candidate for the faulty logic is "
+            "the '__init__' method in which the default value for the 'name' is set to "
+            "'None' instead of an empty string.",
         ),
         RelevantFile(
             path="test/models/bar.py",
             explanation='Contains tests that show how methods in "src/models/bar.py" '
-            "should behave.",
+            "should behave. These are not directly related to the issue, but may be "
+            "useful for understanding the code flow.",
         ),
         RelevantFile(
             path="src/models/qux.py",
-            explanation="The 'qux' class is inherited by 'baz'.",
+            explanation="The 'qux' class is inherited by 'baz'. The base class `qux` "
+            "contains method definitions necessary to understand how the baz class "
+            "works and might contain the faulty logic that needs to be fixed.",
+        ),
+        RelevantFile(
+            path="tests/common/fs.py",
+            explanation="This file contains the usage of the 'XBaseModel' class and "
+            "needs to be modified to align with the new logic of the 'XBaseModel' "
+            "class. ",
+        ),
+        RelevantFile(
+            path="tests/utils.py",
+            explanation="This file contains the usage of the 'XBaseModel' class and "
+            "needs to be modified to align with the new logic of the 'XBaseModel' "
+            "class. ",
+        ),
+        RelevantFile(
+            path="tests/config/entrypoint.py",
+            explanation="This file contains the usage of the 'XBaseModel' class and "
+            "needs to be modified to align with the new logic of the 'XBaseModel' "
+            "class. ",
+        ),
+        RelevantFile(
+            path="tests/config/config.py",
+            explanation="This file contains the usage of the 'XBaseModel' class and "
+            "needs to be modified to align with the new logic of the 'XBaseModel' "
+            "class. ",
+        ),
+        RelevantFile(
+            path="tests/config/consts.py",
+            explanation="This file contains the usage of the 'XBaseModel' class and "
+            "needs to be modified to align with the new logic of the 'XBaseModel' "
+            "class. ",
         ),
     ],
     reasoning="",

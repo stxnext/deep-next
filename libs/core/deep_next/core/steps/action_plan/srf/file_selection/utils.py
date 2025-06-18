@@ -27,12 +27,14 @@ def validate_files(
     valid = []
     invalid = []
     for file in files:
-        path = root_path / Path(file.path)
+        abs_path = root_path / Path(file.path)
 
-        if path.is_file():
-            valid.append(RelevantFile(path=str(path), explanation=file.explanation))
+        if abs_path.is_file():
+            valid.append(
+                RelevantFile(path=str(file.path), explanation=file.explanation)
+            )
         else:
-            logger.warning(f"File not found, adding to invalid paths: {path}")
+            logger.warning(f"File not found, adding to invalid paths: {abs_path}")
             invalid.append(
                 RelevantFile(
                     path=str(file.path),

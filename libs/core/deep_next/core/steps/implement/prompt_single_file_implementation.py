@@ -87,7 +87,7 @@ class PromptSingleFileImplementation:
         ------------------------
         Write a patch for the issue, based on the retrieved context.
 
-        Within `<file>...</file>`, replace `...` with actual absolute file path.
+        Within `<file>...</file>`, replace `...` with actual file path.
 
         Within `<original>...</original>`, replace `...` with the only and exactly the \
         same fragment of code without losing any details, mind spaces gaps and \
@@ -166,7 +166,7 @@ class PromptSingleFileImplementation:
         ## Modifications
         <modifications>
         # modification 1
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def say_hello():
             \"\"\"Say hello!\"\"\"
@@ -185,7 +185,7 @@ class PromptSingleFileImplementation:
         </patched>
 
         # modification 2
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"
@@ -205,7 +205,7 @@ class PromptSingleFileImplementation:
         </patched>
 
         # modification 3
-        <file>/home/patryk/my_project/src/hello_world.py</file>
+        <file>src/hello_world.py</file>
         <original>
         def foo() -> str:
             return "bar"
