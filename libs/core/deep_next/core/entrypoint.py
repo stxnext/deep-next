@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 
 import click
@@ -5,13 +7,23 @@ from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
 from loguru import logger
 
+# Logging configuration: set log level via LOG_LEVEL env variable (default: INFO)
+log_level = os.getenv("LOG_LEVEL", "INFO")
+logger.remove()
+logger.add(sys.stderr, level=log_level)
+
 
 def main(
     problem_statement: str,
     hints: str,
     root_dir: Path,
 ) -> DeepNextResult:
-    """Deep NEXT data pipeline."""
+    """
+    Deep NEXT data pipeline.
+
+    The log level can be controlled via the LOG_LEVEL environment variable,
+    defaulting to INFO.
+    """
     logger.info(f"\n{problem_statement=}\n{hints=}\n{root_dir=}")
 
     # TODO: CLI will fail due to invalid interface
