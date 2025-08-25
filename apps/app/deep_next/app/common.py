@@ -1,4 +1,5 @@
 import re
+import os
 from datetime import datetime
 
 DEEP_NEXT_PR_DESCRIPTION = "DeepNext's attempt to solve the issue #{issue_no}."
@@ -35,3 +36,12 @@ def trim_comment_header(comment: str) -> str:
         return comment[len(_COMMENT_HEADER) :].strip()
 
     return comment
+
+
+def setup_logging() -> None:
+    """Configures Loguru logger level from LOG_LEVEL env variable (default: INFO)."""
+    from loguru import logger
+
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)

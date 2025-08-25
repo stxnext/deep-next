@@ -1,4 +1,7 @@
-from deep_next.app.common import create_feature_branch_name
+from deep_next.app.common import setup_logging, create_feature_branch_name
+
+setup_logging()
+
 from deep_next.app.config import REF_BRANCH, REPOSITORIES_DIR, Label
 from deep_next.app.git import FeatureBranch, GitRepository, setup_local_git_repo
 from deep_next.app.handle_mr.autonomous import propose_solution_autonomously

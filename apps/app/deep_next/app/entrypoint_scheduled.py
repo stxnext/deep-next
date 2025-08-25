@@ -1,3 +1,7 @@
+from deep_next.app.common import setup_logging
+
+setup_logging()
+
 import time
 
 import click
