@@ -10,6 +10,12 @@ from deep_next.app.utils import get_connector
 from deep_next.app.vcs_config import VCSConfig, load_vcs_config_from_env
 from deep_next.common.cmd import run_command
 from deep_next.connectors.version_control_provider import BaseIssue, BaseMR
+
+from deep_next.common.common import load_monorepo_dotenv, setup_logging
+
+load_monorepo_dotenv()
+setup_logging()
+
 from loguru import logger
 
 
@@ -155,9 +161,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv, setup_logging
-
-    load_monorepo_dotenv()
-    setup_logging()
-
     main()

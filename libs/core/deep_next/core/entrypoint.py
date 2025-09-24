@@ -1,5 +1,10 @@
 from pathlib import Path
 
+from deep_next.common.common import load_monorepo_dotenv, setup_logging
+
+load_monorepo_dotenv()
+setup_logging()
+
 import click
 from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
@@ -122,9 +127,4 @@ def cli(
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv, setup_logging
-
-    load_monorepo_dotenv()
-    setup_logging()
-
     cli()
