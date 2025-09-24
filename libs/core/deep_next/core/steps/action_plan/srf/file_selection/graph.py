@@ -204,6 +204,7 @@ def _call_analyze_llm(state: State) -> Analysis:
         ),
         *get_latest_messages(state),
         ("human", AnalyzeKnowledgePrompt.output_format),
+        ("human", "Remember that related paths should be FILES ONLY! No directories!"),
     ]
 
     prompt = ChatPromptTemplate.from_messages(messages)
