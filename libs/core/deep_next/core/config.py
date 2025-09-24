@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+import os
 
 from deep_next.common.config import MONOREPO_DATA_PATH
 
@@ -10,6 +11,9 @@ DATA_DIR = MONOREPO_DATA_PATH / "core"
 DATA_DIR.mkdir(exist_ok=True, parents=True)
 
 AUTOMATED_CODE_REVIEW_MAX_ATTEMPTS = 1
+
+# Logging configuration
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 
 class ImplementationModes(str, Enum):

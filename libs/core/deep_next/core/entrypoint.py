@@ -4,6 +4,7 @@ import click
 from deep_next.core.graph import DeepNextResult, deep_next_graph
 from deep_next.core.io import read_txt
 from loguru import logger
+from deep_next.core.config import LOG_LEVEL
 
 
 def main(
@@ -125,5 +126,8 @@ if __name__ == "__main__":
     from deep_next.common.common import load_monorepo_dotenv
 
     load_monorepo_dotenv()
+
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=LOG_LEVEL)
 
     cli()
