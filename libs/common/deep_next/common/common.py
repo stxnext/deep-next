@@ -25,7 +25,7 @@ def setup_logging() -> None:
     log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
     logger.remove()
     logger.add(sys.stdout, level=log_level)
-    logger.debug(f"Loguru logger initialized with level: {log_level}")
+    logger.info(f"Loguru logger initialized with level: {log_level}")
 
 
 def gitignore_name(name: str) -> str:
