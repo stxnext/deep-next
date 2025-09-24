@@ -95,9 +95,21 @@ def generate_project_description(
         | parser
     )
 
-    related_code_context = "\n".join(
-        [f"File: {file_path}\n{read_txt(file_path)}" for file_path in related_files]
-    )
+    contents = []
+    for file_path in related_files:
+        try:
+            content = read_txt(file_path)
+        except Exception as e:
+            content = f"Error reading file {file_path}: {e}"
+        contents.append(
+            f"File: {file_path}\n"
+            "########## CONTENT START ##########\n"
+            f"{content}\n"
+            f"########## CONTENT END ##########\n"
+        )
+
+    related_code_context = "\n".join(contents)
+
     return llm_agent.invoke(
         {
             "project_name": project_info.name,
