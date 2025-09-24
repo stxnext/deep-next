@@ -204,6 +204,7 @@ def _call_analyze_llm(state: State) -> Analysis:
         ),
         *get_latest_messages(state),
         ("human", AnalyzeKnowledgePrompt.output_format),
+        ("human", "Remember that related paths should be FILES ONLY! No directories!"),
     ]
 
     prompt = ChatPromptTemplate.from_messages(messages)
@@ -232,6 +233,8 @@ class _Node:
         - The previous knowledge analysis.
         - The results of tools called after the previous knowledge analysis.
         """
+        logger.debug("Analyzing knowledge")
+
         analysis: Analysis = _call_analyze_llm(state)
 
         return {
@@ -242,6 +245,8 @@ class _Node:
 
     @staticmethod
     def call_tools(state: State) -> dict:
+        logger.debug("Calling tools")
+
         next_steps = json.dumps(state["_current_analysis"].next_steps)
         llm = create_llm(
             LLMConfigType.SRF_TOOLS, tools=get_llm_tools(state["root_path"])
@@ -261,10 +266,13 @@ class _Node:
 
         result = get_tool_node(state["root_path"]).invoke(state)
         result["_iteration_count"] = state["_iteration_count"] + 1
+
         return result
 
     @staticmethod
     def select_files(state: State) -> dict:
+        logger.debug("Selecting files")
+
         if state["_current_analysis"].next_steps:
             logger.warning(
                 "The analysis is not complete, however flow was forced to make final "
@@ -275,11 +283,22 @@ class _Node:
             state["_current_analysis"].relevant_files_so_far, state["root_path"]
         )
 
+        logger.debug(f"Relevant files: {valid_files}\nInvalid files: {invalid_files}")
+
         return {"relevant_files": valid_files, "invalid_files": invalid_files}
 
 
 def _is_analysis_stuck(state: State) -> bool:
-    return state["_current_analysis"].json_str == state["_previous_analysis"].json_str
+    is_stuck = (
+        state["_current_analysis"].json_str == state["_previous_analysis"].json_str
+    )
+
+    if is_stuck:
+        logger.warning("The analysis is stuck, no progress made in the last iteration.")
+    else:
+        logger.debug("The analysis is not stuck, progress made in the last iteration.")
+
+    return is_stuck
 
 
 def _is_approaching_iteration_limit(state: State) -> bool:
@@ -289,10 +308,16 @@ def _is_approaching_iteration_limit(state: State) -> bool:
     steps_until_graph_end = 1
     """After we exit the analysis loop there is 1 step left: "select_files"."""
 
-    return (
-        state["_iteration_count"] + loop_step_count + steps_until_graph_end
-        >= SRFConfig.CYCLE_ITERATION_LIMIT
+    iter_count = state["_iteration_count"] + loop_step_count + steps_until_graph_end
+    is_limit = iter_count >= SRFConfig.CYCLE_ITERATION_LIMIT
+
+    logger.debug(
+        f"Current iteration count: {state['_iteration_count']}, "
+        f"approaching limit: {is_limit} "
+        f"(will be {iter_count} on exit, max: {SRFConfig.CYCLE_ITERATION_LIMIT})."
     )
+
+    return is_limit
 
 
 def _select_files_or_call_tools(

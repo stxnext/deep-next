@@ -41,7 +41,7 @@ class _State(BaseModel):
 
     # Output
     result: CodeReviewResult = Field(
-        default_factory=list,
+        default_factory=CodeReviewResult,
         description=(
             "Code review issues found during the code review process "
             "and potential errors."
