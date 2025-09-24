@@ -27,6 +27,17 @@ Create an `llm-config.yaml` file based on the example provided to configure mode
 
 For tracking and metrics, DeepNext integrates with LangSmith. Set up your credentials in the `.env` file.
 
+### Logging configuration
+
+You can control the verbosity of DeepNext logs using the `LOG_LEVEL` environment variable.  
+Set `LOG_LEVEL` in your `.env` file to one of: `DEBUG`, `INFO`, `WARNING`, `ERROR`.  
+The default is `INFO` if not set.
+
+Example:
+```env
+LOG_LEVEL=INFO
+```
+
 [See configuration details](https://stxnext.github.io/deep-next/configuration.html)
 
 ## Roadmap
