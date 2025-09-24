@@ -1,3 +1,5 @@
+import os
+import sys
 import textwrap
 
 from dotenv import load_dotenv
@@ -60,3 +62,11 @@ def prepare_issue_statement(
         {issue_comments_str}
         """
     )
+
+
+def setup_logging() -> None:
+    """Configures loguru logging level from LOG_LEVEL env variable (default: INFO)."""
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(sys.stdout, level=log_level)
+    logger.debug(f"Loguru logger initialized with level: {log_level}")
