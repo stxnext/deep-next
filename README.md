@@ -18,6 +18,20 @@ Running as a service to automatically process issues:
 
 ## Configuration
 
+### Logging
+
+DeepNext uses the `LOG_LEVEL` environment variable to control logging verbosity.
+By default, logging is set to `INFO` level. You can change this by setting
+`LOG_LEVEL` in your `.env` file to one of: `DEBUG`, `INFO`, `WARNING`, `ERROR`, etc.
+
+Example:
+```env
+LOG_LEVEL=DEBUG
+```
+
+This affects all log output from DeepNext, making it easy to increase or decrease
+verbosity as needed.
+
 DeepNext supports multiple LLM providers:
 - OpenAI
 - AWS Bedrock (Claude, Mistral, and others)
