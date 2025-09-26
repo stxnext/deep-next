@@ -1,7 +1,15 @@
 import textwrap
+import os
 
 from dotenv import load_dotenv
 from loguru import logger
+
+
+def setup_logging_from_env() -> None:
+    """Configures loguru logger level from LOG_LEVEL env var (default: INFO)."""
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(lambda msg: print(msg, end=""), level=log_level)
 
 
 def load_monorepo_dotenv() -> None:
