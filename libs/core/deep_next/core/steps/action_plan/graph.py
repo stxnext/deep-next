@@ -24,7 +24,7 @@ class _State(BaseModel):
 
     # 🔸 Internal (Hidden)
     code_context: ExistingCodeContext = Field(
-        default_factory=list, description="Files related to the issue."
+        default_factory=ExistingCodeContext, description="Files related to the issue."
     )
 
     # 🔹 Output
