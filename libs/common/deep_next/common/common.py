@@ -21,7 +21,13 @@ def load_monorepo_dotenv() -> None:
 
 
 def setup_logging() -> None:
-    """Configures Loguru logging level from LOG_LEVEL env variable (default INFO)."""
+    """
+    Configures Loguru logging level from LOG_LEVEL env variable.
+
+    LOG_LEVEL can be set in the environment or .env file.
+    Defaults to INFO if not specified.
+    Example: LOG_LEVEL=DEBUG
+    """
     log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
     logger.remove()
     logger.add(sys.stdout, level=log_level)
