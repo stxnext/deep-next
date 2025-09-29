@@ -1,3 +1,5 @@
+import os
+import sys
 import textwrap
 
 from dotenv import load_dotenv
@@ -16,6 +18,14 @@ def load_monorepo_dotenv() -> None:
     logger.debug(f"Loading .env file: '{str(path)}'")
 
     assert load_dotenv(path, verbose=True, override=True)
+
+
+def setup_logging() -> None:
+    """Configures Loguru logging level from LOG_LEVEL env variable (default INFO)."""
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(sys.stdout, level=log_level)
+    logger.debug(f"Loguru logging set to level: {log_level}")
 
 
 def gitignore_name(name: str) -> str:
