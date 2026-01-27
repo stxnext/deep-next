@@ -1,0 +1,7 @@
+{
+  "dependencies": ["."],
+  "graphs": {
+    "agent": "./libs/core/deep_next/core/graph.py:deep_next_graph_studio"
+  },
+  "env": ".env"
+}
