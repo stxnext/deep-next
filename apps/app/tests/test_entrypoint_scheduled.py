@@ -13,7 +13,7 @@ def test_default_value(mock_task_scheduler, monkeypatch):
 
     CliRunner().invoke(cli)
 
-    default_schedule_interval = 60
+    default_schedule_interval = 5
     mock_task_scheduler.assert_called_once_with(default_schedule_interval)
 
 

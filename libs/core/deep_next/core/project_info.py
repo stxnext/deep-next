@@ -1,4 +1,3 @@
-import functools
 import re
 import tomllib
 from dataclasses import dataclass
@@ -7,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from deep_next.core.io import read_txt
-from loguru import logger
 
 NOT_FOUND = "<NOT FOUND>"
 
@@ -31,22 +29,6 @@ def find_setup_py(root_path: Path) -> Path | None:
 def find_setup_cfg(root_path: Path) -> Path | None:
     path = root_path / "setup.cfg"
     return path if path.exists() else None
-
-
-def _log_if_different_than_dir(func):
-    @functools.wraps(func)
-    def wrapper(self, *args, **kwargs):
-        resp = func(self, *args, **kwargs)
-
-        if resp != self.root_dir.name:
-            logger.warning(
-                f"Returned project name `{resp}` is different than "
-                f"its root dir name `{self.root_dir.name}`"
-            )
-
-        return resp
-
-    return wrapper
 
 
 @dataclass(frozen=True)
@@ -73,7 +55,6 @@ class ProjectInfo:
             return None
 
     @property
-    @_log_if_different_than_dir
     def name(self) -> str:
         if self.pyproject_toml != NOT_FOUND:
             if result := self._get_name_from_pyproject_toml_tool():
