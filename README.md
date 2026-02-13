@@ -18,6 +18,20 @@ Running as a service to automatically process issues:
 
 ## Configuration
 
+### Logging
+
+DeepNext uses the [Loguru](https://loguru.readthedocs.io/) logger for output.
+By default, the log level is set to `INFO` to reduce verbosity.
+You can control the log verbosity by setting the `LOG_LEVEL` environment variable
+in your `.env` file or in your environment. Supported values include `DEBUG`,
+`INFO`, `WARNING`, `ERROR`, and `CRITICAL`.
+
+Example:
+```env
+LOG_LEVEL=INFO
+```
+Set to `DEBUG` for more detailed logs, or `WARNING`/`ERROR` for less output.
+
 DeepNext supports multiple LLM providers:
 - OpenAI
 - AWS Bedrock (Claude, Mistral, and others)
