@@ -1,3 +1,5 @@
+import os
+import sys
 import textwrap
 
 from dotenv import load_dotenv
@@ -60,3 +62,20 @@ def prepare_issue_statement(
         {issue_comments_str}
         """
     )
+
+
+def setup_logging() -> None:
+    """
+    Configure Loguru logging for the application.
+
+    This function sets up Loguru to use the log level specified by the LOG_LEVEL
+    environment variable (default: INFO). It removes all existing Loguru handlers
+    to prevent duplicate or conflicting outputs, then adds a single handler that
+    outputs to stdout at the configured log level. This ensures consistent logging
+    behavior across the application and allows dynamic adjustment of verbosity
+    through the LOG_LEVEL environment variable.
+    """
+    log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
+    logger.remove()
+    logger.add(sys.stdout, level=log_level)
+    logger.debug(f"Loguru logging configured. LOG_LEVEL={log_level}")

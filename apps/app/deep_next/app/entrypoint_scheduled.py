@@ -41,8 +41,9 @@ def cli(interval_s: int):
 
 
 if __name__ == "__main__":
-    from deep_next.common.common import load_monorepo_dotenv
+    from deep_next.common.common import load_monorepo_dotenv, setup_logging
 
     load_monorepo_dotenv()
+    setup_logging()
 
     cli()
